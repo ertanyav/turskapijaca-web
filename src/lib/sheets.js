@@ -1,7 +1,7 @@
 import Papa from 'papaparse';
 
-// Master Google Sheets ID'niz doğrudan tanımlandı
-const SHEET_ID = '1BrGhsTDd75PRcVcHzT2Q3Sqtwp6-snAZjjn-Z4fvfLU';
+// Asıl Master Dosyanız: TP_MASTER ID
+const SHEET_ID = '12wF2Is8OiESGgZ-Xq5qJMaZqxKelOCrnRjoj0zCqKlI';
 
 // Ortak Google Sheets CSV veri çekme ve parse etme yardımcısı
 async function fetchSheetData(tabName) {
@@ -54,7 +54,7 @@ export async function getDocuments() {
 }
 
 /**
- * URUNLER sekmesinden ürün verilerini çeker
+ * URUNLER sekmesinden ürün verilerini ve sayaçları çeker
  */
 export async function getProducts() {
   return await fetchSheetData('URUNLER');
@@ -65,4 +65,11 @@ export async function getProducts() {
  */
 export async function getBrands() {
   return await fetchSheetData('MARKALAR');
+}
+
+/**
+ * KATEGORILER sekmesinden kategori verilerini çeker
+ */
+export async function getCategories() {
+  return await fetchSheetData('KATEGORILER');
 }

@@ -1,21 +1,16 @@
 import Papa from 'papaparse';
 
-export const SHEET_ID = '1BrGhsTDd75PRcVcHzT2Q3Sqtwp6-snAZjjn-Z4fvfLU';
+// Google Sheets'ten aldığınız canlı Web CSV bağlantısı:
+const PRODUCTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSgtpYzushPu45KC5ztC4xvXS6AwRFSUEEWaDOZ3klcaxaUSFBxS0JMvUzhEbYO-Aok-lz7re6nr_Hg/pub?gid=300101&single=true&output=csv';
 
-const PRODUCTS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=URUNLER`;
-const TEXTS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=METINLER`;
+export const SHEET_ID = '1BrGhsTDd75PRcVcHzT2Q3Sqtwp6-snAZjjn-Z4fvfLU';
+const TEXTS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=METINLER`;
 
 export async function getProducts() {
   try {
-    const response = await fetch(PRODUCTS_URL);
-    if (!response.ok) throw new Error('Google Sheets URUNLER yanıt vermedi');
+    const response = await fetch(PRODUCTS_CSV_URL);
+    if (!response.ok) throw new Error('URUNLER CSV çekilemedi');
     const csvText = await response.text();
-
-    // İzin veya Paylaşım Hatası Kontrolü
-    if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
-      console.error('❌ HATA: TP_MASTER paylaşım izni kapalı! Lütfen Google Sheets dosyasını "Bağlantıya sahip olan herkes" olarak ayarlayın.');
-      return [];
-    }
 
     return new Promise((resolve) => {
       Papa.parse(csvText, {
@@ -27,31 +22,30 @@ export async function getProducts() {
             return;
           }
 
-          // En az bir hücresi dolu olan tüm satırları ekrana getir
-          const validRows = results.data.filter(row => {
-            return Object.values(row).some(val => val && val.toString().trim() !== '');
+          // Tablonuzdaki "Yayında = EVET" ve "Durum = AKTİF" olan ürünleri filtreler
+          const activeProducts = results.data.filter((item) => {
+            const isPublished = item['Yayında'] ? item['Yayında'].trim().toUpperCase() === 'EVET' : true;
+            const isActive = item['Durum'] ? item['Durum'].trim().toUpperCase() === 'AKTİF' : true;
+            return isPublished && isActive;
           });
 
-          resolve(validRows);
+          // Filtre sonucu ürün çıkarsa onları, çıkmazsa ham veriyi döndürür
+          resolve(activeProducts.length > 0 ? activeProducts : results.data);
         },
         error: () => resolve([])
       });
     });
   } catch (err) {
-    console.error('URUNLER çekilemedi:', err);
+    console.error('URUNLER veri çekme hatası:', err);
     return [];
   }
 }
 
 export async function getTexts() {
   try {
-    const response = await fetch(TEXTS_URL);
-    if (!response.ok) throw new Error('METINLER yanıt vermedi');
+    const response = await fetch(TEXTS_CSV_URL);
+    if (!response.ok) throw new Error('METINLER CSV çekilemedi');
     const csvText = await response.text();
-
-    if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
-      return {};
-    }
 
     return new Promise((resolve) => {
       Papa.parse(csvText, {
@@ -63,18 +57,15 @@ export async function getTexts() {
             results.data.forEach((row) => {
               const keys = Object.keys(row);
               if (keys.length === 0) return;
-              
-              const keyCol = keys.find(k => ['key', 'anahtar', 'kod', 'id', 'metin_kodu'].includes(k.trim().toLowerCase())) || keys[0];
+              const keyCol = keys[0];
               const keyVal = row[keyCol] ? row[keyCol].trim() : null;
 
               if (keyVal) {
-                dict[keyVal] = {};
-                keys.forEach(col => {
-                  const cLower = col.trim().toLowerCase();
-                  if (cLower === 'tr' || cLower.includes('türkçe') || cLower.includes('turkce')) dict[keyVal]['tr'] = row[col];
-                  else if (cLower === 'en' || cLower.includes('english') || cLower.includes('ingilizce')) dict[keyVal]['en'] = row[col];
-                  else if (cLower === 'me' || cLower === 'cg' || cLower.includes('karadağ') || cLower.includes('sr') || cLower.includes('montenegro')) dict[keyVal]['me'] = row[col];
-                });
+                dict[keyVal] = {
+                  tr: row['TR'] || row['Türkçe'] || '',
+                  en: row['EN'] || row['English'] || '',
+                  me: row['ME'] || row['Crnogorski'] || ''
+                };
               }
             });
           }

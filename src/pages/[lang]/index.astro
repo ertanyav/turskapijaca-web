@@ -1,7 +1,7 @@
 ---
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getProducts, getTexts } from '../../lib/sheets';
+import { getProducts, getTexts, getBrands } from '../../lib/sheets';
 
 export async function getStaticPaths() {
   return [
@@ -12,132 +12,318 @@ export async function getStaticPaths() {
 }
 
 const { lang } = Astro.params;
-const [products, texts] = await Promise.all([getProducts(), getTexts()]);
+const [products, texts, brands] = await Promise.all([
+  getProducts(),
+  getTexts(),
+  getBrands()
+]);
 
-// Metinleri Master tablodan çekiyoruz
-const pageTitle = texts['home_h1']?.[lang] || 'TURSKA PIJACA';
-const companySub = texts['company_sub']?.[lang] || '';
-const searchPlaceholder = texts['search_placeholder']?.[lang] || 'Search...';
-const resetText = texts['btn_reset']?.[lang] || 'Reset';
+// METINLER sekmesinden gelen dinamik yazılar
+const searchPlaceholder = texts['ui.search']?.[lang] || 'Ürün adı veya numarası ile arayın...';
+const clearText = texts['ui.clear']?.[lang] || 'Filtreleri Temizle';
+const distributorIntro = texts['brands.distributorIntro']?.[lang] || 'Karadağ’daki distribütörlük portföyümüzde yer alan markalar.';
+const salesTitle = texts['brands.salesTitle']?.[lang] || 'Satış portföyümüzdeki markalar';
+const salesIntro = texts['brands.salesIntro']?.[lang] || 'Toptan satış portföyümüzde yer alan seçilmiş markalar.';
+const askPriceText = texts['ui.askPrice']?.[lang] || 'Fiyat İçin İletişime Geçin';
+
+// Markaları kategorize etme (DISTRIBUTOR vs SALES)
+const distributorBrands = brands.filter(b => (b['Tür'] || '').toUpperCase() === 'DISTRIBUTOR');
+const salesBrands = brands.filter(b => (b['Tür'] || '').toUpperCase() === 'SALES');
 
 const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boolean))];
-const uniqueBrands = [...new Set(products.map(p => p['Marka']).filter(Boolean))];
 ---
 
 <html lang={lang}>
 <head>
   <meta charset="utf-8" />
-  <title>{pageTitle}</title>
+  <title>TURSKA PIJACA | Direct B2B Food & Goods Wholesale Supply Montenegro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- SEO Hreflang -->
-  <link rel="alternate" hreflang="en" href="https://www.turskapijaca.com/" />
-  <link rel="alternate" hreflang="me" href="https://www.turskapijaca.me/" />
-  <link rel="alternate" hreflang="tr" href="https://www.turskapijaca.com.tr/" />
 </head>
-<body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #111827; color: #f8fafc;">
+<body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #0d221a; color: #f0f4ed;">
   <Header lang={lang} texts={texts} />
 
-  <!-- Hero Banner (Soft Dark) -->
-  <section style="background: #1f2937; padding: 3rem 1.5rem; border-bottom: 1px solid #374151;">
+  <!-- Hero Banner -->
+  <section style="background: linear-gradient(135deg, #173f31 0%, #0d221a 100%); padding: 3rem 1.5rem; border-bottom: 2px solid #234d3c;">
     <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;">
       <div>
-        <div style="display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap;">
-          <span style="background: rgba(5,150,105,0.2); color: #10b981; border: 1px solid #059669; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">Direct From Factory</span>
-          <span style="background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid #3b82f6; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">UNIVERCERT MNE D.O.O.</span>
+        <div style="display: flex; gap: 0.6rem; margin-bottom: 0.8rem; flex-wrap: wrap;">
+          <span style="background: #d9b871; color: #173f31; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Direct From Factory</span>
+          <span style="background: rgba(255,255,255,0.1); color: #f0f4ed; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2);">UNIVERCERT MNE D.O.O.</span>
         </div>
-        <h1 style="font-size: 2.4rem; margin: 0 0 0.8rem 0; font-weight: 800; line-height: 1.2; color: #f8fafc;">
-          {pageTitle}
+        <h1 style="font-size: 2.3rem; margin: 0 0 0.8rem 0; font-weight: 800; color: #f0f4ed; line-height: 1.25;">
+          TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı
         </h1>
-        <p style="color: #9ca3af; font-size: 1.1rem; margin: 0; max-width: 800px; line-height: 1.6;">
-          {companySub}
+        <p style="color: #a3c2b5; font-size: 1.05rem; margin: 0; max-width: 800px; line-height: 1.6;">
+          Türkiye'deki <strong>Seda Gıda</strong> fabrikamızın ve distribütörü olduğumuz üretici markaların ürünlerini Karadağ'a aracısız ulaştırıyoruz. Haftalık fabrika sevkiyatımız ve özel dağıtım filomuzla hizmetinizdeyiz.
         </p>
       </div>
 
-      <!-- Quick Stats -->
-      <div style="background: #111827; border: 1px solid #374151; padding: 1.5rem 2rem; border-radius: 12px; text-align: center;">
-        <span style="font-size: 2.2rem; font-weight: 900; color: #10b981; display: block;">{products.length}</span>
-        <span style="font-size: 0.85rem; color: #9ca3af; font-weight: 600; text-transform: uppercase;">Active Products</span>
+      <div style="background: #142e23; border: 1px solid #234d3c; padding: 1.5rem; border-radius: 12px; text-align: center; min-width: 220px;">
+        <span style="font-size: 2.2rem; font-weight: 900; color: #d9b871; display: block;">{products.length}</span>
+        <span style="font-size: 0.8rem; color: #a3c2b5; font-weight: 700; text-transform: uppercase;">Aktif B2B Ürün</span>
       </div>
     </div>
   </section>
 
-  <!-- Interactive Search & Catalog -->
-  <main style="max-width: 1280px; margin: 2rem auto; padding: 0 1.5rem;">
+  <!-- Distribütörlüklerimiz & Toptan Satış Markalarımız Vitrini -->
+  <section style="background: #142e23; padding: 2.5rem 1.5rem; border-bottom: 1px solid #234d3c;">
+    <div style="max-width: 1280px; margin: 0 auto;">
+      
+      <!-- Distribütörlükler -->
+      <div style="margin-bottom: 2.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
+          <h2 style="font-size: 1.3rem; color: #d9b871; margin: 0; font-weight: 800;">🏆 Distribütörlüklerimiz</h2>
+          <span style="background: #d9b871; color: #173f31; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">OFFICIAL DISTRIBUTOR</span>
+        </div>
+        <p style="color: #a3c2b5; font-size: 0.9rem; margin: 0 0 1.2rem 0;">{distributorIntro}</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem;">
+          {distributorBrands.map(b => (
+            <div style="background: #173f31; border: 1px solid #234d3c; border-radius: 8px; padding: 0.8rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 90px; transition: transform 0.2s;">
+              {b['Logo URL'] ? (
+                <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 50px; max-width: 100%; object-fit: contain;" />
+              ) : (
+                <span style="color: #f0f4ed; font-weight: bold; font-size: 0.9rem;">{b['Marka']}</span>
+              )}
+              <span style="font-size: 0.75rem; color: #d9b871; margin-top: 0.3rem; font-weight: 600;">{b['Marka']}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Satış Portföyümüz -->
+      <div>
+        <h3 style="font-size: 1.1rem; color: #f0f4ed; margin: 0 0 0.4rem 0; font-weight: 700;">{salesTitle}</h3>
+        <p style="color: #a3c2b5; font-size: 0.85rem; margin: 0 0 1rem 0;">{salesIntro}</p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+          {salesBrands.map(b => (
+            <span style="background: #173f31; color: #a3c2b5; border: 1px solid #234d3c; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.82rem; font-weight: 600;">
+              {b['Marka']}
+            </span>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Interactive Search & Products Catalog -->
+  <main style="max-width: 1280px; margin: 2.5rem auto; padding: 0 1.5rem;">
     
     <!-- Search Bar -->
-    <div style="background: #1f2937; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #374151; display: flex; gap: 1rem; align-items: center;">
-      <input type="text" id="searchInput" placeholder={searchPlaceholder} style="flex: 1; padding: 0.8rem 1.2rem; border-radius: 8px; border: 1px solid #4b5563; background: #111827; color: white; font-size: 1rem; outline: none;" />
-      <button id="resetBtn" style="background: #374151; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s;">
-        {resetText}
+    <div style="background: #142e23; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #234d3c; display: flex; gap: 1rem; align-items: center;">
+      <input type="text" id="searchInput" placeholder={searchPlaceholder} style="flex: 1; padding: 0.85rem 1.2rem; border-radius: 8px; border: 1px solid #234d3c; background: #0d221a; color: white; font-size: 1rem; outline: none;" />
+      <button id="resetBtn" style="background: #234d3c; color: #f0f4ed; border: none; padding: 0.85rem 1.2rem; border-radius: 8px; font-weight: bold; cursor: pointer;">
+        {clearText}
       </button>
     </div>
 
-    <div style="display: grid; grid-template-columns: 260px 1fr; gap: 2rem;">
-      <!-- Left Filters -->
-      <aside style="background: #1f2937; border-radius: 12px; padding: 1.5rem; border: 1px solid #374151; height: fit-content;">
-        <div style="margin-bottom: 2rem;">
-          <h3 style="font-size: 0.85rem; text-transform: uppercase; color: #9ca3af; font-weight: 800; margin: 0 0 1rem 0; border-bottom: 1px solid #374151; padding-bottom: 0.5rem;">Categories</h3>
-          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-            <button class="cat-btn active" data-cat="ALL" style="text-align: left; padding: 0.6rem 0.8rem; border-radius: 6px; border: none; background: #059669; color: white; font-weight: bold; cursor: pointer;">All ({products.length})</button>
-            {uniqueCategories.map(cat => (
-              <button class="cat-btn" data-cat={cat} style="text-align: left; padding: 0.5rem 0.8rem; border-radius: 6px; border: none; background: transparent; color: #d1d5db; font-weight: 500; cursor: pointer;">{cat}</button>
-            ))}
-          </div>
+    <div style="display: grid; grid-template-columns: 250px 1fr; gap: 2rem;">
+      
+      <!-- Left Category Sidebar -->
+      <aside style="background: #142e23; border-radius: 12px; padding: 1.2rem; border: 1px solid #234d3c; height: fit-content;">
+        <h3 style="font-size: 0.85rem; text-transform: uppercase; color: #d9b871; font-weight: 800; margin: 0 0 1rem 0; border-bottom: 1px solid #234d3c; padding-bottom: 0.4rem;">
+          Kategoriler
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <button class="cat-btn active" data-cat="ALL" style="text-align: left; padding: 0.5rem 0.7rem; border-radius: 6px; border: none; background: #d9b871; color: #173f31; font-weight: 800; cursor: pointer;">
+            Tüm Kategoriler ({products.length})
+          </button>
+          {uniqueCategories.map(cat => (
+            <button class="cat-btn" data-cat={cat} style="text-align: left; padding: 0.45rem 0.7rem; border-radius: 6px; border: none; background: transparent; color: #a3c2b5; font-weight: 600; cursor: pointer;">
+              {cat}
+            </button>
+          ))}
         </div>
       </aside>
 
       <!-- Products Grid -->
       <section>
-        <div id="productsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem;">
+        <div id="productsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.25rem;">
           {products.map(p => {
-            const title = p[`Ad ${lang.toUpperCase()}`] || p['Ad EN'] || p['İç ad'] || 'Product';
+            const title = p[`Ad ${lang.toUpperCase()}`] || p['Ad TR'] || p['Ad EN'] || p['İç ad'] || 'Ürün';
             const code = p['Ürün no'] || p['Kayıt ID'] || '';
-            const brand = p['Marka'] || '';
+            const brand = p['Marka'] || 'TURSKA PIJACA';
             const cat = p['Kategori'] || '';
-            const pack = p['Ambalaj'] || '';
-            const image = p['Görsel URL'] && p['Görsel URL'].startsWith('http') ? p['Görsel URL'] : 'https://via.placeholder.com/300x300/1f2937/4ade80?text=TP';
+            const pack = p['Ambalaj'] || p['Ambalaj tipi'] || '';
+            const image = p['Görsel URL'] && p['Görsel URL'].startsWith('http') ? p['Görsel URL'] : 'https://via.placeholder.com/300x300/142e23/d9b871?text=TP';
 
             let rawPrice = p['Fiyat EUR'] ? String(p['Fiyat EUR']).trim() : '';
             rawPrice = rawPrice.replace(/TRY|TL|EUR|€|\$/gi, '').trim();
-            const price = (rawPrice && rawPrice !== '0' && rawPrice !== '0,00') ? `€${rawPrice}` : 'Quote';
+            const hasPrice = (rawPrice && rawPrice !== '0' && rawPrice !== '0,00');
+            const priceDisplay = hasPrice ? `€${rawPrice}` : askPriceText;
 
             return (
-              <div class="product-card" data-title={title.toLowerCase()} data-code={code.toLowerCase()} data-cat={cat} style="background: #1f2937; border-radius: 12px; border: 1px solid #374151; padding: 1.2rem; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;">
+              <div class="product-card" data-id={code} data-title={title} data-price={hasPrice ? rawPrice : '0'} data-cat={cat} data-brand={brand} style="background: #142e23; border-radius: 12px; border: 1px solid #234d3c; padding: 1.1rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
                 <div>
-                  <div style="height: 180px; background: white; border-radius: 8px; padding: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; position: relative;">
+                  <div style="height: 170px; background: white; border-radius: 8px; padding: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0.8rem; position: relative; overflow: hidden;">
                     <img src={image} alt={title} loading="lazy" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-                    <span style="position: absolute; top: 8px; left: 8px; background: #0f172a; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">{brand}</span>
+                    <span style="position: absolute; top: 6px; left: 6px; background: #173f31; color: #d9b871; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">{brand}</span>
                   </div>
-                  
-                  <span style="font-size: 0.75rem; color: #10b981; font-weight: 800; text-transform: uppercase;">{cat}</span>
-                  <h3 style="font-size: 1rem; margin: 0.3rem 0 0.5rem 0; color: #f8fafc; line-height: 1.35; font-weight: 700;">
+
+                  <span style="font-size: 0.7rem; color: #d9b871; font-weight: 800; text-transform: uppercase;">{cat}</span>
+                  <h3 style="font-size: 0.95rem; margin: 0.2rem 0 0.4rem 0; color: #f0f4ed; line-height: 1.35; font-weight: 700; min-height: 2.6em;">
                     <!-- AYNI PENCEREDE AÇILIR -->
                     <a href={`/${lang}/products/${code}`} target="_self" style="color: inherit; text-decoration: none;">{title}</a>
                   </h3>
-                  <p style="font-size: 0.8rem; color: #9ca3af; margin: 0 0 1rem 0;">Code: {code} {pack && `• ${pack}`}</p>
+                  <p style="font-size: 0.78rem; color: #a3c2b5; margin: 0 0 0.8rem 0;">Kod: {code} {pack && `• ${pack}`}</p>
                 </div>
 
-                <div style="border-top: 1px solid #374151; padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <span style="font-size: 0.7rem; color: #6b7280; display: block; font-weight: bold;">B2B PRICE</span>
-                    <span style="font-size: 1.25rem; font-weight: 900; color: #10b981;">{price}</span>
+                <div style="border-top: 1px solid #234d3c; padding-top: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                    <span style="font-size: 0.65rem; color: #a3c2b5; text-transform: uppercase; font-weight: bold;">TOPTAN FİYAT</span>
+                    <span style="font-size: 1.15rem; font-weight: 900; color: #d9b871;">{priceDisplay}</span>
                   </div>
-                  <a href={`https://wa.me/38263256666?text=B2B%20Siparis:%20${encodeURIComponent(title)}%20(${code})`} target="_blank" style="background: #059669; color: white; padding: 0.5rem 0.8rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">
-                    Order
-                  </a>
+
+                  <!-- B2B Sepete Ekle Butonu -->
+                  <button class="add-cart-btn" data-id={code} data-title={title} data-price={hasPrice ? rawPrice : '0'} style="width: 100%; background: #173f31; color: #d9b871; border: 1px solid #d9b871; padding: 0.5rem; border-radius: 6px; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: background 0.2s;">
+                    ➕ Sepete Ekle
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       </section>
+
     </div>
   </main>
-  
+
   <Footer lang={lang} texts={texts} />
 
+  <!-- 🛒 B2B Alışveriş Sepeti Çekmecesi (Slide-Over Drawer) -->
+  <div id="cartDrawer" style="position: fixed; top: 0; right: -420px; width: 380px; height: 100vh; background: #142e23; border-left: 3px solid #d9b871; box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column;">
+    
+    <!-- Sepet Header -->
+    <div style="padding: 1.2rem; background: #173f31; border-bottom: 1px solid #234d3c; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; color: #d9b871; font-size: 1.2rem; font-weight: 800;">🛒 B2B Sipariş Sepetim</h3>
+      <button id="closeCartBtn" style="background: transparent; border: none; color: #f0f4ed; font-size: 1.5rem; cursor: pointer;">✕</button>
+    </div>
+
+    <!-- Sepet Ürün Listesi -->
+    <div id="cartItemsList" style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+      <p id="emptyCartMsg" style="color: #a3c2b5; text-align: center; margin-top: 2rem;">Sepetiniz henüz boş. Kataloğumuzdan ürün ekleyebilirsiniz.</p>
+    </div>
+
+    <!-- Sepet Footer & WhatsApp Gönderim -->
+    <div style="padding: 1.2rem; background: #0d221a; border-top: 1px solid #234d3c;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: 800; font-size: 1.1rem;">
+        <span style="color: #a3c2b5;">Tahmini Toplam:</span>
+        <span id="cartTotalEuro" style="color: #d9b871;">€0.00</span>
+      </div>
+
+      <button id="sendCartWaBtn" style="width: 100%; background: #22c55e; color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(34,197,94,0.3);">
+        💬 Toplu Siparişi WhatsApp'a Gönder
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Client-side Search, Filtering & B2B Cart Logic -->
   <script>
-    // Filtreleme scripti aynı kalıyor (önceki koddan devralındı)
+    let cart = JSON.parse(localStorage.getItem('tp_b2b_cart') || '[]');
+
+    const cartDrawer = document.getElementById('cartDrawer');
+    const openCartBtn = document.getElementById('openCartBtn');
+    const closeCartBtn = document.getElementById('closeCartBtn');
+    const cartBadge = document.getElementById('cartBadge');
+    const cartItemsList = document.getElementById('cartItemsList');
+    const emptyCartMsg = document.getElementById('emptyCartMsg');
+    const cartTotalEuro = document.getElementById('cartTotalEuro');
+    const sendCartWaBtn = document.getElementById('sendCartWaBtn');
+
+    function updateCartUI() {
+      if (!cartBadge || !cartItemsList || !cartTotalEuro || !emptyCartMsg) return;
+
+      const totalCount = cart.reduce((sum: number, item: any) => sum + item.qty, 0);
+      cartBadge.textContent = String(totalCount);
+
+      if (cart.length === 0) {
+        emptyCartMsg.style.display = 'block';
+        cartItemsList.innerHTML = '';
+        cartItemsList.appendChild(emptyCartMsg);
+        cartTotalEuro.textContent = '€0.00';
+        return;
+      }
+
+      emptyCartMsg.style.display = 'none';
+      cartItemsList.innerHTML = '';
+
+      let grandTotal = 0;
+
+      cart.forEach((item: any, index: number) => {
+        const itemPrice = parseFloat(item.price) || 0;
+        const itemTotal = itemPrice * item.qty;
+        grandTotal += itemTotal;
+
+        const div = document.createElement('div');
+        div.style.cssText = 'background: #173f31; padding: 0.8rem; border-radius: 8px; border: 1px solid #234d3c; display: flex; justify-content: space-between; align-items: center;';
+        div.innerHTML = `
+          <div>
+            <strong style="color: #f0f4ed; font-size: 0.88rem; display: block;">${item.title}</strong>
+            <span style="font-size: 0.75rem; color: #a3c2b5;">Kod: ${item.id} · €${item.price}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button onclick="changeQty(${index}, -1)" style="background: #234d3c; color: white; border: none; width: 24px; height: 24px; border-radius: 4px; font-weight: bold; cursor: pointer;">-</button>
+            <span style="font-weight: bold; color: #d9b871; font-size: 0.9rem;">${item.qty}</span>
+            <button onclick="changeQty(${index}, 1)" style="background: #234d3c; color: white; border: none; width: 24px; height: 24px; border-radius: 4px; font-weight: bold; cursor: pointer;">+</button>
+          </div>
+        `;
+        cartItemsList.appendChild(div);
+      });
+
+      cartTotalEuro.textContent = `€${grandTotal.toFixed(2)}`;
+      localStorage.setItem('tp_b2b_cart', JSON.stringify(cart));
+    }
+
+    (window as any).changeQty = function(index: number, delta: number) {
+      cart[index].qty += delta;
+      if (cart[index].qty <= 0) cart.splice(index, 1);
+      updateCartUI();
+    };
+
+    // Sepete Ekle
+    document.querySelectorAll('.add-cart-btn').forEach(btn => {
+      btn.addEventListener('click', (e: any) => {
+        const id = e.currentTarget.dataset.id;
+        const title = e.currentTarget.dataset.title;
+        const price = e.currentTarget.dataset.price;
+
+        const existing = cart.find((item: any) => item.id === id);
+        if (existing) {
+          existing.qty += 1;
+        } else {
+          cart.push({ id, title, price, qty: 1 });
+        }
+
+        updateCartUI();
+        if (cartDrawer) cartDrawer.style.right = '0px';
+      });
+    });
+
+    openCartBtn?.addEventListener('click', () => {
+      if (cartDrawer) cartDrawer.style.right = '0px';
+    });
+
+    closeCartBtn?.addEventListener('click', () => {
+      if (cartDrawer) cartDrawer.style.right = '-420px';
+    });
+
+    // WhatsApp Sipariş
+    sendCartWaBtn?.addEventListener('click', () => {
+      if (cart.length === 0) return;
+      let msg = "Hello TURSKA PIJACA, Wholesale B2B Order:\n\n";
+      cart.forEach((item: any) => {
+        msg += `- ${item.title} (Code: ${item.id}) x ${item.qty} pcs\n`;
+      });
+      msg += `\nEstimated Total: ${cartTotalEuro?.textContent}`;
+      window.open(`https://wa.me/38263256666?text=${encodeURIComponent(msg)}`, '_self');
+    });
+
+    updateCartUI();
+
+    // Live Search
     let selectedCat = 'ALL';
     let searchQuery = '';
     const searchInput = document.getElementById('searchInput') as HTMLInputElement;
@@ -146,9 +332,10 @@ const uniqueBrands = [...new Set(products.map(p => p['Marka']).filter(Boolean))]
 
     function filterProducts() {
       cards.forEach((card: any) => {
-        const title = card.dataset.title;
-        const code = card.dataset.code;
+        const title = card.dataset.title.toLowerCase();
+        const code = card.dataset.id.toLowerCase();
         const cat = card.dataset.cat;
+
         const matchSearch = !searchQuery || title.includes(searchQuery) || code.includes(searchQuery);
         const matchCat = selectedCat === 'ALL' || cat === selectedCat;
         card.style.display = matchSearch && matchCat ? 'flex' : 'none';
@@ -162,8 +349,12 @@ const uniqueBrands = [...new Set(products.map(p => p['Marka']).filter(Boolean))]
 
     document.querySelectorAll('.cat-btn').forEach(btn => {
       btn.addEventListener('click', (e: any) => {
-        document.querySelectorAll('.cat-btn').forEach(b => (b as HTMLElement).style.background = 'transparent');
-        e.currentTarget.style.background = '#059669';
+        document.querySelectorAll('.cat-btn').forEach(b => {
+          (b as HTMLElement).style.background = 'transparent';
+          (b as HTMLElement).style.color = '#a3c2b5';
+        });
+        e.currentTarget.style.background = '#d9b871';
+        e.currentTarget.style.color = '#173f31';
         selectedCat = e.currentTarget.dataset.cat;
         filterProducts();
       });

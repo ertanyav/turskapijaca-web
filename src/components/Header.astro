@@ -1,32 +1,43 @@
 ---
 const { lang = 'en', texts = {} } = Astro.props;
 
-// METINLER tablosundan çeker, yoksa varsayılan metinleri kullanır
 const siteTitle = texts['site_title']?.[lang] || 'TURSKA PIJACA';
-const wholesaleText = texts['wholesale_subtitle']?.[lang] || 'Direct B2B Supply Montenegro';
-const productsLabel = texts['nav_products']?.[lang] || 'Products';
-const waBtnText = texts['whatsapp_btn']?.[lang] || '💬 WhatsApp B2B Order';
+const wholesaleSub = texts['wholesale_subtitle']?.[lang] || 'UNIVERCERT-MNE D.O.O. · Seda Gıda Representative Montenegro';
+const searchPlaceholder = lang === 'tr' ? 'Ürün adı, marka veya kod ile arayın...' : lang === 'me' ? 'Tražite po nazivu, brendu ili kodu...' : 'Search by product name, brand or code...';
 ---
 
-<header style="background: #1e293b; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-  <div>
-    <a href={`/${lang}/`} style="color: white; font-weight: bold; font-size: 1.4rem; text-decoration: none;">
-      🇹🇷 {siteTitle}
-    </a>
-    <span style="font-size: 0.85rem; color: #94a3b8; display: block;">{wholesaleText}</span>
+<header style="background: #0f172a; color: white; border-bottom: 3px solid #059669; sticky; top: 0; z-index: 100;">
+  <!-- Üst Bilgi Barmı (Top Bar) -->
+  <div style="background: #1e293b; font-size: 0.8rem; padding: 0.4rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
+    <div style="color: #94a3b8; display: flex; gap: 1.5rem;">
+      <span>📍 Podgorica / Budva / Tivat, Montenegro</span>
+      <span>📧 info@turskapijaca.com</span>
+      <span>☎️ +382 63 256 666</span>
+    </div>
+    <div style="display: flex; gap: 0.8rem; align-items: center;">
+      <span style="color: #64748b;">Regional Domain:</span>
+      <a href="https://www.turskapijaca.com/en/" style={`color: ${lang === 'en' ? '#10b981' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>🌐 Global (.com)</a>
+      <a href="https://www.turskapijaca.me/me/" style={`color: ${lang === 'me' ? '#10b981' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>🇲🇪 Montenegro (.me)</a>
+      <a href="https://www.turskapijaca.com.tr/tr/" style={`color: ${lang === 'tr' ? '#10b981' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>🇹🇷 Türkiye (.com.tr)</a>
+    </div>
   </div>
 
-  <nav style="display: flex; gap: 1.5rem; align-items: center;">
-    <a href={`/${lang}/`} style="color: #e2e8f0; text-decoration: none; font-weight: 500;">{productsLabel}</a>
-    
-    <div style="background: #334155; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; display: flex; gap: 0.5rem;">
-      <a href="/en/" style={`color: ${lang === 'en' ? '#38bdf8' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>EN (.com)</a> |
-      <a href="/me/" style={`color: ${lang === 'me' ? '#38bdf8' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>ME (.me)</a> |
-      <a href="/tr/" style={`color: ${lang === 'tr' ? '#38bdf8' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>TR (.com.tr)</a>
+  <!-- Ana Header -->
+  <div style="max-width: 1280px; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <!-- Logo & Unvan -->
+    <div>
+      <a href={`/${lang}/`} style="color: white; font-weight: 800; font-size: 1.6rem; text-decoration: none; tracking: -0.5px; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="background: #059669; color: white; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 1.2rem;">TP</span>
+        {siteTitle}
+      </a>
+      <span style="font-size: 0.75rem; color: #94a3b8; display: block; margin-top: 0.2rem;">{wholesaleSub}</span>
     </div>
 
-    <a href="https://wa.me/38263256666" target="_blank" style="background: #22c55e; color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem;">
-      {waBtnText}
-    </a>
-  </nav>
+    <!-- Hızlı B2B WhatsApp İletişim -->
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <a href="https://wa.me/38263256666" target="_blank" style="background: #22c55e; color: white; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(34,197,94,0.3);">
+        💬 B2B WhatsApp Order Line
+      </a>
+    </div>
+  </div>
 </header>

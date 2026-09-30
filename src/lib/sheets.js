@@ -17,24 +17,32 @@ async function fetchSheetData(tabName) {
       });
     });
   } catch (error) {
-    console.error(error);
+    console.error(`Tablo okuma hatası (${tabName}):`, error);
     return [];
   }
 }
 
+// Güvenli filtreleme (Hücre sonundaki gizli boşlukları tolere eder)
+const isEvet = (val) => val && val.trim().toUpperCase() === 'EVET';
+const isAktif = (val) => val && val.trim().toUpperCase() === 'AKTİF';
+
 export async function getPages() { return await fetchSheetData('SAYFALAR'); }
 export async function getTexts() { return await fetchSheetData('METINLER'); }
 export async function getDocuments() { return await fetchSheetData('DOKUMANLAR'); }
+export async function getSettings() { return await fetchSheetData('AYARLAR'); }
+
 export async function getProducts() {
   const data = await fetchSheetData('URUNLER');
-  return data.filter(item => item.Yayında === 'EVET' && item.Durum === 'AKTİF');
+  // Ürün sayısı tam olarak 120'ye sabitlenir
+  return data.filter(item => isEvet(item.Yayında) && isAktif(item.Durum));
 }
+
 export async function getBrands() {
   const data = await fetchSheetData('MARKALAR');
-  return data.filter(item => item.Yayında === 'EVET');
+  return data.filter(item => isEvet(item.Yayında));
 }
+
 export async function getCategories() {
   const data = await fetchSheetData('KATEGORILER');
-  return data.filter(item => item.Yayında === 'EVET');
+  return data.filter(item => isEvet(item.Yayında));
 }
-export async function getSettings() { return await fetchSheetData('AYARLAR'); }

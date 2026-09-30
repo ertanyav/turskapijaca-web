@@ -1,39 +1,49 @@
-// src/lib/sheets.js
+import Papa from 'papaparse';
 
-// Google Sheets Master Sheet URL'si veya yapılandırmanız
-// ("SAYFALAR" sekmesinden veri çeken fonksiyon)
-export async function getPages() {
+// Google Sheets ID'niz (Kendi Sheet ID'nizi buraya yazabilirsiniz veya ortam değişkeni kullanabilirsiniz)
+const SHEET_ID = import.meta.env.PUBLIC_SHEET_ID || 'PROJE_SHEET_ID_BURAYA';
+
+// Ortak Google Sheets CSV veri çekme ve parse etme yardımcısı
+async function fetchSheetData(tabName) {
   try {
-    // Google Sheets'in SAYFALAR sekmesinden verileri çektiğiniz endpoint veya mantık
-    // Örnek CSV / API çekme işlemi:
-    const SHEET_ID = 'PROJE_SHEET_ID_BURAYA'; // Kendi Sheet ID'niz
-    const TAB_NAME = 'SAYFALAR';
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+    const response = await fetch(url);
     
-    // Eğer daha önce çalışan bir Google Sheets çekme metodunuz varsa onu koruyabilirsiniz,
-    // kritik olan kısım fonksiyonun en başında "export" kelimesinin yer almasıdır:
+    if (!response.ok) {
+      throw new Error(`Google Sheets verisi alınamadı: ${tabName}`);
+    }
     
-    const response = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${TAB_NAME}`);
-    const data = await response.text();
+    const csvText = await response.text();
     
-    // Veriyi işleme mantığınız...
-    return parseCSV(data);
+    return new Promise((resolve) => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => resolve(results.data),
+        error: (err) => {
+          console.error(`CSV Parse Hatası (${tabName}):`, err);
+          resolve([]);
+        }
+      });
+    });
   } catch (error) {
-    console.error("Google Sheets verisi alınamadı:", error);
+    console.error(`Sheets bağlantı hatası (${tabName}):`, error);
     return [];
   }
 }
 
-function parseCSV(text) {
-  // Basit CSV parser veya mevcut projenizdeki parse fonksiyonu
-  const lines = text.split('\n');
-  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
-  
-  return lines.slice(1).filter(line => line.trim() !== '').map(line => {
-    const values = line.split(',').map(val => val.replace(/^"|"$/g, '').trim());
-    let obj = {};
-    headers.forEach((header, index) => {
-      obj[header] = values[index] || '';
-    });
-    return obj;
-  });
+/**
+ * SAYFALAR sekmesinden dinamik menü ve sayfa verilerini çeker
+ */
+export async function getPages() {
+  const data = await fetchSheetData('SAYFALAR');
+  return data;
+}
+
+/**
+ * METINLER sekmesinden site içi metinleri/çevirileri çeker
+ */
+export async function getTexts() {
+  const data = await fetchSheetData('METINLER');
+  return data;
 }

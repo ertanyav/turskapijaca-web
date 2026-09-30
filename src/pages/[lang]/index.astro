@@ -20,7 +20,16 @@ const [products, texts, brands] = await Promise.all([
 
 const eyebrowText = texts['home.eyebrow']?.[lang] || 'Direct From Factory · UNIVERCERT MNE D.O.O.';
 const headingText = texts['home.heading']?.[lang] || 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı';
-const introText = texts['home.intro']?.[lang] || 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.';
+
+// Master dosyadaki formata tam uyum: "Türkiye’den Karadağ’a." sonrasında yeni satır garantisi
+let introText = texts['home.intro']?.[lang] || 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.';
+if (lang === 'tr' && introText) {
+  introText = introText.replace('Türkiye’den Karadağ’a.', 'Türkiye’den Karadağ’a.\n');
+} else if (lang === 'en' && introText) {
+  introText = introText.replace('From Turkey to Montenegro.', 'From Turkey to Montenegro.\n');
+} else if (lang === 'me' && introText) {
+  introText = introText.replace('Od Turske do Crne Gore.', 'Od Turske do Crne Gore.\n');
+}
 
 const distributorIntro = texts['brands.distributorIntro']?.[lang] || 'Karadağ’daki distribütörlük portföyümüzde yer alan markalar.';
 const salesIntro = texts['brands.salesIntro']?.[lang] || 'Toptan satış portföyümüzde yer alan seçilmiş markalar.';
@@ -183,7 +192,7 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
     </div>
   </section>
 
-  <!-- 2. BÖLÜM: DİSTRİBÜTÖRLÜKLERİMİZ (Otomatik Kayma + Oklar) -->
+  <!-- 2. BÖLÜM: DİSTRİBÜTÖRLÜKLERİMİZ -->
   <div class="slider-section-container">
     <div class="slider-header-bar">
       <h3 style="margin: 0; color: #e5c58a; font-size: 1.1rem; font-weight: 800;">🏆 Distribütörlüklerimiz</h3>
@@ -206,7 +215,7 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
     </div>
   </div>
 
-  <!-- 3. BÖLÜM: SATIŞ PORTFÖYÜMÜZDEKİ MARKALAR (Otomatik Kayma + Oklar) -->
+  <!-- 3. BÖLÜM: SATIŞ PORTFÖYÜMÜZDEKİ MARKALAR -->
   <div class="slider-section-container">
     <div class="slider-header-bar">
       <h3 style="margin: 0; color: #e5c58a; font-size: 1.1rem; font-weight: 800;">📦 Satış Portföyümüzdeki Markalar</h3>
@@ -255,7 +264,7 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
     </div>
 
     <div style="display: grid; grid-template-columns: 260px 1fr; gap: 2rem;">
-      <!-- Kategoriler Sidebar (Sayaçlı) -->
+      <!-- Kategoriler Sidebar -->
       <aside style="background: #14352a; border-radius: 12px; padding: 1.5rem; border: 1px solid #285e4c; height: fit-content;">
         <h3 style="font-size: 0.85rem; text-transform: uppercase; color: #e5c58a; font-weight: 800; margin: 0 0 1rem 0; border-bottom: 1px solid #285e4c; padding-bottom: 0.5rem;">Kategoriler</h3>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
@@ -383,7 +392,6 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
     }
     (window as any).changeQty = function(i: number, d: number) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); updateCartUI(); };
 
-    // Otomatik Kayma + Ok Tuşları + Dokunmatik/Fare Kaydırma
     (window as any).scrollSlider = function(trackId: string, amount: number) {
       document.getElementById(trackId)?.scrollBy({ left: amount, behavior: 'smooth' });
     };

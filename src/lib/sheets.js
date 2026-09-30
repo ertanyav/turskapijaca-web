@@ -54,22 +54,29 @@ export async function getDocuments() {
 }
 
 /**
- * URUNLER sekmesinden ürün verilerini ve sayaçları çeker
+ * URUNLER sekmesinden yalnızca yayında ve aktif olan ürünleri çeker (Sayaç ve listeler için)
  */
 export async function getProducts() {
-  return await fetchSheetData('URUNLER');
+  const data = await fetchSheetData('URUNLER');
+  // Master kuralı: Yayında = EVET ve Durum = AKTİF olanlar (Bu filtre sayaçları 120 yapar)
+  return data.filter(item => 
+    (item.Yayında === 'EVET' || item.Yayında === 'EVET ') && 
+    (item.Durum === 'AKTİF' || item.Durum === 'AKTİF ')
+  );
 }
 
 /**
  * MARKALAR sekmesinden marka verilerini çeker
  */
 export async function getBrands() {
-  return await fetchSheetData('MARKALAR');
+  const data = await fetchSheetData('MARKALAR');
+  return data.filter(item => item.Yayında === 'EVET');
 }
 
 /**
  * KATEGORILER sekmesinden kategori verilerini çeker
  */
 export async function getCategories() {
-  return await fetchSheetData('KATEGORILER');
+  const data = await fetchSheetData('KATEGORILER');
+  return data.filter(item => item.Yayında === 'EVET');
 }

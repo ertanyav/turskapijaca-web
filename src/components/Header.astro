@@ -10,11 +10,11 @@ const [pages, texts, settings, categories] = await Promise.all([
   getPages(), getTexts(), getSettings(), getCategories()
 ]);
 
-// 1. AYARLAR'dan Logo Çekimi
+// Ayarlardan Logo ve Alt Başlık
 const logoSetting = settings.find(s => s.Anahtar === 'logo');
 const logoUrl = logoSetting ? logoSetting.Değer : '';
 
-// 2. Çeviri Yardımcısı
+// Metin Çevirici (Satır atlamalarını korumak için pre-line sınıfını kullanacağız)
 function getText(key, defaultVal) {
   const found = texts.find(t => t.Anahtar === key);
   if (!found) return defaultVal;
@@ -23,93 +23,84 @@ function getText(key, defaultVal) {
   return found.Türkçe || defaultVal;
 }
 
-// 3. 404'ü Önleyen Rota Oluşturucu (Master dosyadaki Adres sütununu birebir kullanır)
+// Dinamik URL Oluşturucu (Master Tablodaki Adres Sütunlarına Göre)
 function getPath(item) {
-  let path = item['Adres TR'];
+  let path = item['Adres TR'] || '';
   if (currentLang === 'en') path = item['Adres EN'] || path;
   if (currentLang === 'me') path = item['Adres ME'] || path;
   
-  if (path === '/ana-sayfa' || path === '/home' || path === '/početna') {
+  if (!path) return `/${currentLang}`;
+  if (path.includes('ana-sayfa') || path.includes('home') || path.includes('početna')) {
     return `/${currentLang}`;
   }
-  return `/${currentLang}${path.startsWith('/') ? path : '/' + path}`;
+  return `/${currentLang}/${path.replace(/^\//, '')}`;
 }
 
-// 4. Alt Menü (Dropdown) ve Hiyerarşi Mimarisinin Kurulması
-// Sayfalar: Sadece Yayında=EVET ve Menüde=EVET olanları al
-const rawMenuPages = pages.filter(p => p.Yayında?.trim().toUpperCase() === 'EVET' && p.Menüde?.trim().toUpperCase() === 'EVET').sort((a, b) => Number(a.Sıra) - Number(b.Sıra));
-const activeCategories = categories.filter(c => c.Yayında?.trim().toUpperCase() === 'EVET').sort((a, b) => Number(a.Sıra) - Number(b.Sıra));
+// Menü Hiyerarşisi
+const menuPages = pages
+  .filter(p => /evet/i.test(p.Yayında) && /evet/i.test(p.Menüde))
+  .sort((a, b) => Number(a.Sıra) - Number(b.Sıra));
 
-// Tek slash içerenler Ana Menü (Kök), birden fazla slash içerenler Alt Menü
-const rootPages = rawMenuPages.filter(p => p['Adres TR'].split('/').filter(Boolean).length === 1);
-const childPages = rawMenuPages.filter(p => p['Adres TR'].split('/').filter(Boolean).length > 1);
-
-// Hiyerarşiyi bağlama
-const menuTree = rootPages.map(root => {
-  const rootPathBase = root['Adres TR'];
-  let children = childPages.filter(child => child['Adres TR'].startsWith(rootPathBase + '/'));
-
-  // Ürünler menüsü altındaysa, kategorileri de alt menüye ekle
-  if (root.Kod === 'products') {
-    const catChildren = activeCategories.map(cat => ({
-      isCategory: true,
-      ...cat,
-      Kod: cat.Kod
-    }));
-    children = [...children, ...catChildren];
-  }
-
-  return { ...root, children };
-});
+const activeCategories = categories.sort((a, b) => Number(a.Sıra) - Number(b.Sıra));
 ---
 
 <header class="site-header">
   <div class="header-container">
-    <!-- Logo Alanı -->
-    <a href={`/${currentLang}`} class="logo-link" aria-label="Ana Sayfa">
-      {logoUrl ? (
-         <img src={logoUrl} alt="TURSKA PIJACA" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-      ) : null}
-      <span class="logo-text" style={logoUrl ? "display:none;" : ""}>TURSKA PIJACA</span>
+    
+    <!-- LOGO VE BAŞLIKLAR (Turski Proizvodi eklendi) -->
+    <a href={`/${currentLang}`} class="logo-area" aria-label="Ana Sayfa">
+      {logoUrl && (
+        <img src={logoUrl} alt="Turska Pijaca Logo" class="logo-img" onerror="this.style.display='none'" />
+      )}
+      <div class="logo-text-group">
+        <span class="logo-title">TURSKA PIJACA</span>
+        <span class="logo-subtitle">Turski Proizvodi</span>
+      </div>
     </a>
 
-    <!-- Mobil Hamburger Butonu -->
-    <button id="menu-toggle" class="mobile-toggle" aria-label="Menüyü Aç">
+    <!-- MOBİL BUTON -->
+    <button id="menu-toggle" class="mobile-toggle" aria-label="Menü">
       <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     </button>
 
-    <!-- Navigasyon (Menü, Alt Menüler ve Diller) -->
+    <!-- ANA MENÜ -->
     <div id="nav-wrapper" class="nav-wrapper">
       <nav class="main-nav">
         <ul>
-          {menuTree.map(item => {
-            const menuTitle = getText(`${item.Kod}.title`, item.Kod);
-            const href = getPath(item);
-            const hasChildren = item.children && item.children.length > 0;
+          {menuPages.map(page => {
+            const menuTitle = getText(`${page.Kod}.title`, page.Kod);
+            const href = getPath(page);
+            const isProducts = page.Kod === 'products' || page.Kod === 'urunler';
 
             return (
-              <li class={hasChildren ? 'has-dropdown' : ''}>
+              <li class={isProducts ? 'has-mega-menu' : ''}>
                 <a href={href} class="nav-link">
-                  {menuTitle} {hasChildren && <span class="caret">▾</span>}
+                  {menuTitle} {isProducts && <span class="caret">▾</span>}
                 </a>
-                
-                {hasChildren && (
-                  <ul class="dropdown-menu">
-                    {item.children.map(child => {
-                      const childHref = getPath(child);
-                      // Kategori ise kendi sekmesinden, Sayfa ise METINLER'den çeviri al
-                      let childTitle = '';
-                      if (child.isCategory) {
-                        childTitle = currentLang === 'en' ? child['Ad EN'] : currentLang === 'me' ? child['Ad ME'] : child['Ad TR'];
-                      } else {
-                        childTitle = getText(`${child.Kod}.title`, child.Kod);
-                      }
 
-                      return (
-                        <li><a href={childHref} class="dropdown-link">{childTitle}</a></li>
-                      );
-                    })}
-                  </ul>
+                {/* ÜRÜNLER İÇİN KATEGORİ RESİMLİ MEGA MENÜ */}
+                {isProducts && activeCategories.length > 0 && (
+                  <div class="mega-menu">
+                    <div class="mega-menu-grid">
+                      {activeCategories.map(cat => {
+                        const catImg = cat['Resim'] || cat['Görsel'] || cat['Fotoğraf'] || '';
+                        const catName = currentLang === 'en' ? cat['Ad EN'] : currentLang === 'me' ? cat['Ad ME'] : cat['Ad TR'];
+                        
+                        // Kategori linkini oluştur
+                        let catPath = cat['Adres TR'] || '';
+                        if (currentLang === 'en') catPath = cat['Adres EN'] || catPath;
+                        if (currentLang === 'me') catPath = cat['Adres ME'] || catPath;
+                        const catHref = `/${currentLang}/${catPath.replace(/^\//, '')}`;
+
+                        return (
+                          <a href={catHref} class="mega-menu-item">
+                            {catImg && <img src={catImg} alt={catName} loading="lazy" />}
+                            <span class="multiline-text">{catName}</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </li>
             );
@@ -117,7 +108,7 @@ const menuTree = rootPages.map(root => {
         </ul>
       </nav>
 
-      <!-- Dil Düğmeleri -->
+      <!-- DİLLER -->
       <div class="lang-switcher">
         <a href="/tr" class={currentLang === 'tr' ? 'active' : ''}>TR</a>
         <span class="divider">|</span>
@@ -130,7 +121,6 @@ const menuTree = rootPages.map(root => {
 </header>
 
 <script>
-  // Mobil Menü Aç/Kapat
   const toggleBtn = document.getElementById('menu-toggle');
   const navWrapper = document.getElementById('nav-wrapper');
   if (toggleBtn && navWrapper) {
@@ -141,41 +131,68 @@ const menuTree = rootPages.map(root => {
 </script>
 
 <style>
+  /* 1. SABİT (STICKY) HEADER - KAYMA SORUNU ÇÖZÜLDÜ */
   .site-header {
-    background-color: #0b2218; /* Kurumsal Koyu Yeşil */
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    position: relative;
-    z-index: 1000;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    background-color: #ffffff;
+    border-bottom: 1px solid #eaeaea;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    width: 100%;
   }
+
   .header-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0.75rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  .logo-link {
+
+  /* 2. LOGO VE ALT BAŞLIK (TURSKI PROIZVODI) */
+  .logo-area {
     display: flex;
     align-items: center;
+    gap: 1rem;
     text-decoration: none;
   }
   .logo-img {
-    height: 45px;
+    height: 50px;
     width: auto;
     object-fit: contain;
   }
-  .logo-text {
-    color: #ffffff;
-    font-weight: 800;
-    font-size: 1.25rem;
+  .logo-text-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
-  
-  /* Menü ve Navigasyon */
+  .logo-title {
+    color: #4b1b85;
+    font-weight: 900;
+    font-size: 1.4rem;
+    line-height: 1.1;
+    letter-spacing: 0.5px;
+  }
+  .logo-subtitle {
+    color: #0b2218;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* 3. SATIR ATLAMALARI KORUYAN CSS SINIFI */
+  .multiline-text {
+    white-space: pre-line;
+  }
+
+  /* NAVİGASYON */
   .nav-wrapper {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 2.5rem;
   }
   .main-nav ul {
     display: flex;
@@ -183,145 +200,139 @@ const menuTree = rootPages.map(root => {
     margin: 0;
     padding: 0;
     gap: 1.5rem;
+    align-items: center;
   }
   .nav-link {
-    color: #cbd5e1;
+    color: #1f2937;
     text-decoration: none;
     font-size: 0.95rem;
-    font-weight: 500;
-    padding: 0.5rem 0;
+    font-weight: 600;
+    padding: 1rem 0;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.4rem;
     transition: color 0.2s;
   }
   .nav-link:hover {
-    color: #ffffff;
-  }
-  .caret {
-    font-size: 0.7rem;
+    color: #e11d48; /* Vurgu rengi */
   }
 
-  /* Alt Menü (Dropdown) Tasarımı */
-  .has-dropdown {
+  /* 4. KATEGORİLER İÇİN RESİMLİ MEGA MENÜ */
+  .has-mega-menu {
     position: relative;
   }
-  .dropdown-menu {
+  .mega-menu {
     position: absolute;
     top: 100%;
-    left: 0;
-    background-color: #0f2e20;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    min-width: 220px;
-    padding: 0.5rem 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(15px);
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 600px; /* Menü genişliği */
     opacity: 0;
     visibility: hidden;
-    transform: translateY(10px);
-    transition: all 0.2s ease;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    z-index: 1001;
+    transition: all 0.3s ease;
+    z-index: 1000;
   }
-  .has-dropdown:hover .dropdown-menu {
+  .has-mega-menu:hover .mega-menu {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
   }
-  .dropdown-menu li {
-    display: block;
-    width: 100%;
+  .mega-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
   }
-  .dropdown-link {
-    display: block;
-    padding: 0.6rem 1.25rem;
-    color: #cbd5e1;
+  .mega-menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-decoration: none;
-    font-size: 0.9rem;
-    transition: background 0.2s, color 0.2s;
+    text-align: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background 0.2s;
   }
-  .dropdown-link:hover {
-    background-color: rgba(255,255,255,0.05);
-    color: #ffffff;
+  .mega-menu-item:hover {
+    background: #f8fafc;
+  }
+  .mega-menu-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #eaeaea;
+  }
+  .mega-menu-item span {
+    color: #1f2937;
+    font-size: 0.85rem;
+    font-weight: 600;
   }
 
-  /* Dil Seçimi */
+  /* DİLLER */
   .lang-switcher {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
   .lang-switcher a {
-    color: #94a3b8;
+    color: #64748b;
     text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 700;
   }
   .lang-switcher a.active, .lang-switcher a:hover {
-    color: #ffffff;
+    color: #4b1b85;
   }
   .lang-switcher .divider {
-    color: #475569;
+    color: #cbd5e1;
   }
 
-  /* Mobil Hamburger Menü */
-  .mobile-toggle {
-    display: none;
-    background: none;
-    border: none;
-    color: #ffffff;
-    cursor: pointer;
-  }
+  /* MOBİL */
+  .mobile-toggle { display: none; background: none; border: none; cursor: pointer; color: #1f2937; }
 
-  /* Mobil Responsive Ayarlar */
   @media (max-width: 1024px) {
-    .mobile-toggle {
-      display: block;
-    }
+    .mobile-toggle { display: block; }
     .nav-wrapper {
       position: absolute;
       top: 100%;
       left: 0;
       width: 100%;
-      background-color: #0b2218;
+      background: #ffffff;
       flex-direction: column;
-      align-items: stretch;
+      align-items: flex-start;
       padding: 0;
       gap: 0;
       max-height: 0;
       overflow: hidden;
       transition: max-height 0.3s ease;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .nav-wrapper.is-open {
-      max-height: 100vh;
-      padding: 1rem 0;
-    }
-    .main-nav ul {
-      flex-direction: column;
-      gap: 0;
-    }
-    .nav-link {
-      padding: 1rem 2rem;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .has-dropdown:hover .dropdown-menu {
+    .nav-wrapper.is-open { max-height: 80vh; overflow-y: auto; }
+    .main-nav ul { flex-direction: column; width: 100%; gap: 0; }
+    .nav-link { padding: 1rem 2rem; border-bottom: 1px solid #eaeaea; width: 100%; }
+    
+    .has-mega-menu:hover .mega-menu { display: none; } /* Mobilde mega menüyü basitleştirmek için gizlenir veya alt alta dizilir */
+    .mega-menu {
       position: static;
+      transform: none;
+      width: 100%;
+      box-shadow: none;
+      border: none;
+      border-bottom: 1px solid #eaeaea;
+      border-radius: 0;
+      padding: 1rem;
       opacity: 1;
       visibility: visible;
-      transform: none;
-      box-shadow: none;
-      background-color: rgba(0,0,0,0.15);
-      border: none;
-      border-radius: 0;
-      padding: 0;
+      display: none;
     }
-    .dropdown-link {
-      padding: 0.8rem 3rem;
-      border-bottom: 1px solid rgba(255,255,255,0.02);
-    }
-    .lang-switcher {
-      padding: 1.5rem 2rem;
-      justify-content: center;
-    }
+    .has-mega-menu.active .mega-menu { display: block; }
+    .mega-menu-grid { grid-template-columns: repeat(2, 1fr); }
+    .lang-switcher { padding: 1rem 2rem; width: 100%; justify-content: flex-start; }
   }
 </style>

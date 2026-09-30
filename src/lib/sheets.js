@@ -1,7 +1,7 @@
 import Papa from 'papaparse';
 
-// Google Sheets ID'niz
-const SHEET_ID = import.meta.env.PUBLIC_SHEET_ID || 'PROJE_SHEET_ID_BURAYA';
+// Master Google Sheets ID'niz doğrudan tanımlandı
+const SHEET_ID = '1BrGhsTDd75PRcVcHzT2Q3Sqtwp6-snAZjjn-Z4fvfLU';
 
 // Ortak Google Sheets CSV veri çekme ve parse etme yardımcısı
 async function fetchSheetData(tabName) {

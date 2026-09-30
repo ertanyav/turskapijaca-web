@@ -1,58 +1,55 @@
 ---
 const { lang = 'en', texts = {} } = Astro.props;
 
-// Metinleri tablodan güvenli çekme
-const siteTitle = texts['site_title']?.[lang] || 'TURSKA PIJACA';
-const wholesaleSub = texts['wholesale_subtitle']?.[lang] || 'UNIVERCERT MNE D.O.O. · Seda Gıda Representative Montenegro';
+// Master METINLER tablosundan dinamik çekim
+const siteTitle = 'TURSKA PIJACA';
+const wholesaleSub = 'UNIVERCERT MNE D.O.O. · Seda Gıda Official Representative';
 
-const menuCatalog = texts['nav_products']?.[lang] || 'Catalog';
-const menuAbout = texts['nav_about']?.[lang] || 'About Us';
-const menuContact = texts['nav_contact']?.[lang] || 'Contact';
+const logoUrl = 'https://lh3.googleusercontent.com/d/14BFS24JrQOpz1ALBLzUGd0T-0Jw4c0jy=w200';
 
-// Logonuzun URL'si (Beyaz/Açık renkli logo dark temada daha iyi durur)
-const logoUrl = 'https://turskapijaca.com/assets/logo.png'; // Eğer asset klasöründeyse. Yoksa metin logo kullanılır.
+const navCatalog = texts['ui.fullCatalog']?.[lang] || 'Ürün Kataloğu';
+const navAbout = texts['ui.company']?.[lang] || 'Kurumsal & Lojistik';
 ---
 
-<header style="background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #059669; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+<header style="background: #173f31; color: #f0f4ed; border-bottom: 3px solid #d9b871; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
   <!-- Top Bar -->
-  <div style="background: #0b1120; font-size: 0.8rem; padding: 0.4rem 1.5rem; border-bottom: 1px solid #1e293b;">
+  <div style="background: #0d221a; font-size: 0.8rem; padding: 0.4rem 1.5rem; border-bottom: 1px solid #234d3c;">
     <div style="max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-      <div style="color: #94a3b8; display: flex; gap: 1.2rem; align-items: center;">
-        <span>🏢 <strong>UNIVERCERT MNE D.O.O.</strong></span>
-        <span>🚚 Weekly Direct Transfer</span>
+      <div style="color: #d9b871; display: flex; gap: 1.2rem; font-weight: 600;">
+        <span>🏢 UNIVERCERT MNE D.O.O.</span>
+        <span>🚚 Weekly Direct Factory Transfer (Seda Gıda)</span>
       </div>
       <div style="display: flex; gap: 0.8rem; align-items: center;">
-        <span style="color: #64748b; font-size: 0.75rem;">Domains:</span>
-        <!-- 404 ÇÖZÜMÜ: Alt klasör (/en/) yerine tam alan adına yönlendirme -->
-        <a href="https://www.turskapijaca.com" style={`color: ${lang === 'en' ? '#10b981' : '#94a3b8'}; text-decoration: none; font-weight: bold; transition: color 0.2s;`}>Global (.com)</a>
-        <a href="https://www.turskapijaca.me" style={`color: ${lang === 'me' ? '#10b981' : '#94a3b8'}; text-decoration: none; font-weight: bold; transition: color 0.2s;`}>Montenegro (.me)</a>
-        <a href="https://www.turskapijaca.com.tr" style={`color: ${lang === 'tr' ? '#10b981' : '#94a3b8'}; text-decoration: none; font-weight: bold; transition: color 0.2s;`}>Türkiye (.com.tr)</a>
+        <span style="color: #a3c2b5; font-size: 0.75rem;">Domains:</span>
+        <a href="https://www.turskapijaca.com/en/" target="_self" style={`color: ${lang === 'en' ? '#d9b871' : '#a3c2b5'}; text-decoration: none; font-weight: bold;`}>Global (.com)</a>
+        <a href="https://www.turskapijaca.me/me/" target="_self" style={`color: ${lang === 'me' ? '#d9b871' : '#a3c2b5'}; text-decoration: none; font-weight: bold;`}>Montenegro (.me)</a>
+        <a href="https://www.turskapijaca.com.tr/tr/" target="_self" style={`color: ${lang === 'tr' ? '#d9b871' : '#a3c2b5'}; text-decoration: none; font-weight: bold;`}>Türkiye (.com.tr)</a>
       </div>
     </div>
   </div>
 
   <!-- Main Header -->
-  <div style="max-width: 1280px; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-    <!-- Logo & Subtitle -->
-    <div>
-      <a href={`/${lang}/`} style="color: white; font-weight: 800; font-size: 1.6rem; text-decoration: none; display: flex; align-items: center; gap: 0.8rem;">
-        <!-- Drive'daki logonuz (Eğer resim yüklenemezse CSS ile yeşil TP logosu çıkar) -->
-        <div style="background: #059669; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900; color: white;">TP</div>
-        <div style="display: flex; flex-direction: column;">
-          <span style="letter-spacing: -0.5px;">{siteTitle}</span>
-          <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 500; letter-spacing: 0;">{wholesaleSub}</span>
-        </div>
-      </a>
-    </div>
+  <div style="max-width: 1280px; margin: 0 auto; padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <!-- Logo & Title -->
+    <a href={`/${lang}/`} target="_self" style="color: white; font-weight: 800; font-size: 1.5rem; text-decoration: none; display: flex; align-items: center; gap: 0.8rem;">
+      <img src={logoUrl} alt="TURSKA PIJACA Logo" style="height: 48px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.style.display='none'; document.getElementById('altLogo').style.display='flex';" />
+      <div id="altLogo" style="display: none; background: #d9b871; color: #173f31; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 900;">TP</div>
+      <div>
+        <span style="color: #f0f4ed; letter-spacing: -0.5px; display: block; font-size: 1.4rem;">{siteTitle}</span>
+        <span style="font-size: 0.7rem; color: #d9b871; font-weight: 500; display: block; margin-top: -2px;">{wholesaleSub}</span>
+      </div>
+    </a>
 
-    <!-- Nav Menu -->
-    <nav style="display: flex; gap: 1.8rem; align-items: center;">
-      <a href={`/${lang}/`} style="color: #f8fafc; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{menuCatalog}</a>
-      <a href={`/${lang}/about`} style="color: #cbd5e1; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{menuAbout}</a>
+    <!-- Nav & B2B Cart Button -->
+    <nav style="display: flex; gap: 1.5rem; align-items: center;">
+      <a href={`/${lang}/`} target="_self" style="color: #f0f4ed; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navCatalog}</a>
+      <a href={`/${lang}/about`} target="_self" style="color: #a3c2b5; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navAbout}</a>
       
-      <a href="https://wa.me/38263256666" target="_blank" rel="noopener noreferrer" style="background: #059669; color: white; padding: 0.55rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 15px rgba(5,150,105,0.4); transition: transform 0.2s;">
-        💬 Order
-      </a>
+      <!-- B2B Sepet Açma Butonu -->
+      <button id="openCartBtn" style="background: #d9b871; color: #173f31; border: none; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 10px rgba(217,184,113,0.3);">
+        🛒 <span>Sepetim</span>
+        <span id="cartBadge" style="background: #173f31; color: #d9b871; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; font-weight: 900;">0</span>
+      </button>
     </nav>
   </div>
 </header>

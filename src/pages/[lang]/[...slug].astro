@@ -1,7 +1,6 @@
 ---
-import { getPages } from '../../lib/sheets';
-import Layout from '../../layouts/Layout.astro';
-// Eğer Header ve Footer Layout içinde gelmiyorsa buraya import edip sayfa içine ekleyebilirsin.
+import { getPages } from '../../../lib/sheets';
+import Header from '../../../components/Header.astro';
 
 export async function getStaticPaths() {
   const pages = await getPages();
@@ -38,33 +37,68 @@ if (lang === 'en') pageTitle = page['Ad EN'] || pageTitle;
 if (lang === 'me') pageTitle = page['Ad ME'] || pageTitle;
 ---
 
-<Layout title={`${pageTitle} | Turska Pijaca`}>
-  <main class="page-container">
-    <div class="content-wrapper">
-      <h1>{pageTitle}</h1>
-      <p class="temp-content">
-        Bu sayfa Master Tablo üzerinden dinamik olarak oluşturulmuştur. 
-        ({page.Kod} içeriği buraya gelecek)
-      </p>
-    </div>
-  </main>
-</Layout>
+<!DOCTYPE html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle} | Turska Pijaca</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+        background-color: #f8fafc;
+        color: #1f2937;
+      }
+      .page-container {
+        max-width: 1200px;
+        margin: 3rem auto;
+        padding: 0 2rem;
+        min-height: 60vh;
+      }
+      .content-wrapper {
+        background: #ffffff;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+      .content-wrapper h1 {
+        color: #0b2218;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #eaeaea;
+        padding-bottom: 0.75rem;
+        font-size: 2.2rem;
+      }
+      .temp-content {
+        color: #475569;
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+      .code-badge {
+        display: inline-block;
+        background: #e2e8f0;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #0f172a;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Üst Menü -->
+    <Header />
 
-<style>
-  .page-container {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 2rem;
-    min-height: 60vh;
-  }
-  .content-wrapper h1 {
-    color: #0b2218;
-    margin-bottom: 1rem;
-    border-bottom: 2px solid #eaeaea;
-    padding-bottom: 0.5rem;
-  }
-  .temp-content {
-    color: #475569;
-    font-size: 1.1rem;
-  }
-</style>
+    <main class="page-container">
+      <div class="content-wrapper">
+        <h1>{pageTitle}</h1>
+        <p class="temp-content">
+          Bu sayfa Master Tablo üzerinden dinamik olarak oluşturulmuştur. 
+          Sayfa Kodu: <span class="code-badge">{page.Kod}</span>
+        </p>
+      </div>
+    </main>
+
+  </body>
+</html>

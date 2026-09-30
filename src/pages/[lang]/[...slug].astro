@@ -1,6 +1,6 @@
 ---
-import { getPages } from '../../../lib/sheets';
-import Header from '../../../components/Header.astro';
+import { getPages } from '../../lib/sheets';
+import Header from '../../components/Header.astro';
 
 export async function getStaticPaths() {
   const pages = await getPages();

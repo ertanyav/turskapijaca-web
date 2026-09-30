@@ -21,14 +21,17 @@ const [products, texts, brands] = await Promise.all([
 const eyebrowText = texts['home.eyebrow']?.[lang] || 'Direct From Factory · UNIVERCERT MNE D.O.O.';
 const headingText = texts['home.heading']?.[lang] || 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı';
 
-// Master dosyadaki formata tam uyum: "Türkiye’den Karadağ’a." sonrasında yeni satır garantisi
-let introText = texts['home.intro']?.[lang] || 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.';
-if (lang === 'tr' && introText) {
-  introText = introText.replace('Türkiye’den Karadağ’a.', 'Türkiye’den Karadağ’a.\n');
-} else if (lang === 'en' && introText) {
-  introText = introText.replace('From Turkey to Montenegro.', 'From Turkey to Montenegro.\n');
-} else if (lang === 'me' && introText) {
-  introText = introText.replace('Od Turske do Crne Gore.', 'Od Turske do Crne Gore.\n');
+// Master dosyadaki formata birebir uyum: Cümleden sonra kesin yeni satır
+let introText = texts['home.intro']?.[lang] || '';
+if (!introText) {
+  if (lang === 'tr') introText = 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.';
+  else if (lang === 'me') introText = 'Od Turske do Crne Gore.\nDirektno snabdijevanje, jaka distribucija.';
+  else introText = 'From Turkey to Montenegro.\nDirect supply, strong distribution.';
+} else {
+  introText = introText
+    .replace('Türkiye’den Karadağ’a.', 'Türkiye’den Karadağ’a.\n')
+    .replace('From Turkey to Montenegro.', 'From Turkey to Montenegro.\n')
+    .replace('Od Turske do Crne Gore.', 'Od Turske do Crne Gore.\n');
 }
 
 const distributorIntro = texts['brands.distributorIntro']?.[lang] || 'Karadağ’daki distribütörlük portföyümüzde yer alan markalar.';

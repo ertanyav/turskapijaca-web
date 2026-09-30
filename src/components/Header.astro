@@ -6,40 +6,37 @@ const navDocs = texts['documents.intro']?.[lang] ? 'Dokümanlar' : 'Dokümanlar'
 const navAbout = texts['ui.company']?.[lang] || 'Kurumsal';
 ---
 
-<header style="background: #173f31; color: #f0f4ed; border-bottom: 3px solid #d9b871; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+<header style="background: #1e4a3b; color: #f4f7f2; border-bottom: 3px solid #e0c382; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
   <div style="max-width: 1280px; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
     
-    <!-- Logo Alanı (Sol) -->
+    <!-- Logo & Alt Yazı -->
     <a href={`/${lang}/`} target="_self" style="color: white; font-weight: 800; font-size: 1.5rem; text-decoration: none; display: flex; align-items: center; gap: 0.8rem;">
       <img src={logoUrl} alt="TURSKA PIJACA Logo" style="height: 52px; width: auto; object-fit: contain;" />
       <div>
-        <span style="color: #f0f4ed; letter-spacing: -0.5px; display: block; font-size: 1.5rem; font-weight: 900;">TURSKA PIJACA</span>
-        <span style="font-size: 0.75rem; color: #d9b871; font-weight: 600; display: block; margin-top: -2px;">UNIVERCERT MNE D.O.O.</span>
+        <span style="color: #f4f7f2; letter-spacing: -0.5px; display: block; font-size: 1.5rem; font-weight: 900;">TURSKA PIJACA</span>
+        <span style="font-size: 0.75rem; color: #e0c382; font-weight: 600; display: block; margin-top: -2px;">Turski Proizvodi</span>
       </div>
     </a>
 
-    <!-- Menü, Sepet ve Dil Butonları (Sağ) -->
+    <!-- Nav, Sepet ve Dil Butonları -->
     <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
-      
       <nav style="display: flex; gap: 1.2rem; align-items: center;">
-        <a href={`/${lang}/`} target="_self" style="color: #f0f4ed; text-decoration: none; font-weight: 700; font-size: 0.95rem;">{navCatalog}</a>
-        <a href={`/${lang}/documents`} target="_self" style="color: #a3c2b5; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navDocs}</a>
-        <a href={`/${lang}/about`} target="_self" style="color: #a3c2b5; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navAbout}</a>
+        <a href={`/${lang}/`} target="_self" style="color: #f4f7f2; text-decoration: none; font-weight: 700; font-size: 0.95rem;">{navCatalog}</a>
+        <a href={`/${lang}/documents`} target="_self" style="color: #b5cca8; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navDocs}</a>
+        <a href={`/${lang}/about`} target="_self" style="color: #b5cca8; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navAbout}</a>
       </nav>
       
-      <!-- Sepet Butonu -->
-      <button id="openCartBtn" style="background: #d9b871; color: #173f31; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 10px rgba(217,184,113,0.3);">
+      <button id="openCartBtn" style="background: #e0c382; color: #1e4a3b; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 10px rgba(224,195,130,0.3);">
         🛒 <span>Sepetim</span>
-        <span id="cartBadge" style="background: #173f31; color: #d9b871; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; font-weight: 900;">0</span>
+        <span id="cartBadge" style="background: #1e4a3b; color: #e0c382; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; font-weight: 900;">0</span>
       </button>
 
-      <!-- Sağ Üst Dil Butonları (Profesyonel) -->
-      <div style="background: #0d221a; border: 1px solid #234d3c; padding: 0.3rem; border-radius: 8px; display: flex; gap: 0.2rem; margin-left: 0.5rem;">
-        <a href="https://www.turskapijaca.com/en/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 800; text-decoration: none; ${lang === 'en' ? 'background: #d9b871; color: #173f31;' : 'color: #a3c2b5;'}`}>EN</a>
-        <a href="https://www.turskapijaca.me/me/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 800; text-decoration: none; ${lang === 'me' ? 'background: #d9b871; color: #173f31;' : 'color: #a3c2b5;'}`}>ME</a>
-        <a href="https://www.turskapijaca.com.tr/tr/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 800; text-decoration: none; ${lang === 'tr' ? 'background: #d9b871; color: #173f31;' : 'color: #a3c2b5;'}`}>TR</a>
+      <!-- Sağ Üst Dil Butonları -->
+      <div style="background: #14352a; border: 1px solid #285e4c; padding: 0.3rem; border-radius: 8px; display: flex; gap: 0.2rem; margin-left: 0.5rem;">
+        <a href="https://www.turskapijaca.com/en/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 800; text-decoration: none; ${lang === 'en' ? 'background: #e0c382; color: #1e4a3b;' : 'color: #b5cca8;'}`}>EN</a>
+        <a href="https://www.turskapijaca.me/me/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 800; text-decoration: none; ${lang === 'me' ? 'background: #e0c382; color: #1e4a3b;' : 'color: #b5cca8;'}`}>ME</a>
+        <a href="https://www.turskapijaca.com.tr/tr/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 800; text-decoration: none; ${lang === 'tr' ? 'background: #e0c382; color: #1e4a3b;' : 'color: #b5cca8;'}`}>TR</a>
       </div>
-
     </div>
   </div>
 </header>

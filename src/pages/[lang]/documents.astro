@@ -1,0 +1,71 @@
+---
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getDocuments, getTexts } from '../../lib/sheets';
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'me' } },
+    { params: { lang: 'tr' } }
+  ];
+}
+
+const { lang } = Astro.params;
+const [documents, texts] = await Promise.all([getDocuments(), getTexts()]);
+
+const docIntro = texts['documents.intro']?.[lang] || 'Sipariş formu ve kurumsal logo dosyaları. Dosyalar sayfa içinde incelenebilir veya indirilebilir.';
+---
+
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <title>Dokümanlar & Kurumsal Dosyalar | TURSKA PIJACA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body style="margin: 0; font-family: system-ui, sans-serif; background: #0d221a; color: #f0f4ed;">
+  <Header lang={lang} texts={texts} />
+
+  <main style="max-width: 1100px; margin: 3rem auto; padding: 0 1.5rem;">
+    <div style="background: #142e23; border-radius: 16px; padding: 2.5rem; border: 1px solid #234d3c;">
+      
+      <span style="background: #d9b871; color: #173f31; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase;">
+        DOWNLOAD CENTER
+      </span>
+
+      <h1 style="font-size: 2.2rem; color: #f0f4ed; margin: 1rem 0 0.5rem 0; font-weight: 800;">
+        Kurumsal Dokümanlar & Sipariş Formları
+      </h1>
+      <p style="color: #a3c2b5; font-size: 1.05rem; margin-bottom: 2.5rem;">{docIntro}</p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+        {documents.map(doc => {
+          const title = doc[`Ad ${lang.toUpperCase()}`] || doc['Ad TR'] || doc['Ad EN'] || 'Doküman';
+          const desc = doc[`Açıklama ${lang.toUpperCase()}`] || doc['Açıklama TR'] || '';
+          const driveId = doc['Drive ID'];
+          const fileUrl = `https://lh3.googleusercontent.com/d/${driveId}`;
+
+          return (
+            <div style="background: #173f31; border-radius: 12px; padding: 1.5rem; border: 1px solid #234d3c; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div style="font-size: 2rem; margin-bottom: 0.8rem;">📄</div>
+                <h3 style="margin: 0 0 0.5rem 0; color: #d9b871; font-size: 1.2rem; font-weight: 800;">{title}</h3>
+                <p style="color: #a3c2b5; font-size: 0.88rem; margin: 0 0 1.5rem 0; line-height: 1.5;">{desc}</p>
+              </div>
+
+              <div style="display: flex; gap: 0.8rem;">
+                <a href={fileUrl} target="_blank" style="flex: 1; text-align: center; background: #d9b871; color: #173f31; padding: 0.6rem; border-radius: 6px; font-weight: 800; text-decoration: none; font-size: 0.85rem;">
+                  👁️ İncele / İndir
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+    </div>
+  </main>
+
+  <Footer lang={lang} texts={texts} />
+</body>
+</html>

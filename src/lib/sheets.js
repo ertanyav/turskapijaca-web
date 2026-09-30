@@ -22,9 +22,9 @@ async function fetchSheetData(tabName) {
   }
 }
 
-// Güvenli filtreleme (Hücre sonundaki gizli boşlukları tolere eder)
-const isEvet = (val) => val && val.trim().toUpperCase() === 'EVET';
-const isAktif = (val) => val && val.trim().toUpperCase() === 'AKTİF';
+// Türkçe i/I, boşluk ve büyük/küçük harf duyarlılığını çözen güvenli filtre
+const isEvet = (val) => val && /evet/i.test(val.toString().trim());
+const isAktif = (val) => val && /aktif/i.test(val.toString().trim());
 
 export async function getPages() { return await fetchSheetData('SAYFALAR'); }
 export async function getTexts() { return await fetchSheetData('METINLER'); }
@@ -33,7 +33,6 @@ export async function getSettings() { return await fetchSheetData('AYARLAR'); }
 
 export async function getProducts() {
   const data = await fetchSheetData('URUNLER');
-  // Ürün sayısı tam olarak 120'ye sabitlenir
   return data.filter(item => isEvet(item.Yayında) && isAktif(item.Durum));
 }
 

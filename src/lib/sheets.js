@@ -36,22 +36,33 @@ async function fetchSheetData(tabName) {
  * SAYFALAR sekmesinden dinamik menü ve sayfa verilerini çeker
  */
 export async function getPages() {
-  const data = await fetchSheetData('SAYFALAR');
-  return data;
+  return await fetchSheetData('SAYFALAR');
 }
 
 /**
  * METINLER sekmesinden site içi metinleri/çevirileri çeker
  */
 export async function getTexts() {
-  const data = await fetchSheetData('METINLER');
-  return data;
+  return await fetchSheetData('METINLER');
 }
 
 /**
  * DOKUMANLAR sekmesinden doküman verilerini çeker
  */
 export async function getDocuments() {
-  const data = await fetchSheetData('DOKUMANLAR');
-  return data;
+  return await fetchSheetData('DOKUMANLAR');
+}
+
+/**
+ * URUNLER sekmesinden ürün verilerini çeker
+ */
+export async function getProducts() {
+  return await fetchSheetData('URUNLER');
+}
+
+/**
+ * MARKALAR sekmesinden marka verilerini çeker
+ */
+export async function getBrands() {
+  return await fetchSheetData('MARKALAR');
 }

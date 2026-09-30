@@ -1,6 +1,6 @@
 ---
 import Header from '../../../components/Header.astro';
-import { getProducts } from '../../../lib/sheets';
+import { getProducts, getTexts } from '../../../lib/sheets';
 
 export async function getStaticPaths() {
   const products = await getProducts();
@@ -23,86 +23,91 @@ export async function getStaticPaths() {
 
 const { lang, id } = Astro.params;
 const { product } = Astro.props;
+const texts = await getTexts();
 
-const keys = Object.keys(product);
-const titleKey = keys.find(k => k.toLowerCase().includes(`ad ${lang}`)) || 'Ad EN';
-const title = product[titleKey] || product['Ad EN'] || product['Ad TR'] || product['İç ad'];
-const category = product['Kategori'] || 'General';
-
-// Karadağ B2B Kataloğu için Tüm Fiyatlar Euro (€) Cinsindendir
-const quoteLabels = {
-  tr: 'Fiyat Sorunuz',
-  en: 'Request Quote',
-  me: 'Upit za cijenu'
-};
-
-const priceKey = keys.find(k => k.toLowerCase().includes('fiyat') || k.toLowerCase().includes('price')) || 'Fiyat EUR';
-let rawPrice = product[priceKey] ? String(product[priceKey]).trim() : '';
-
-// Tablodaki TRY, TL, EUR vb. metin eklerini temizleyip sadece sayısal değeri € olarak gösterir
-rawPrice = rawPrice.replace(/TRY|TL|EUR|€|\$/gi, '').trim();
-
-let price = quoteLabels[lang] || quoteLabels.en;
-let numericPrice = "0.00";
-
-if (rawPrice && rawPrice !== '0' && rawPrice !== '0,00' && rawPrice !== '0.00') {
-  price = `€${rawPrice}`;
-  numericPrice = rawPrice.replace(',', '.');
-}
-
-const image = product['Görsel URL'] || 'https://via.placeholder.com/400x400';
+const title = product[`Ad ${lang.toUpperCase()}`] || product['Ad EN'] || product['Ad TR'] || product['İç ad'];
+const category = product['Kategori'] || 'General Food';
+const brand = product['Marka'] || 'Turska Pijaca';
+const pack = product['Ambalaj'] || product['Ambalaj tipi'] || 'Standard';
 const origin = product['Menşe'] || 'Türkiye';
-const pack = product['Ambalaj'] || 'Standard';
+const supplier = product['Tedarikçi'] || 'Seda Gıda';
 
-const schemaData = {
-  "@context": "https://schema.org/",
-  "@type": "Product",
-  "name": title,
-  "image": image,
-  "sku": id,
-  "offers": {
-    "@type": "Offer",
-    "priceCurrency": "EUR",
-    "price": numericPrice,
-    "availability": "https://schema.org/InStock"
-  }
-};
+let rawPrice = product['Fiyat EUR'] ? String(product['Fiyat EUR']).trim() : '';
+rawPrice = rawPrice.replace(/TRY|TL|EUR|€|\$/gi, '').trim();
+const price = (rawPrice && rawPrice !== '0' && rawPrice !== '0,00') ? `€${rawPrice}` : 'Request B2B Quote';
+
+const image = product['Görsel URL'] && product['Görsel URL'].startsWith('http') ? product['Görsel URL'] : 'https://via.placeholder.com/500x500?text=TURSKA+PIJACA';
+
+const waMsg = encodeURIComponent(`Hello TURSKA PIJACA, Wholesale B2B Quote Order:\n- Product: ${title}\n- Code (SKU): ${id}\n- Brand: ${brand}\n- Packaging: ${pack}`);
 ---
 
 <html lang={lang}>
 <head>
   <meta charset="utf-8" />
-  <title>{title} Wholesale Montenegro | TURSKA PIJACA</title>
+  <title>{title} Wholesale Supply Montenegro | TURSKA PIJACA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="alternate" hreflang="en" href={`https://www.turskapijaca.com/en/products/${id}`} />
   <link rel="alternate" hreflang="me" href={`https://www.turskapijaca.me/me/products/${id}`} />
   <link rel="alternate" hreflang="tr" href={`https://www.turskapijaca.com.tr/tr/products/${id}`} />
-  <script type="application/ld+json" set:html={JSON.stringify(schemaData)} />
 </head>
-<body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc;">
-  <Header lang={lang} />
+<body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a;">
+  <Header lang={lang} texts={texts} />
 
-  <main style="max-width: 900px; margin: 3rem auto; padding: 0 1rem;">
-    <div style="background: white; border-radius: 12px; padding: 2rem; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-      <div style="background: #f8fafc; border-radius: 8px; padding: 1rem; display: flex; align-items: center; justify-content: center;">
-        <img src={image} alt={title} style="max-width: 100%; max-height: 350px; object-fit: contain;" />
+  <main style="max-width: 1000px; margin: 3rem auto; padding: 0 1.5rem;">
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 1.5rem; font-size: 0.85rem; color: #64748b;">
+      <a href={`/${lang}/`} style="color: #059669; text-decoration: none;">Home Catalog</a> / 
+      <span>{category}</span> / 
+      <strong style="color: #0f172a;">{title}</strong>
+    </div>
+
+    <div style="background: white; border-radius: 16px; padding: 2.5rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start;">
+      
+      <!-- Left Image Showcase -->
+      <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: center;">
+        <img src={image} alt={title} style="max-width: 100%; max-height: 400px; object-fit: contain;" />
       </div>
 
+      <!-- Right Product Info Table -->
       <div>
-        <span style="font-size: 0.8rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 4px;">{category}</span>
-        <h1 style="font-size: 1.6rem; margin: 0.8rem 0; color: #0f172a;">{title}</h1>
-        
-        <div style="margin: 1.5rem 0; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; padding: 1rem 0;">
-          <p style="margin: 0.3rem 0; color: #475569;"><strong>Code (SKU):</strong> {id}</p>
-          <p style="margin: 0.3rem 0; color: #475569;"><strong>Packaging:</strong> {pack}</p>
-          <p style="margin: 0.3rem 0; color: #475569;"><strong>Origin:</strong> {origin}</p>
-          <p style="margin: 0.8rem 0 0 0; font-size: 1.4rem; color: #059669; font-weight: bold;">{price}</p>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <span style="background: #e2e8f0; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: bold; color: #334155;">{category}</span>
+          {brand && <span style="background: #0f172a; color: white; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: bold;">{brand}</span>}
         </div>
 
-        <a href={`https://wa.me/38263256666?text=Order%20Quote:%20${encodeURIComponent(title)}%20(${id})`} target="_blank" style="display: block; text-align: center; background: #22c55e; color: white; padding: 0.8rem; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 1rem;">
-          💬 Direct WhatsApp Order & Quote
+        <h1 style="font-size: 1.8rem; margin: 0.5rem 0 1rem 0; font-weight: 800; color: #0f172a; line-height: 1.25;">{title}</h1>
+
+        <div style="background: #f1f5f9; padding: 1rem 1.2rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: bold; display: block;">B2B Wholesale Price</span>
+          <span style="font-size: 2rem; font-weight: 800; color: #059669;">{price}</span>
+        </div>
+
+        <!-- Spec Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 2rem;">
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 0.6rem 0; color: #64748b;">SKU / Product Code:</td>
+            <td style="padding: 0.6rem 0; font-weight: bold; text-align: right;">{id}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 0.6rem 0; color: #64748b;">Packaging / Unit:</td>
+            <td style="padding: 0.6rem 0; font-weight: bold; text-align: right;">{pack}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 0.6rem 0; color: #64748b;">Country of Origin:</td>
+            <td style="padding: 0.6rem 0; font-weight: bold; text-align: right;">{origin}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 0.6rem 0; color: #64748b;">Distribution Representation:</td>
+            <td style="padding: 0.6rem 0; font-weight: bold; text-align: right;">UNIVERCERT-MNE D.O.O.</td>
+          </tr>
+        </table>
+
+        <!-- Order CTA -->
+        <a href={`https://wa.me/38263256666?text=${waMsg}`} target="_blank" style="display: block; text-align: center; background: #22c55e; color: white; padding: 0.9rem; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 1.05rem; box-shadow: 0 4px 12px rgba(34,197,94,0.35);">
+          💬 Order via WhatsApp B2B Direct
         </a>
       </div>
+
     </div>
   </main>
 </body>

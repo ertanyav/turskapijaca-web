@@ -1,0 +1,87 @@
+---
+import Header from '../../../components/Header.astro';
+import { getProducts } from '../../../lib/sheets';
+
+export async function getStaticPaths() {
+  const products = await getProducts();
+  const languages = ['en', 'me', 'tr'];
+
+  const paths = [];
+  for (const lang of languages) {
+    for (const product of products) {
+      const id = product['Ürün no'] || product['Kayıt ID'];
+      if (id) {
+        paths.push({
+          params: { lang, id: String(id).trim() },
+          props: { product }
+        });
+      }
+    }
+  }
+  return paths;
+}
+
+const { lang, id } = Astro.params;
+const { product } = Astro.props;
+
+const titleKey = `Ad ${lang.toUpperCase()}`;
+const title = product[titleKey] || product['Ad EN'] || product['İç ad'];
+const category = product['Kategori'] || 'General';
+const price = product['Fiyat EUR'] ? `€${product['Fiyat EUR']}` : 'Request Quote';
+const image = product['Görsel URL'] || 'https://via.placeholder.com/400x400';
+const origin = product['Menşe'] || 'Türkiye';
+const pack = product['Ambalaj'] || 'Standard';
+
+const schemaData = {
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": title,
+  "image": image,
+  "sku": id,
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "EUR",
+    "price": product['Fiyat EUR'] || "0.00",
+    "availability": "https://schema.org/InStock"
+  }
+};
+---
+
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <title>{title} Wholesale Montenegro | TURSKA PIJACA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="alternate" hreflang="en" href={`https://www.turskapijaca.com/en/products/${id}`} />
+  <link rel="alternate" hreflang="me" href={`https://www.turskapijaca.me/me/products/${id}`} />
+  <link rel="alternate" hreflang="tr" href={`https://www.turskapijaca.com.tr/tr/products/${id}`} />
+  <script type="application/ld+json" set:html={JSON.stringify(schemaData)} />
+</head>
+<body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc;">
+  <Header lang={lang} />
+
+  <main style="max-width: 900px; margin: 3rem auto; padding: 0 1rem;">
+    <div style="background: white; border-radius: 12px; padding: 2rem; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+      <div style="background: #f8fafc; border-radius: 8px; padding: 1rem; display: flex; align-items: center; justify-content: center;">
+        <img src={image} alt={title} style="max-width: 100%; max-height: 350px; object-fit: contain;" />
+      </div>
+
+      <div>
+        <span style="font-size: 0.8rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 4px;">{category}</span>
+        <h1 style="font-size: 1.6rem; margin: 0.8rem 0; color: #0f172a;">{title}</h1>
+        
+        <div style="margin: 1.5rem 0; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; padding: 1rem 0;">
+          <p style="margin: 0.3rem 0; color: #475569;"><strong>Code (SKU):</strong> {id}</p>
+          <p style="margin: 0.3rem 0; color: #475569;"><strong>Packaging:</strong> {pack}</p>
+          <p style="margin: 0.3rem 0; color: #475569;"><strong>Origin:</strong> {origin}</p>
+          <p style="margin: 0.8rem 0 0 0; font-size: 1.4rem; color: #059669; font-weight: bold;">{price}</p>
+        </div>
+
+        <a href={`https://wa.me/38263256666?text=Order%20Quote:%20${encodeURIComponent(title)}%20(${id})`} target="_blank" style="display: block; text-align: center; background: #22c55e; color: white; padding: 0.8rem; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 1rem;">
+          💬 Direct WhatsApp Order & Quote
+        </a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -24,10 +24,32 @@ export async function getStaticPaths() {
 const { lang, id } = Astro.params;
 const { product } = Astro.props;
 
-const titleKey = `Ad ${lang.toUpperCase()}`;
-const title = product[titleKey] || product['Ad EN'] || product['İç ad'];
+const keys = Object.keys(product);
+const titleKey = keys.find(k => k.toLowerCase().includes(`ad ${lang}`)) || 'Ad EN';
+const title = product[titleKey] || product['Ad EN'] || product['Ad TR'] || product['İç ad'];
 const category = product['Kategori'] || 'General';
-const price = product['Fiyat EUR'] ? `€${product['Fiyat EUR']}` : 'Request Quote';
+
+// Karadağ B2B Kataloğu için Tüm Fiyatlar Euro (€) Cinsindendir
+const quoteLabels = {
+  tr: 'Fiyat Sorunuz',
+  en: 'Request Quote',
+  me: 'Upit za cijenu'
+};
+
+const priceKey = keys.find(k => k.toLowerCase().includes('fiyat') || k.toLowerCase().includes('price')) || 'Fiyat EUR';
+let rawPrice = product[priceKey] ? String(product[priceKey]).trim() : '';
+
+// Tablodaki TRY, TL, EUR vb. metin eklerini temizleyip sadece sayısal değeri € olarak gösterir
+rawPrice = rawPrice.replace(/TRY|TL|EUR|€|\$/gi, '').trim();
+
+let price = quoteLabels[lang] || quoteLabels.en;
+let numericPrice = "0.00";
+
+if (rawPrice && rawPrice !== '0' && rawPrice !== '0,00' && rawPrice !== '0.00') {
+  price = `€${rawPrice}`;
+  numericPrice = rawPrice.replace(',', '.');
+}
+
 const image = product['Görsel URL'] || 'https://via.placeholder.com/400x400';
 const origin = product['Menşe'] || 'Türkiye';
 const pack = product['Ambalaj'] || 'Standard';
@@ -41,7 +63,7 @@ const schemaData = {
   "offers": {
     "@type": "Offer",
     "priceCurrency": "EUR",
-    "price": product['Fiyat EUR'] || "0.00",
+    "price": numericPrice,
     "availability": "https://schema.org/InStock"
   }
 };

@@ -22,7 +22,7 @@ async function fetchSheetData(tabName) {
   }
 }
 
-// Türkçe i/I, boşluk ve büyük/küçük harf duyarlılığını çözen güvenli filtre
+// Güvenli Filtreler
 const isEvet = (val) => val && /evet/i.test(val.toString().trim());
 const isAktif = (val) => val && /aktif/i.test(val.toString().trim());
 
@@ -31,16 +31,15 @@ export async function getTexts() { return await fetchSheetData('METINLER'); }
 export async function getDocuments() { return await fetchSheetData('DOKUMANLAR'); }
 export async function getSettings() { return await fetchSheetData('AYARLAR'); }
 
+// Ürünleri ve Kategorileri Filtreleyerek Getir
 export async function getProducts() {
   const data = await fetchSheetData('URUNLER');
   return data.filter(item => isEvet(item.Yayında) && isAktif(item.Durum));
 }
-
 export async function getBrands() {
   const data = await fetchSheetData('MARKALAR');
   return data.filter(item => isEvet(item.Yayında));
 }
-
 export async function getCategories() {
   const data = await fetchSheetData('KATEGORILER');
   return data.filter(item => isEvet(item.Yayında));

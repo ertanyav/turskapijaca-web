@@ -19,7 +19,7 @@ const products = await getProducts();
 const brands = await getBrands();
 const categories = await getCategories();
 
-// Metin çevirileri için yardımcı fonksiyon
+// Metin çevirileri için yardımcı fonksiyon (Master METINLER anahtarlarıyla tam uyumlu)
 function getText(key, defaultVal) {
   const found = texts.find(t => t.Anahtar === key);
   if (!found) return defaultVal;
@@ -42,7 +42,7 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{getText('home.title', 'Ana Sayfa')} - TURSKA PIJACA</title>
+    <title>{getText('home.heading', 'Ana Sayfa')} - TURSKA PIJACA</title>
     <style>
       body {
         margin: 0;
@@ -56,7 +56,7 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
         padding: 0 2rem;
       }
       .hero-section {
-        margin: 2rem 0;
+        margin: 2.5rem 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -66,13 +66,25 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
       .hero-content {
         max-width: 750px;
       }
-      .hero-title {
+      .hero-eyebrow {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #34d399;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.75rem;
+        display: inline-block;
+        background: rgba(52, 211, 153, 0.1);
+        padding: 0.3rem 0.75rem;
+        border-radius: 4px;
+      }
+      .hero-heading {
         font-size: 2.75rem;
         font-weight: 800;
         line-height: 1.2;
         margin-bottom: 1rem;
       }
-      .hero-subtitle {
+      .hero-intro {
         font-size: 1.25rem;
         color: #cbd5e1;
         line-height: 1.5;
@@ -100,18 +112,20 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
         margin-top: 0.25rem;
       }
       .section-title {
-        font-size: 1.25rem;
+        font-size: 1.35rem;
         font-weight: 600;
-        margin: 3rem 0 1.5rem 0;
+        margin: 3.5rem 0 1.5rem 0;
         display: flex;
         align-items: center;
         gap: 0.5rem;
         color: #e2e8f0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 0.75rem;
       }
       .brands-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1.25rem;
         margin-bottom: 3rem;
       }
       .brand-card {
@@ -122,14 +136,15 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 70px;
-        transition: background 0.2s;
+        height: 75px;
+        transition: background 0.2s, transform 0.2s;
       }
       .brand-card:hover {
         background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-2px);
       }
       .brand-card img {
-        max-height: 45px;
+        max-height: 50px;
         max-width: 100%;
         object-fit: contain;
       }
@@ -138,6 +153,24 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
         font-size: 0.95rem;
         color: #fff;
       }
+      .supply-section {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 2rem;
+        border-radius: 12px;
+        margin: 3rem 0;
+      }
+      .supply-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: #34d399;
+      }
+      .supply-body {
+        font-size: 1.05rem;
+        color: #cbd5e1;
+        line-height: 1.6;
+      }
     </style>
   </head>
   <body>
@@ -145,43 +178,50 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
     <Header />
 
     <main class="main-container">
-      <!-- Hero Alanı ve Sayaçlar -->
+      <!-- Hero Alanı ve Sayaçlar (Master METINLER anahtarlarıyla) -->
       <section class="hero-section">
         <div class="hero-content">
-          <h1 class="hero-title">
-            {getText('home.heroTitle', 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı')}
+          {getText('home.eyebrow') && (
+            <div class="hero-eyebrow">{getText('home.eyebrow')}</div>
+          )}
+          <h1 class="hero-heading">
+            {getText('home.heading', 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı')}
           </h1>
-          <p class="hero-subtitle">
-            {getText('home.heroSubtitle', 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.')}
+          <p class="hero-intro">
+            {getText('home.intro', 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.')}
           </p>
         </div>
 
         <div class="stats-box">
           <div class="stat-item">
             <div class="number">{productCount}</div>
-            <div class="label">ÜRÜN</div>
+            <div class="label">{getText('stats.products', 'ÜRÜN')}</div>
           </div>
           <div class="stat-item">
             <div class="number">{categoryCount}</div>
-            <div class="label">KATEGORİ</div>
+            <div class="label">{getText('stats.categories', 'KATEGORİ')}</div>
           </div>
           <div class="stat-item">
             <div class="number">{brandCount}</div>
-            <div class="label">MARKA</div>
+            <div class="label">{getText('stats.brands', 'MARKA')}</div>
           </div>
         </div>
       </section>
 
-      <!-- Distribütörlükler Bölümü -->
+      <!-- Distribütörlükler Bölümü (Master: home.brands veya özel başlık) -->
       {distributors.length > 0 && (
         <>
-          <div class="section-title">🏆 Distribütörlüklerimiz</div>
+          <div class="section-title">
+            <span>🏆</span> {getText('home.brands', 'Distribütörlüklerimiz')}
+          </div>
           <div class="brands-grid">
             {distributors.map((b) => (
               <div class="brand-card">
                 {b['Logo URL'] ? (
-                  <img src={b['Logo URL']} alt={b.Marka} onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                  <span style="display:none;">{b.Marka}</span>
+                  <>
+                    <img src={b['Logo URL']} alt={b.Marka} onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                    <span style="display:none;">{b.Marka}</span>
+                  </>
                 ) : (
                   <span>{b.Marka}</span>
                 )}
@@ -194,13 +234,17 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
       <!-- Satış Portföyü Bölümü -->
       {salesBrands.length > 0 && (
         <>
-          <div class="section-title">📦 Satış Portföyümüzdeki Markalar</div>
+          <div class="section-title">
+            <span>📦</span> {getText('home.salesBrands', 'Satış Portföyümüzdeki Markalar')}
+          </div>
           <div class="brands-grid">
             {salesBrands.map((b) => (
               <div class="brand-card">
                 {b['Logo URL'] ? (
-                  <img src={b['Logo URL']} alt={b.Marka} onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                  <span style="display:none;">{b.Marka}</span>
+                  <>
+                    <img src={b['Logo URL']} alt={b.Marka} onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                    <span style="display:none;">{b.Marka}</span>
+                  </>
                 ) : (
                   <span>{b.Marka}</span>
                 )}
@@ -208,6 +252,14 @@ const salesBrands = brands.filter(b => b.Tür === 'SALES');
             ))}
           </div>
         </>
+      )}
+
+      <!-- Tedarik / Supply Açıklama Alanı (Master: home.supply & home.supplyBody) -->
+      {(getText('home.supply') || getText('home.supplyBody')) && (
+        <section class="supply-section">
+          {getText('home.supply') && <div class="supply-title">{getText('home.supply')}</div>}
+          {getText('home.supplyBody') && <div class="supply-body">{getText('home.supplyBody')}</div>}
+        </section>
       )}
     </main>
 

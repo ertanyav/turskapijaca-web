@@ -1,44 +1,93 @@
 ---
-const { lang = 'en', texts = {} } = Astro.props;
-const logoUrl = 'https://lh3.googleusercontent.com/d/14BFS24JrQOpz1ALBLzUGd0T-0Jw4c0jy=w200';
+import { getTexts } from '../lib/sheets';
 
-const navCatalog = texts['ui.fullCatalog']?.[lang] || 'Katalog';
-const navDocs = texts['documents.intro']?.[lang] ? 'Dokümanlar' : 'Dokümanlar';
-const navAbout = texts['ui.company']?.[lang] || 'Kurumsal';
+export interface Props {
+  lang: string;
+  texts?: Record<string, Record<string, string>>;
+}
+
+const { lang } = Astro.props;
+const texts = Astro.props.texts || await getTexts();
+
+const homeText = lang === 'tr' ? 'Ana Sayfa' : lang === 'me' ? 'Početna' : 'Home';
+const cartText = texts['ui.cart']?.[lang] || (lang === 'tr' ? 'Sepet' : lang === 'me' ? 'Korpa' : 'Cart');
+
+// Dil seçenekleri
+const languages = [
+  { code: 'tr', label: 'TR', flag: '🇹🇷' },
+  { code: 'me', label: 'ME', flag: '🇲🇪' },
+  { code: 'en', label: 'EN', flag: '🇬🇧' }
+];
+
+// Master dosyasındaki SAYFALAR sekmesinden dinamik menüleri çekiyoruz
+import { getPages } from '../lib/sheets';
+const pages = await getPages();
+
+// Mevcut dile göre menüleri filtreliyoruz ve sıralıyoruz
+const menuItems = pages
+  .filter(p => p['Yayında'] === 'EVET' && p['Yerleşim'] === 'HEADER')
+  .map(p => ({
+    title: p[`Başlık ${lang.toUpperCase()}`] || p['Başlık TR'] || p['İç ad'] || 'Sayfa',
+    url: p['Yol'] ? `/${lang}${p['Yol'].startsWith('/') ? p['Yol'] : '/' + p['Yol']}` : `/${lang}`
+  }));
 ---
 
-<header style="background: #153b2e; color: #f4f7f2; border-bottom: 3px solid #e5c58a; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-  <div style="max-width: 1280px; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+<header style="background: #153b2e; border-bottom: 1px solid #285e4c; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 0.9rem 1.5rem; display: flex; justify-content: space-linejoin; align-items: center; justify-content: space-between;">
     
-    <!-- Logo & Alt Yazı -->
-    <a href={`/${lang}/`} target="_self" style="color: white; font-weight: 800; font-size: 1.5rem; text-decoration: none; display: flex; align-items: center; gap: 0.8rem;">
-      <img src={logoUrl} alt="TURSKA PIJACA Logo" style="height: 50px; width: auto; object-fit: contain;" />
+    <!-- Logo & Subtext -->
+    <a href={`/${lang}`} style="text-decoration: none; display: flex; align-items: center; gap: 0.8rem;">
+      <div style="background: #e5c58a; color: #153b2e; font-weight: 900; font-size: 1.25rem; padding: 0.4rem 0.8rem; border-radius: 8px; letter-spacing: 0.5px;">
+        TP
+      </div>
       <div>
-        <span style="color: #f4f7f2; letter-spacing: -0.5px; display: block; font-size: 1.45rem; font-weight: 900;">TURSKA PIJACA</span>
-        <span style="font-size: 0.72rem; color: #e5c58a; font-weight: 600; display: block; margin-top: -2px;">Turski Proizvodi</span>
+        <span style="font-size: 1.2rem; font-weight: 900; color: #f4f7f2; letter-spacing: 0.5px; display: block; line-height: 1.2;">TURSKA PIJACA</span>
+        <span style="font-size: 0.68rem; color: #b5cca8; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Turski Proizvodi · Montenegro</span>
       </div>
     </a>
 
-    <!-- Navigasyon, Sepet ve Dil Seçici -->
-    <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
-      <nav style="display: flex; gap: 1.2rem; align-items: center;">
-        <a href={`/${lang}/`} target="_self" style="color: #f4f7f2; text-decoration: none; font-weight: 700; font-size: 0.95rem;">{navCatalog}</a>
-        <a href={`/${lang}/documents`} target="_self" style="color: #b5cca8; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navDocs}</a>
-        <a href={`/${lang}/about`} target="_self" style="color: #b5cca8; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navAbout}</a>
-      </nav>
+    <!-- Dinamik Menü Linkleri (SAYFALAR Sekmesinden Gelir) -->
+    <nav style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;" class="nav-links">
+      <a href={`/${lang}`} style="color: #f4f7f2; text-decoration: none; font-weight: 700; font-size: 0.92rem; transition: color 0.2s;" class="nav-link">{homeText}</a>
       
-      <!-- Sepet Butonu -->
-      <button id="openCartBtn" style="background: #e5c58a; color: #153b2e; border: none; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 10px rgba(229,197,138,0.3);">
-        🛒 <span>Sepetim</span>
-        <span id="cartBadge" style="background: #153b2e; color: #e5c58a; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.72rem; font-weight: 900;">0</span>
-      </button>
+      {menuItems.map(item => (
+        <a href={item.url} style="color: #f4f7f2; text-decoration: none; font-weight: 700; font-size: 0.92rem; transition: color 0.2s;" class="nav-link">
+          {item.title}
+        </a>
+      ))}
+    </nav>
 
-      <!-- Sağ Üst Kurumsal Dil Butonları -->
-      <div style="background: #0f2920; border: 1px solid #285e4c; padding: 0.3rem; border-radius: 8px; display: flex; gap: 0.2rem;">
-        <a href="https://www.turskapijaca.com/en/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 800; text-decoration: none; ${lang === 'en' ? 'background: #e5c58a; color: #153b2e;' : 'color: #b5cca8;'}`}>EN</a>
-        <a href="https://www.turskapijaca.me/me/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 800; text-decoration: none; ${lang === 'me' ? 'background: #e5c58a; color: #153b2e;' : 'color: #b5cca8;'}`}>ME</a>
-        <a href="https://www.turskapijaca.com.tr/tr/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 800; text-decoration: none; ${lang === 'tr' ? 'background: #e5c58a; color: #153b2e;' : 'color: #b5cca8;'}`}>TR</a>
+    <!-- Sağ Alan: Dil Seçici & Sepet Butonu -->
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <!-- Dil Seçici -->
+      <div style="display: flex; background: #0f2920; border: 1px solid #285e4c; border-radius: 6px; padding: 0.2rem; gap: 0.2rem;">
+        {languages.map(l => (
+          <a 
+            href={`/${l.code}`} 
+            style={`padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-decoration: none; color: ${lang === l.code ? '#153b2e' : '#b5cca8'}; background: ${lang === l.code ? '#e5c58a' : 'transparent'}; transition: all 0.2s;`}
+          >
+            {l.flag} {l.label}
+          </a>
+        ))}
       </div>
+
+      <!-- Sepet Butonu -->
+      <button id="openCartBtn" style="background: #e5c58a; color: #153b2e; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        🛒 <span>{cartText}</span>
+        <span id="cartBadge" style="background: #153b2e; color: #e5c58a; padding: 0.1rem 0.4rem; border-radius: 10px; font-size: 0.75rem; font-weight: 900;">0</span>
+      </button>
     </div>
+
   </div>
 </header>
+
+<style>
+  .nav-link:hover {
+    color: #e5c58a !important;
+  }
+  @media (max-width: 768px) {
+    .nav-links {
+      display: none !important;
+    }
+  }
+</style>

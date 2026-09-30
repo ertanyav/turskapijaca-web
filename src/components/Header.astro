@@ -1,7 +1,7 @@
 ---
 import { getPages, getTexts } from '../lib/sheets';
 
-// URL'den aktif dili tespit et (tr, en, me)
+// URL'den aktif dili tespit et
 const pathname = Astro.url.pathname;
 let currentLang = 'tr';
 if (pathname.startsWith('/en')) {
@@ -13,7 +13,7 @@ if (pathname.startsWith('/en')) {
 const pages = await getPages();
 const texts = await getTexts();
 
-// Sadece Menüde = EVET ve Yayında = EVET olan sayfaları al, Sıra'ya göre sırala
+// Master SAYFALAR tablosundan Menüde = EVET olanları Sıra'ya göre al
 const menuPages = pages
   .filter(p => p.Yayında === 'EVET' && p.Menüde === 'EVET')
   .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
@@ -29,29 +29,28 @@ function getText(key, defaultVal) {
 ---
 
 <header class="site-header">
-  <div class="header-inner">
-    <div class="logo">
-      <a href={currentLang === 'en' ? '/en/home' : currentLang === 'me' ? '/me/početna' : '/tr/ana-sayfa'}>
-        <strong>TURSKA PIJACA</strong>
+  <div class="header-container">
+    <!-- Sol Kısım: Logo ve Marka -->
+    <div class="logo-area">
+      <a href={`/${currentLang}`} class="logo-link">
+        <span class="logo-text">TURSKA PIJACA</span>
       </a>
     </div>
 
+    <!-- Orta Kısım: Dinamik Ana Menü -->
     <nav class="main-nav">
       <ul>
         {menuPages.map((page) => {
-          // Master'dan gelen adresi al ve aktif dile göre [lang] prefix'i ile uyumlu hale getir
-          let rawPath = page['Adres TR'];
-          if (currentLang === 'en') rawPath = page['Adres EN'] || rawPath;
-          if (currentLang === 'me') rawPath = page['Adres ME'] || rawPath;
+          // Master dosyadaki ilgili dil adresini al
+          let subPath = page['Adres TR'];
+          if (currentLang === 'en') subPath = page['Adres EN'] || subPath;
+          if (currentLang === 'me') subPath = page['Adres ME'] || subPath;
 
-          // Eğer yol slash ile başlamıyorsa ekle
-          if (!rawPath.startsWith('/')) rawPath = '/' + rawPath;
-
-          // Dil prefix'ini doğru konumlandırma (örnek: /tr/ana-sayfa, /en/products vb.)
-          let finalHref = `/${currentLang}${rawPath}`;
-          // Eğer ana sayfa kök dizin ise veya özel durum varsa temizle
-          if (rawPath === '/ana-sayfa' || rawPath === '/home' || rawPath === '/početna') {
-            finalHref = `/${currentLang}`;
+          // Rotalama temizliği ve [lang] uyumu (404'leri önlemek için)
+          // Örneğin /ana-sayfa yerine doğrudan /tr veya /en/home yapısı
+          let href = `/${currentLang}${subPath.startsWith('/') ? subPath : '/' + subPath}`;
+          if (subPath === '/ana-sayfa' || subPath === '/home' || subPath === '/početna') {
+            href = `/${currentLang}`;
           }
 
           const titleKey = `${page.Kod}.title`;
@@ -59,51 +58,81 @@ function getText(key, defaultVal) {
 
           return (
             <li>
-              <a href={finalHref}>{menuTitle}</a>
+              <a href={href}>{menuTitle}</a>
             </li>
           );
         })}
       </ul>
     </nav>
+
+    <!-- Sağ Kısım: Dil Seçim Düğmeleri -->
+    <div class="lang-switcher">
+      <a href="/tr" class={currentLang === 'tr' ? 'active' : ''}>TR</a>
+      <span class="divider">|</span>
+      <a href="/en" class={currentLang === 'en' ? 'active' : ''}>EN</a>
+      <span class="divider">|</span>
+      <a href="/me" class={currentLang === 'me' ? 'active' : ''}>ME</a>
+    </div>
   </div>
 </header>
 
 <style>
   .site-header {
     width: 100%;
-    background: transparent; /* Sitenin kendi koyu yeşil arka planına uyum sağlar */
-    padding: 1.25rem 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   }
-  .header-inner {
+  .header-container {
     max-width: 1400px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  .logo a {
-    color: #ffffff;
+  .logo-link {
     text-decoration: none;
-    font-size: 1.25rem;
+  }
+  .logo-text {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.1rem;
     letter-spacing: 0.5px;
   }
   .main-nav ul {
     display: flex;
     list-style: none;
-    gap: 1.5rem;
+    gap: 1.25rem;
     margin: 0;
     padding: 0;
   }
   .main-nav a {
-    color: #e2e8f0;
+    color: #cbd5e1;
     text-decoration: none;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 400;
-    transition: color 0.2s ease;
+    transition: color 0.2s;
   }
   .main-nav a:hover {
     color: #ffffff;
+  }
+  .lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+  }
+  .lang-switcher a {
+    color: #94a3b8;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .lang-switcher a.active {
+    color: #ffffff;
+    font-weight: 700;
     text-decoration: underline;
+  }
+  .lang-switcher .divider {
+    color: #475569;
   }
 </style>

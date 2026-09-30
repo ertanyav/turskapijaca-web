@@ -1,13 +1,10 @@
 ---
 const { lang = 'en', texts = {} } = Astro.props;
 
-// Master METINLER tablosundan dinamik çekim
-const siteTitle = 'TURSKA PIJACA';
-const wholesaleSub = 'UNIVERCERT MNE D.O.O. · Seda Gıda Official Representative';
-
 const logoUrl = 'https://lh3.googleusercontent.com/d/14BFS24JrQOpz1ALBLzUGd0T-0Jw4c0jy=w200';
 
 const navCatalog = texts['ui.fullCatalog']?.[lang] || 'Ürün Kataloğu';
+const navDocs = texts['documents.intro']?.[lang] ? 'Dokümanlar' : 'Dokümanlar';
 const navAbout = texts['ui.company']?.[lang] || 'Kurumsal & Lojistik';
 ---
 
@@ -32,20 +29,19 @@ const navAbout = texts['ui.company']?.[lang] || 'Kurumsal & Lojistik';
   <div style="max-width: 1280px; margin: 0 auto; padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
     <!-- Logo & Title -->
     <a href={`/${lang}/`} target="_self" style="color: white; font-weight: 800; font-size: 1.5rem; text-decoration: none; display: flex; align-items: center; gap: 0.8rem;">
-      <img src={logoUrl} alt="TURSKA PIJACA Logo" style="height: 48px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.style.display='none'; document.getElementById('altLogo').style.display='flex';" />
-      <div id="altLogo" style="display: none; background: #d9b871; color: #173f31; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 900;">TP</div>
+      <img src={logoUrl} alt="TURSKA PIJACA Logo" style="height: 48px; width: auto; object-fit: contain;" />
       <div>
-        <span style="color: #f0f4ed; letter-spacing: -0.5px; display: block; font-size: 1.4rem;">{siteTitle}</span>
-        <span style="font-size: 0.7rem; color: #d9b871; font-weight: 500; display: block; margin-top: -2px;">{wholesaleSub}</span>
+        <span style="color: #f0f4ed; letter-spacing: -0.5px; display: block; font-size: 1.4rem;">TURSKA PIJACA</span>
+        <span style="font-size: 0.7rem; color: #d9b871; font-weight: 500; display: block; margin-top: -2px;">UNIVERCERT MNE D.O.O. · Seda Gıda Representative</span>
       </div>
     </a>
 
     <!-- Nav & B2B Cart Button -->
     <nav style="display: flex; gap: 1.5rem; align-items: center;">
       <a href={`/${lang}/`} target="_self" style="color: #f0f4ed; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navCatalog}</a>
+      <a href={`/${lang}/documents`} target="_self" style="color: #a3c2b5; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navDocs}</a>
       <a href={`/${lang}/about`} target="_self" style="color: #a3c2b5; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navAbout}</a>
       
-      <!-- B2B Sepet Açma Butonu -->
       <button id="openCartBtn" style="background: #d9b871; color: #173f31; border: none; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 10px rgba(217,184,113,0.3);">
         🛒 <span>Sepetim</span>
         <span id="cartBadge" style="background: #173f31; color: #d9b871; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; font-weight: 900;">0</span>

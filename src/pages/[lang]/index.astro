@@ -1,0 +1,51 @@
+---
+import Header from '../../components/Header.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { getProducts } from '../../lib/sheets';
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'me' } },
+    { params: { lang: 'tr' } }
+  ];
+}
+
+const { lang } = Astro.params;
+const products = await getProducts();
+
+const titles = {
+  tr: 'Türkiye\'den Karadağ\'a Doğrudan B2B Toptan Gıda Tedariki',
+  en: 'Direct B2B Wholesale Food Supply from Türkiye to Montenegro',
+  me: 'Direktno B2B Veleprodajno Snabdijevanje Hranom iz Turske u Crnu Goru'
+};
+---
+
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <title>{titles[lang]} | TURSKA PIJACA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Wholesale Turkish food products distribution for Horeca, Supermarkets and Dealers in Montenegro." />
+  <link rel="alternate" hreflang="en" href="https://www.turskapijaca.com/en/" />
+  <link rel="alternate" hreflang="me" href="https://www.turskapijaca.me/me/" />
+  <link rel="alternate" hreflang="tr" href="https://www.turskapijaca.com.tr/tr/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.turskapijaca.com/en/" />
+</head>
+<body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b;">
+  <Header lang={lang} />
+
+  <main style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+    <div style="background: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #e2e8f0;">
+      <h1 style="margin: 0 0 0.5rem 0; font-size: 1.8rem; color: #0f172a;">{titles[lang]}</h1>
+      <p style="color: #64748b; margin: 0;">UNIVERCERT-MNE D.O.O. · Seda Gıda Representative Montenegro</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem;">
+      {products.map((product) => (
+        <ProductCard product={product} lang={lang} />
+      ))}
+    </div>
+  </main>
+</body>
+</html>

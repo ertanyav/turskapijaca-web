@@ -21,23 +21,16 @@ const [products, texts, brands] = await Promise.all([
 const eyebrowText = texts['home.eyebrow']?.[lang] || 'Direct From Factory · UNIVERCERT MNE D.O.O.';
 const headingText = texts['home.heading']?.[lang] || 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı';
 
-// Google Sheets'ten gelen metni alıp "Türkiye’den Karadağ’a." sonrasına kesinlikle <br> ekliyoruz
-let rawIntro = texts['home.intro']?.[lang] || '';
-if (!rawIntro) {
-  if (lang === 'tr') rawIntro = 'Türkiye’den Karadağ’a. Doğrudan tedarik, güçlü dağıtım.';
-  else if (lang === 'me') rawIntro = 'Od Turske do Crne Gore. Direktno snabdijevanje, jaka distribucija.';
-  else rawIntro = 'From Turkey to Montenegro. Direct supply, strong distribution.';
-}
-
-let formattedIntro = rawIntro;
-if (lang === 'tr' && formattedIntro.includes('Türkiye’den Karadağ’a.')) {
-  formattedIntro = formattedIntro.replace('Türkiye’den Karadağ’a.', 'Türkiye’den Karadağ’a.<br>');
-} else if (lang === 'en' && formattedIntro.includes('From Turkey to Montenegro.')) {
-  formattedIntro = formattedIntro.replace('From Turkey to Montenegro.', 'From Turkey to Montenegro.<br>');
-} else if (lang === 'me' && formattedIntro.includes('Od Turske do Crne Gore.')) {
-  formattedIntro = formattedIntro.replace('Od Turske do Crne Gore.', 'Od Turske do Crne Gore.<br>');
+// Google Sheets'ten bağımsız olarak satır atlamasını garantileyen kesin metin tanımı:
+let formattedIntro = '';
+if (lang === 'tr') {
+  formattedIntro = 'Türkiye’den Karadağ’a.<br>Doğrudan tedarik, güçlü dağıtım.';
+} else if (lang === 'en') {
+  formattedIntro = 'From Turkey to Montenegro.<br>Direct supply, strong distribution.';
+} else if (lang === 'me') {
+  formattedIntro = 'Od Turske do Crne Gore.<br>Direktno snabdijevanje, jaka distribucija.';
 } else {
-  formattedIntro = formattedIntro.replace('. ', '.<br>');
+  formattedIntro = texts['home.intro']?.[lang] || 'Türkiye’den Karadağ’a.<br>Doğrudan tedarik, güçlü dağıtım.';
 }
 
 const distributorIntro = texts['brands.distributorIntro']?.[lang] || 'Karadağ’daki distribütörlük portföyümüzde yer alan markalar.';
@@ -178,7 +171,7 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
         <h1 style="font-size: 2.4rem; margin: 0 0 0.8rem 0; font-weight: 800; color: #f4f7f2; line-height: 1.25;">
           {headingText}
         </h1>
-        <!-- Kesin satır atlamalı intro paragrafı -->
+        <!-- Garantili satır atlamalı intro paragrafı -->
         <p style="color: #b5cca8; font-size: 1.15rem; margin: 0; max-width: 800px; line-height: 1.6;" set:html={formattedIntro} />
       </div>
       

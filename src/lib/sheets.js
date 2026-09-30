@@ -12,7 +12,7 @@ async function fetchSheetData(tabName) {
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
-        complete: (results) => resolve(results.data),
+        complete: (results) => resolve(results.data || []),
         error: () => resolve([])
       });
     });
@@ -22,25 +22,22 @@ async function fetchSheetData(tabName) {
   }
 }
 
-// Güvenli Filtreler
-const isEvet = (val) => val && /evet/i.test(val.toString().trim());
-const isAktif = (val) => val && /aktif/i.test(val.toString().trim());
-
 export async function getPages() { return await fetchSheetData('SAYFALAR'); }
 export async function getTexts() { return await fetchSheetData('METINLER'); }
 export async function getDocuments() { return await fetchSheetData('DOKUMANLAR'); }
 export async function getSettings() { return await fetchSheetData('AYARLAR'); }
 
-// Ürünleri ve Kategorileri Filtreleyerek Getir
 export async function getProducts() {
   const data = await fetchSheetData('URUNLER');
-  return data.filter(item => isEvet(item.Yayında) && isAktif(item.Durum));
+  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()) && item.Durum && /aktif/i.test(item.Durum.toString()));
 }
+
 export async function getBrands() {
   const data = await fetchSheetData('MARKALAR');
-  return data.filter(item => isEvet(item.Yayında));
+  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()));
 }
+
 export async function getCategories() {
   const data = await fetchSheetData('KATEGORILER');
-  return data.filter(item => isEvet(item.Yayında));
+  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()));
 }

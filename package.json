@@ -1,0 +1,14 @@
+{
+  "name": "turskapijaca-www",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^4.5.0",
+    "papaparse": "^5.4.1"
+  }
+}

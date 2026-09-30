@@ -1,25 +1,23 @@
 ---
-const { lang = 'en' } = Astro.props;
+const { lang = 'en', texts = {} } = Astro.props;
 
-const labels = {
-  tr: { title: 'TURSKA PIJACA', home: 'Ana Sayfa', products: 'Ürünler', contact: 'İletişim', wholesale: 'B2B Toptan Tedarik' },
-  en: { title: 'TURSKA PIJACA', home: 'Home', products: 'Products', contact: 'Contact', wholesale: 'Direct B2B Supply' },
-  me: { title: 'TURSKA PIJACA', home: 'Početna', products: 'Proizvodi', contact: 'Kontakt', wholesale: 'Direktno B2B Snabdijevanje' }
-};
-
-const current = labels[lang] || labels.en;
+// METINLER tablosundan çeker, yoksa varsayılan metinleri kullanır
+const siteTitle = texts['site_title']?.[lang] || 'TURSKA PIJACA';
+const wholesaleText = texts['wholesale_subtitle']?.[lang] || 'Direct B2B Supply Montenegro';
+const productsLabel = texts['nav_products']?.[lang] || 'Products';
+const waBtnText = texts['whatsapp_btn']?.[lang] || '💬 WhatsApp B2B Order';
 ---
 
 <header style="background: #1e293b; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
   <div>
     <a href={`/${lang}/`} style="color: white; font-weight: bold; font-size: 1.4rem; text-decoration: none;">
-      🇹🇷 {current.title}
+      🇹🇷 {siteTitle}
     </a>
-    <span style="font-size: 0.85rem; color: #94a3b8; display: block;">{current.wholesale}</span>
+    <span style="font-size: 0.85rem; color: #94a3b8; display: block;">{wholesaleText}</span>
   </div>
 
   <nav style="display: flex; gap: 1.5rem; align-items: center;">
-    <a href={`/${lang}/`} style="color: #e2e8f0; text-decoration: none;">{current.products}</a>
+    <a href={`/${lang}/`} style="color: #e2e8f0; text-decoration: none; font-weight: 500;">{productsLabel}</a>
     
     <div style="background: #334155; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; display: flex; gap: 0.5rem;">
       <a href="/en/" style={`color: ${lang === 'en' ? '#38bdf8' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>EN (.com)</a> |
@@ -28,7 +26,7 @@ const current = labels[lang] || labels.en;
     </div>
 
     <a href="https://wa.me/38263256666" target="_blank" style="background: #22c55e; color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem;">
-      💬 WhatsApp B2B Order
+      {waBtnText}
     </a>
   </nav>
 </header>

@@ -1,23 +1,36 @@
 ---
 const { product, lang = 'en' } = Astro.props;
 
-// Esnek Alan Yakalayıcılar
 const keys = Object.keys(product);
 
-// Ürün Adı Bulucu
-const nameKey = keys.find(k => k.toLowerCase().includes(`ad ${lang}`) || k.toLowerCase().includes(`ad_${lang}`) || k.toLowerCase().includes('ürün ad') || k.toLowerCase().includes('name')) || keys[1] || keys[0];
-const title = product[nameKey] || product['Ad EN'] || product['Ad TR'] || 'Ürün';
+// Dil Bazlı Ürün Adı Yakalama
+const nameKey = keys.find(k => k.toLowerCase().includes(`ad ${lang}`) || k.toLowerCase().includes(`ad_${lang}`)) || 'Ad EN';
+const title = product[nameKey] || product['Ad EN'] || product['Ad TR'] || product['İç ad'] || 'Ürün';
 
-// Fiyat Bulucu
-const priceKey = keys.find(k => k.toLowerCase().includes('fiyat') || k.toLowerCase().includes('price') || k.toLowerCase().includes('eur')) || '';
-const price = product[priceKey] ? `€${product[priceKey]}` : 'Quote';
+// Karadağ B2B Kataloğu için Tüm Fiyatlar Euro (€) Cinsindendir
+const quoteLabels = {
+  tr: 'Fiyat Sorunuz',
+  en: 'Request Quote',
+  me: 'Upit za cijenu'
+};
 
-// Kod/SKU Bulucu
-const codeKey = keys.find(k => k.toLowerCase().includes('no') || k.toLowerCase().includes('id') || k.toLowerCase().includes('sku') || k.toLowerCase().includes('kod')) || keys[0];
-const code = product[codeKey] || '1';
+const priceKey = keys.find(k => k.toLowerCase().includes('fiyat') || k.toLowerCase().includes('price')) || 'Fiyat EUR';
+let rawPrice = product[priceKey] ? String(product[priceKey]).trim() : '';
 
-// Görsel URL Bulucu
-const imgKey = keys.find(k => k.toLowerCase().includes('görsel') || k.toLowerCase().includes('gorsel') || k.toLowerCase().includes('image') || k.toLowerCase().includes('url') || k.toLowerCase().includes('resim')) || '';
+// Tablodaki TRY, TL, EUR vb. metin eklerini temizleyip sadece sayısal değeri € olarak gösterir
+rawPrice = rawPrice.replace(/TRY|TL|EUR|€|\$/gi, '').trim();
+
+let price = quoteLabels[lang] || quoteLabels.en;
+if (rawPrice && rawPrice !== '0' && rawPrice !== '0,00' && rawPrice !== '0.00') {
+  price = `€${rawPrice}`;
+}
+
+// Ürün Kodu / SKU
+const codeKey = keys.find(k => k.toLowerCase().includes('ürün no') || k.toLowerCase().includes('no') || k.toLowerCase().includes('id')) || 'Ürün no';
+const code = product[codeKey] || product['Kayıt ID'] || '1';
+
+// Görsel URL
+const imgKey = keys.find(k => k.toLowerCase().includes('görsel') || k.toLowerCase().includes('gorsel') || k.toLowerCase().includes('image')) || 'Görsel URL';
 const image = product[imgKey] && product[imgKey].startsWith('http') ? product[imgKey] : 'https://via.placeholder.com/300x300?text=TURSKA+PIJACA';
 
 const detailUrl = `/${lang}/products/${code}`;

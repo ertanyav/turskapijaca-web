@@ -1,0 +1,34 @@
+---
+const { lang = 'en' } = Astro.props;
+
+const labels = {
+  tr: { title: 'TURSKA PIJACA', home: 'Ana Sayfa', products: 'Ürünler', contact: 'İletişim', wholesale: 'B2B Toptan Tedarik' },
+  en: { title: 'TURSKA PIJACA', home: 'Home', products: 'Products', contact: 'Contact', wholesale: 'Direct B2B Supply' },
+  me: { title: 'TURSKA PIJACA', home: 'Početna', products: 'Proizvodi', contact: 'Kontakt', wholesale: 'Direktno B2B Snabdijevanje' }
+};
+
+const current = labels[lang] || labels.en;
+---
+
+<header style="background: #1e293b; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+  <div>
+    <a href={`/${lang}/`} style="color: white; font-weight: bold; font-size: 1.4rem; text-decoration: none;">
+      🇹🇷 {current.title}
+    </a>
+    <span style="font-size: 0.85rem; color: #94a3b8; display: block;">{current.wholesale}</span>
+  </div>
+
+  <nav style="display: flex; gap: 1.5rem; align-items: center;">
+    <a href={`/${lang}/`} style="color: #e2e8f0; text-decoration: none;">{current.products}</a>
+    
+    <div style="background: #334155; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; display: flex; gap: 0.5rem;">
+      <a href="/en/" style={`color: ${lang === 'en' ? '#38bdf8' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>EN (.com)</a> |
+      <a href="/me/" style={`color: ${lang === 'me' ? '#38bdf8' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>ME (.me)</a> |
+      <a href="/tr/" style={`color: ${lang === 'tr' ? '#38bdf8' : '#94a3b8'}; text-decoration: none; font-weight: bold;`}>TR (.com.tr)</a>
+    </div>
+
+    <a href="https://wa.me/38263256666" target="_blank" style="background: #22c55e; color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem;">
+      💬 WhatsApp B2B Order
+    </a>
+  </nav>
+</header>

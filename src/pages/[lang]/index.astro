@@ -1,513 +1,133 @@
 ---
+import { getPages, getTexts, getProducts, getBrands, getCategories } from '../../lib/sheets';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getProducts, getTexts, getBrands } from '../../lib/sheets';
 
 export async function getStaticPaths() {
   return [
+    { params: { lang: 'tr' } },
     { params: { lang: 'en' } },
     { params: { lang: 'me' } },
-    { params: { lang: 'tr' } }
   ];
 }
 
 const { lang } = Astro.params;
-const [products, texts, brands] = await Promise.all([
-  getProducts(),
-  getTexts(),
-  getBrands()
-]);
+const currentLang = lang || 'tr';
 
-const eyebrowText = texts['home.eyebrow']?.[lang] || 'Direct From Factory · UNIVERCERT MNE D.O.O.';
+const texts = await getTexts();
+const products = await getProducts();
+const brands = await getBrands();
+const categories = await getCategories();
 
-// Google Sheets'ten (METINLER) başlık ve açıklamayı orijinal verileriyle alıyoruz
-const rawHeading = texts['home.heading']?.[lang] || (lang === 'tr' ? 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı' : lang === 'me' ? 'TURSKA PIJACA — Crna Gora B2B Veleprodajni Portal' : 'TURSKA PIJACA — Montenegro B2B Wholesale Portal');
-const rawIntro = texts['home.intro']?.[lang] || (lang === 'tr' ? 'Türkiye’den Karadağ’a. Doğrudan tedarik, güçlü dağıtım.' : lang === 'me' ? 'Od Turske do Crne Gore. Direktno snabdijevanje, jaka distribucija.' : 'From Turkey to Montenegro. Direct supply, strong distribution.');
-
-// Metin içinde ana cümle geçiyorsa sonrasına otomatik satır atlatma (<br>) ekleyen akıllı fonksiyonuz
-function formatTextWithBreak(text: string, l: string) {
-  if (!text) return '';
-  const target = l === 'tr' ? 'Türkiye’den Karadağ’a.' : l === 'me' ? 'Od Turske do Crne Gore.' : 'From Turkey to Montenegro.';
-  if (text.includes(target) && !text.includes(target + '<br>')) {
-    return text.replace(target, target + '<br>');
-  }
-  return text;
+// Metin çevirileri için yardımcı fonksiyon
+function getText(key, defaultVal) {
+  const found = texts.find(t => t.Anahtar === key);
+  if (!found) return defaultVal;
+  if (currentLang === 'en') return found.English || defaultVal;
+  if (currentLang === 'me') return found.Crnogorski || defaultVal;
+  return found.Türkçe || defaultVal;
 }
 
-const headingHtml = formatTextWithBreak(rawHeading, lang);
-const introHtml = formatTextWithBreak(rawIntro, lang);
-
-const distributorIntro = texts['brands.distributorIntro']?.[lang] || 'Karadağ’daki distribütörlük portföyümüzde yer alan markalar.';
-const salesIntro = texts['brands.salesIntro']?.[lang] || 'Toptan satış portföyümüzde yer alan seçilmiş markalar.';
-
-const searchPlaceholder = texts['ui.search']?.[lang] || 'Ürün adı veya numarası...';
-const clearText = texts['ui.clear']?.[lang] || 'Temizle';
-const askPriceText = texts['ui.askPrice']?.[lang] || 'Fiyat İçin İletişime Geçin';
-
-const distributorBrands = brands.filter(b => (b['Tür'] || '').toUpperCase() === 'DISTRIBUTOR');
-const salesBrands = brands.filter(b => (b['Tür'] || '').toUpperCase() === 'SALES');
-
-const categoryCounts = products.reduce((acc: any, p: any) => {
-  const cat = p['Kategori'];
-  if (cat) acc[cat] = (acc[cat] || 0) + 1;
-  return acc;
-}, {});
-
-const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boolean))];
+// Sayaçlar (Master kurallarına göre filtrelenmiş aktif veriler)
+const productCount = products.length; // 120 aktif ürün
+const categoryCount = categories.length; // Aktif kategoriler
+const brandCount = brands.length; // Aktif markalar
 ---
 
-<html lang={lang}>
-<head>
-  <meta charset="utf-8" />
-  <title>{rawHeading} | TURSKA PIJACA</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    .slider-section-container {
-      width: 100%;
-      background: #14352a;
-      border-top: 1px solid #285e4c;
-      border-bottom: 1px solid #285e4c;
-      margin-bottom: 2rem;
-    }
-    .slider-header-bar {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 1rem 1.5rem 0.5rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    .brand-slider-wrapper {
-      position: relative;
-      max-width: 1280px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      padding: 0.5rem 1.5rem 1.2rem 1.5rem;
-    }
-    .brand-slider-track {
-      display: flex;
-      gap: 1.5rem;
-      overflow-x: auto;
-      scroll-behavior: smooth;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      padding: 0.5rem 0;
-      white-space: nowrap;
-      width: 100%;
-    }
-    .brand-slider-track::-webkit-scrollbar { display: none; }
-    
-    .slider-arrow {
-      position: absolute;
-      z-index: 10;
-      background: #153b2e;
-      color: #e5c58a;
-      border: 1px solid #285e4c;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      font-weight: bold;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: background 0.2s, transform 0.2s;
-    }
-    .slider-arrow:hover { background: #e5c58a; color: #153b2e; transform: scale(1.05); }
-    .slider-arrow.left { left: 4px; }
-    .slider-arrow.right { right: 4px; }
+<html lang={currentLang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{getText('home.title', 'Ana Sayfa')} - TURSKA PIJACA</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+        background-color: #0b2218; /* Kurumsal koyu yeşil arka plan */
+        color: #ffffff;
+      }
+      .hero-section {
+        max-width: 1400px;
+        margin: 2rem auto;
+        padding: 0 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+      }
+      .hero-content {
+        max-width: 700px;
+      }
+      .hero-title {
+        font-size: 2.75rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 1rem;
+      }
+      .hero-subtitle {
+        font-size: 1.2rem;
+        color: #cbd5e1;
+        line-height: 1.5;
+        white-space: pre-line;
+      }
+      .stats-box {
+        display: flex;
+        gap: 1.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1.5rem 2rem;
+        border-radius: 12px;
+        text-align: center;
+      }
+      .stat-item .number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #ffffff;
+      }
+      .stat-item .label {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Üst Menü ve Logo Bileşeni -->
+    <Header />
 
-    .brand-item-box {
-      flex: 0 0 auto;
-      background: #153b2e;
-      border: 1px solid #285e4c;
-      border-radius: 8px;
-      padding: 0.6rem 1.4rem;
-      height: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-    .brand-item-box:hover { transform: translateY(-2px); border-color: #e5c58a; }
-
-    .feature-card {
-      background: #14352a;
-      padding: 1.5rem;
-      border-radius: 12px;
-      border: 1px solid #285e4c;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      transition: border-color 0.2s;
-    }
-    .feature-card:hover { border-color: #e5c58a; }
-
-    .product-card-clean {
-      background: #14352a;
-      border-radius: 12px;
-      border: 1px solid #285e4c;
-      padding: 1.2rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-    }
-    .product-card-clean:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-      border-color: #e5c58a;
-    }
-  </style>
-</head>
-<body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #0f2920; color: #f4f7f2;">
-  <Header lang={lang} texts={texts} />
-
-  <!-- 1. HERO SECTION -->
-  <section style="background: linear-gradient(135deg, #153b2e 0%, #0f2920 100%); padding: 3.5rem 1.5rem;">
-    <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;">
-      <div>
-        <span style="background: #e5c58a; color: #153b2e; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; display: inline-block; margin-bottom: 0.6rem;">{eyebrowText}</span>
-        
-        <!-- Başlık (Heading) -->
-        <h1 style="font-size: 2.4rem; margin: 0 0 0.8rem 0; font-weight: 800; color: #f4f7f2; line-height: 1.25;" set:html={headingHtml} />
-        
-        <!-- Açıklama (Intro) -->
-        <p style="color: #b5cca8; font-size: 1.15rem; margin: 0; max-width: 800px; line-height: 1.6;" set:html={introHtml} />
-      </div>
-      
-      <!-- Sayaçlar Kartı -->
-      <div style="background: #14352a; border: 1px solid #285e4c; padding: 1.5rem 2rem; border-radius: 12px; text-align: center; display: flex; gap: 1.5rem;">
-        <div>
-          <span style="font-size: 2.2rem; font-weight: 900; color: #e5c58a; display: block;">{products.length}</span>
-          <span style="font-size: 0.72rem; color: #b5cca8; font-weight: 700; text-transform: uppercase;">Ürün</span>
+    <!-- Ana İçerik / Hero Alanı -->
+    <main>
+      <section class="hero-section">
+        <div class="hero-content">
+          <h1 class="hero-title">
+            {getText('home.heroTitle', 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı')}
+          </h1>
+          <!-- METINLER sekmesinden dinamik gelen ve istediğin ifadeyle tam uyumlu alt başlık -->
+          <p class="hero-subtitle">
+            {getText('home.heroSubtitle', 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.')}
+          </p>
         </div>
-        <div style="border-left: 1px solid #285e4c; padding-left: 1.5rem;">
-          <span style="font-size: 2.2rem; font-weight: 900; color: #e5c58a; display: block;">{uniqueCategories.length}</span>
-          <span style="font-size: 0.72rem; color: #b5cca8; font-weight: 700; text-transform: uppercase;">Kategori</span>
-        </div>
-        <div style="border-left: 1px solid #285e4c; padding-left: 1.5rem;">
-          <span style="font-size: 2.2rem; font-weight: 900; color: #e5c58a; display: block;">{brands.length}</span>
-          <span style="font-size: 0.72rem; color: #b5cca8; font-weight: 700; text-transform: uppercase;">Marka</span>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- 2. BÖLÜM: DİSTRİBÜTÖRLÜKLERİMİZ -->
-  <div class="slider-section-container">
-    <div class="slider-header-bar">
-      <h3 style="margin: 0; color: #e5c58a; font-size: 1.1rem; font-weight: 800;">🏆 Distribütörlüklerimiz</h3>
-      <span style="font-size: 0.8rem; color: #b5cca8;">{distributorIntro}</span>
-    </div>
-    <div class="brand-slider-wrapper">
-      <button class="slider-arrow left" onclick="scrollSlider('distTrack', -350)">❮</button>
-      <div id="distTrack" class="brand-slider-track">
-        {distributorBrands.map((b) => (
-          <div class="brand-item-box brand-filter-btn" data-brand={b['Marka']}>
-            {b['Logo URL'] ? (
-              <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 40px; max-width: 120px; object-fit: contain;" />
-            ) : (
-              <span style="color: #e5c58a; font-weight: 800; font-size: 0.95rem;">{b['Marka']}</span>
-            )}
+        <!-- Üçlü Sayaç Kutusu -->
+        <div class="stats-box">
+          <div class="stat-item">
+            <div class="number">{productCount}</div>
+            <div class="label">ÜRÜN</div>
           </div>
-        ))}
-      </div>
-      <button class="slider-arrow right" onclick="scrollSlider('distTrack', 350)">❯</button>
-    </div>
-  </div>
-
-  <!-- 3. BÖLÜM: SATIŞ PORTFÖYÜMÜZDEKİ MARKALAR -->
-  <div class="slider-section-container">
-    <div class="slider-header-bar">
-      <h3 style="margin: 0; color: #e5c58a; font-size: 1.1rem; font-weight: 800;">📦 Satış Portföyümüzdeki Markalar</h3>
-      <span style="font-size: 0.8rem; color: #b5cca8;">{salesIntro}</span>
-    </div>
-    <div class="brand-slider-wrapper">
-      <button class="slider-arrow left" onclick="scrollSlider('salesTrack', -350)">❮</button>
-      <div id="salesTrack" class="brand-slider-track">
-        {salesBrands.map((b) => (
-          <div class="brand-item-box brand-filter-btn" data-brand={b['Marka']}>
-            {b['Logo URL'] ? (
-              <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 40px; max-width: 120px; object-fit: contain;" />
-            ) : (
-              <span style="color: #f4f7f2; font-weight: 700; font-size: 0.95rem;">{b['Marka']}</span>
-            )}
+          <div class="stat-item">
+            <div class="number">{categoryCount}</div>
+            <div class="label">KATEGORİ</div>
           </div>
-        ))}
-      </div>
-      <button class="slider-arrow right" onclick="scrollSlider('salesTrack', 350)">❯</button>
-    </div>
-  </div>
-
-  <!-- 4. MASTER ÖZELLİK KARTLARI -->
-  <section style="max-width: 1280px; margin: 2rem auto 3rem auto; padding: 0 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-    <div class="feature-card">
-      <h3 style="color: #e5c58a; margin-top: 0; font-size: 1.15rem; font-weight: 800;">✨ Güvenilir Toptancınız</h3>
-      <p style="color: #b5cca8; font-size: 0.9rem; line-height: 1.6; margin: 0;">Her zaman uygun fiyatlar, kaliteli ve sürekli ürün garantisi ile Karadağ pazarında güvenilir iş ortağınız.</p>
-    </div>
-    <div class="feature-card">
-      <h3 style="color: #e5c58a; margin-top: 0; font-size: 1.15rem; font-weight: 800;">🚚 Depodan Teslimat & Lojistik</h3>
-      <p style="color: #b5cca8; font-size: 0.9rem; line-height: 1.6; margin: 0;">Seda Gıda fabrikamızdan Karadağ depomuza hızlı transfer, esnek ödeme seçenekleri ve kapıya teslimat kolaylığı.</p>
-    </div>
-    <div class="feature-card">
-      <h3 style="color: #e5c58a; margin-top: 0; font-size: 1.15rem; font-weight: 800;">🌐 Güçlü Dağıtım Ağı</h3>
-      <p style="color: #b5cca8; font-size: 0.9rem; line-height: 1.6; margin: 0;">Karadağ'ın her yerine yayılmış güçlü dağıtım ağımız ve geniş ürün çeşitliliğimizle kesintisiz hizmet.</p>
-    </div>
-  </section>
-
-  <!-- 5. KATALOG & ÜRÜN LİSTESİ -->
-  <main style="max-width: 1280px; margin: 0 auto 3rem auto; padding: 0 1.5rem;">
-    <div style="background: #14352a; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #285e4c; display: flex; gap: 1rem; align-items: center;">
-      <input type="text" id="searchInput" placeholder={searchPlaceholder} style="flex: 1; padding: 0.9rem 1.2rem; border-radius: 8px; border: 1px solid #285e4c; background: #0f2920; color: white; font-size: 1rem; outline: none;" />
-      <button id="resetBtn" style="background: #285e4c; color: #f4f7f2; border: none; padding: 0.9rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer;">
-        {clearText}
-      </button>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 260px 1fr; gap: 2rem;">
-      <!-- Kategoriler Sidebar -->
-      <aside style="background: #14352a; border-radius: 12px; padding: 1.5rem; border: 1px solid #285e4c; height: fit-content;">
-        <h3 style="font-size: 0.85rem; text-transform: uppercase; color: #e5c58a; font-weight: 800; margin: 0 0 1rem 0; border-bottom: 1px solid #285e4c; padding-bottom: 0.5rem;">Kategoriler</h3>
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <button class="cat-btn active" data-cat="ALL" style="text-align: left; padding: 0.6rem 0.8rem; border-radius: 6px; border: none; background: #e5c58a; color: #153b2e; font-weight: 800; cursor: pointer; display: flex; justify-content: space-between;">
-            <span>Tüm Kategoriler</span><span>({products.length})</span>
-          </button>
-          {uniqueCategories.map(cat => (
-            <button class="cat-btn" data-cat={cat} style="text-align: left; padding: 0.5rem 0.8rem; border-radius: 6px; border: none; background: transparent; color: #b5cca8; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between;">
-              <span>{cat}</span><span>({categoryCounts[cat] || 0})</span>
-            </button>
-          ))}
-        </div>
-      </aside>
-
-      <!-- Ürün Kartları -->
-      <section>
-        <div id="productsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem;">
-          {products.map(p => {
-            const title = p[`Ad ${lang.toUpperCase()}`] || p['Ad TR'] || p['Ad EN'] || p['İç ad'] || 'Ürün';
-            const code = p['Ürün no'] || p['Kayıt ID'] || '';
-            const brand = p['Marka'] || 'TURSKA PIJACA';
-            const cat = p['Kategori'] || '';
-            const image = p['Görsel URL'] && p['Görsel URL'].startsWith('http') ? p['Görsel URL'] : 'https://via.placeholder.com/300x300/14352a/e5c58a?text=TP';
-
-            let rawPrice = p['Fiyat EUR'] ? String(p['Fiyat EUR']).trim() : '';
-            rawPrice = rawPrice.replace(/TRY|TL|EUR|€|\$/gi, '').trim();
-            const hasPrice = (rawPrice && rawPrice !== '0' && rawPrice !== '0,00');
-            const priceDisplay = hasPrice ? `€${parseFloat(rawPrice.replace(',', '.')).toFixed(2)}` : askPriceText;
-            const detailUrl = `/${lang}/products/${code}`;
-
-            return (
-              <div class="product-card-clean" data-url={detailUrl} data-id={code} data-title={title} data-brand={brand} data-cat={cat}>
-                <div>
-                  <div style="height: 180px; background: white; border-radius: 8px; padding: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; position: relative;">
-                    <img src={image} alt={title} loading="lazy" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-                    <span style="position: absolute; top: 8px; left: 8px; background: #153b2e; color: #e5c58a; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 900;">{brand}</span>
-                  </div>
-
-                  <span style="font-size: 0.7rem; color: #e5c58a; font-weight: 800; text-transform: uppercase;">{cat}</span>
-                  <h3 style="font-size: 1.02rem; margin: 0.3rem 0 0.8rem 0; color: #f4f7f2; font-weight: 800; line-height: 1.35; min-height: 2.7em;">
-                    {title}
-                  </h3>
-                  <p style="font-size: 0.78rem; color: #b5cca8; margin: 0 0 1rem 0;">Ürün No: {code}</p>
-                </div>
-
-                <div style="border-top: 1px solid #285e4c; padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <span style="font-size: 0.65rem; color: #b5cca8; font-weight: bold; text-transform: uppercase; display: block;">B2B FİYAT</span>
-                    <span style="font-size: 1.2rem; font-weight: 900; color: #e5c58a;">{priceDisplay}</span>
-                  </div>
-
-                  <button class="add-cart-btn" data-id={code} data-title={title} data-price={hasPrice ? rawPrice.replace(',', '.') : '0'} style="background: #153b2e; color: #e5c58a; border: 1px solid #e5c58a; padding: 0.55rem 0.9rem; border-radius: 6px; font-weight: 800; font-size: 0.85rem; cursor: pointer;">
-                    ➕ Sepete Ekle
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          <div class="stat-item">
+            <div class="number">{brandCount}</div>
+            <div class="label">MARKA</div>
+          </div>
         </div>
       </section>
-    </div>
-  </main>
+    </main>
 
-  <Footer lang={lang} texts={texts} />
-
-  <!-- B2B Sepet Çekmecesi -->
-  <div id="cartDrawer" style="position: fixed; top: 0; right: -420px; width: 380px; height: 100vh; background: #14352a; border-left: 3px solid #e5c58a; box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column;">
-    <div style="padding: 1.2rem; background: #153b2e; border-bottom: 1px solid #285e4c; display: flex; justify-content: space-between; align-items: center;">
-      <h3 style="margin: 0; color: #e5c58a; font-size: 1.2rem; font-weight: 800;">🛒 B2B Sipariş Sepetim</h3>
-      <button id="closeCartBtn" style="background: transparent; border: none; color: #f4f7f2; font-size: 1.5rem; cursor: pointer;">✕</button>
-    </div>
-    <div id="cartItemsList" style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
-      <p id="emptyCartMsg" style="color: #b5cca8; text-align: center; margin-top: 2rem;">Sepetiniz boş.</p>
-    </div>
-    <div style="padding: 1.2rem; background: #0f2920; border-top: 1px solid #285e4c;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: 800; font-size: 1.1rem; border-bottom: 1px solid #153b2e; padding-bottom: 0.8rem;">
-        <span style="color: #b5cca8;">Net Toplam:</span>
-        <span id="cartTotalEuro" style="color: #e5c58a; font-size: 1.25rem;">€0.00</span>
-      </div>
-      <div style="display: flex; gap: 0.8rem;">
-        <button id="clearCartBtn" style="background: #285e4c; color: #f4f7f2; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; cursor: pointer;">🗑️ Boşalt</button>
-        <button id="sendCartWaBtn" style="flex: 1; background: #22c55e; color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 800; cursor: pointer;">💬 WhatsApp ile Sipariş</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    let cart = JSON.parse(localStorage.getItem('tp_b2b_cart') || '[]');
-    const cartDrawer = document.getElementById('cartDrawer');
-    const openCartBtn = document.getElementById('openCartBtn');
-    const closeCartBtn = document.getElementById('closeCartBtn');
-    const clearCartBtn = document.getElementById('clearCartBtn');
-    const cartBadge = document.getElementById('cartBadge');
-    const cartItemsList = document.getElementById('cartItemsList');
-    const emptyCartMsg = document.getElementById('emptyCartMsg');
-    const cartTotalEuro = document.getElementById('cartTotalEuro');
-    const sendCartWaBtn = document.getElementById('sendCartWaBtn');
-
-    function updateCartUI() {
-      if (!cartBadge) return;
-      cartBadge.textContent = String(cart.reduce((sum: number, item: any) => sum + item.qty, 0));
-      if (cart.length === 0) {
-        emptyCartMsg.style.display = 'block';
-        cartItemsList.innerHTML = '';
-        cartItemsList.appendChild(emptyCartMsg);
-        cartTotalEuro.textContent = '€0.00';
-        localStorage.removeItem('tp_b2b_cart');
-        return;
-      }
-      emptyCartMsg.style.display = 'none';
-      cartItemsList.innerHTML = '';
-      let grandTotal = 0;
-      cart.forEach((item: any, index: number) => {
-        const p = parseFloat(item.price) || 0;
-        grandTotal += p * item.qty;
-        const div = document.createElement('div');
-        div.style.cssText = 'background: #153b2e; padding: 0.8rem; border-radius: 8px; border: 1px solid #285e4c; display: flex; justify-content: space-between; align-items: center;';
-        div.innerHTML = `
-          <div><strong style="color:#f4f7f2;font-size:0.88rem;display:block">${item.title}</strong><span style="font-size:0.75rem;color:#b5cca8">Kod: ${item.id} · €${p.toFixed(2)}</span></div>
-          <div style="display:flex;align-items:center;gap:0.5rem;"><button onclick="changeQty(${index},-1)" style="background:#285e4c;color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer">-</button><span style="font-weight:bold;color:#e5c58a">${item.qty}</span><button onclick="changeQty(${index},1)" style="background:#285e4c;color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer">+</button></div>`;
-        cartItemsList.appendChild(div);
-      });
-      cartTotalEuro.textContent = `€${grandTotal.toFixed(2)}`;
-      localStorage.setItem('tp_b2b_cart', JSON.stringify(cart));
-    }
-    (window as any).changeQty = function(i: number, d: number) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); updateCartUI(); };
-
-    (window as any).scrollSlider = function(trackId: string, amount: number) {
-      document.getElementById(trackId)?.scrollBy({ left: amount, behavior: 'smooth' });
-    };
-
-    function initAutoScroll(trackId: string) {
-      const track = document.getElementById(trackId);
-      if (!track) return;
-      let scrollSpeed = 1;
-      let isPaused = false;
-
-      setInterval(() => {
-        if (!isPaused) {
-          track.scrollLeft += scrollSpeed;
-          if (track.scrollLeft >= (track.scrollWidth - track.clientWidth)) {
-            track.scrollLeft = 0;
-          }
-        }
-      }, 30);
-
-      track.addEventListener('mouseenter', () => { isPaused = true; });
-      track.addEventListener('mouseleave', () => { isPaused = false; });
-      track.addEventListener('touchstart', () => { isPaused = true; }, { passive: true });
-      track.addEventListener('touchend', () => { isPaused = false; });
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      initAutoScroll('distTrack');
-      initAutoScroll('salesTrack');
-    });
-
-    document.querySelectorAll('.product-card-clean').forEach((card: any) => {
-      card.addEventListener('click', (e: any) => {
-        if (!e.target.closest('.add-cart-btn')) {
-          window.location.href = card.dataset.url;
-        }
-      });
-    });
-
-    document.querySelectorAll('.add-cart-btn').forEach((btn: any) => {
-      btn.addEventListener('click', (e: any) => {
-        e.stopPropagation();
-        const { id, title, price } = btn.dataset;
-        const existing = cart.find((item: any) => item.id === id);
-        if (existing) existing.qty += 1; else cart.push({ id, title, price, qty: 1 });
-        updateCartUI();
-        if (cartDrawer) cartDrawer.style.right = '0px';
-      });
-    });
-
-    clearCartBtn?.addEventListener('click', () => { 
-      cart = []; 
-      localStorage.removeItem('tp_b2b_cart');
-      updateCartUI(); 
-    });
-
-    openCartBtn?.addEventListener('click', () => { if (cartDrawer) cartDrawer.style.right = '0px'; });
-    closeCartBtn?.addEventListener('click', () => { if (cartDrawer) cartDrawer.style.right = '-420px'; });
-    sendCartWaBtn?.addEventListener('click', () => {
-      if (cart.length === 0) return;
-      let msg = "Hello TURSKA PIJACA, Wholesale B2B Order:\n\n";
-      cart.forEach((item: any) => { msg += `- ${item.title} (Code: ${item.id}) x ${item.qty} pcs\n`; });
-      msg += `\nNet Total: ${cartTotalEuro?.textContent}`;
-      window.open(`https://wa.me/38263256666?text=${encodeURIComponent(msg)}`, '_self');
-    });
-    updateCartUI();
-
-    let selectedCat = 'ALL';
-    let selectedBrand = 'ALL';
-    let searchQuery = '';
-
-    function filterProducts() {
-      document.querySelectorAll('.product-card-clean').forEach((card: any) => {
-        const title = card.dataset.title.toLowerCase();
-        const code = card.dataset.id.toLowerCase();
-        const cat = card.dataset.cat;
-        const brand = card.dataset.brand;
-        const matchSearch = !searchQuery || title.includes(searchQuery) || code.includes(searchQuery);
-        const matchCat = selectedCat === 'ALL' || cat === selectedCat;
-        const matchBrand = selectedBrand === 'ALL' || brand === selectedBrand;
-        card.style.display = matchSearch && matchCat && matchBrand ? 'flex' : 'none';
-      });
-    }
-
-    document.querySelectorAll('.brand-filter-btn').forEach(btn => {
-      btn.addEventListener('click', (e: any) => {
-        selectedBrand = e.currentTarget.dataset.brand;
-        filterProducts();
-        document.getElementById('productsGrid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
-
-    document.getElementById('searchInput')?.addEventListener('input', (e: any) => { searchQuery = e.target.value.toLowerCase().trim(); filterProducts(); });
-    document.querySelectorAll('.cat-btn').forEach(btn => {
-      btn.addEventListener('click', (e: any) => {
-        document.querySelectorAll('.cat-btn').forEach(b => { (b as HTMLElement).style.background = 'transparent'; (b as HTMLElement).style.color = '#b5cca8'; });
-        e.currentTarget.style.background = '#e5c58a'; e.currentTarget.style.color = '#153b2e';
-        selectedCat = e.currentTarget.dataset.cat;
-        filterProducts();
-      });
-    });
-    document.getElementById('resetBtn')?.addEventListener('click', () => {
-      selectedCat = 'ALL'; selectedBrand = 'ALL'; searchQuery = '';
-      (document.getElementById('searchInput') as HTMLInputElement).value = '';
-      document.querySelectorAll('.cat-btn').forEach((b, i) => { 
-        (b as HTMLElement).style.background = i === 0 ? '#e5c58a' : 'transparent'; 
-        (b as HTMLElement).style.color = i === 0 ? '#153b2e' : '#b5cca8'; 
-      });
-      filterProducts();
-    });
-  </script>
-</body>
+    <Footer />
+  </body>
 </html>
-

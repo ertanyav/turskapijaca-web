@@ -1,10 +1,11 @@
 import Papa from 'papaparse';
 
-export const SHEET_ID = '1BrGhsTDd75PRcVcHzT2Q3Sqtwp6-snAZjjn-Z4fvfLU';
+export const SHEET_ID = '12wF2Is8OiESGgZ-Xq5qJMaZqxKelOCrnRjoj0zCqKlI';
 
-// Web CSV Bağlantısı
 const PRODUCTS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSgtpYzushPu45KC5ztC4xvXS6AwRFSUEEWaDOZ3klcaxaUSFBxS0JMvUzhEbYO-Aok-lz7re6nr_Hg/pub?gid=300101&single=true&output=csv';
 const TEXTS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=METINLER`;
+const BRANDS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=MARKALAR`;
+const SETTINGS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=AYARLAR`;
 
 async function fetchCSV(url) {
   try {
@@ -40,7 +41,7 @@ export async function getTexts() {
   data.forEach(row => {
     const keys = Object.keys(row);
     if (keys.length === 0) return;
-    const kCol = keys.find(k => ['key', 'anahtar', 'kod'].includes(k.toLowerCase())) || keys[0];
+    const kCol = keys.find(k => ['kod', 'key', 'anahtar'].includes(k.toLowerCase())) || keys[0];
     const keyVal = row[kCol] ? row[kCol].trim() : null;
     if (keyVal) {
       dict[keyVal] = {
@@ -51,4 +52,23 @@ export async function getTexts() {
     }
   });
   return dict;
+}
+
+export async function getBrands() {
+  const data = await fetchCSV(BRANDS_CSV);
+  return data.filter(item => {
+    return item['Yayında'] ? item['Yayında'].trim().toUpperCase() === 'EVET' : true;
+  });
+}
+
+export async function getSettings() {
+  const data = await fetchCSV(SETTINGS_CSV);
+  const settings = {};
+  data.forEach(row => {
+    const keys = Object.keys(row);
+    if (keys.length >= 2 && row[keys[0]]) {
+      settings[row[keys[0]].trim()] = row[keys[1]] ? row[keys[1]].trim() : '';
+    }
+  });
+  return settings;
 }

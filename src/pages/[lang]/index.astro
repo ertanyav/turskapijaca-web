@@ -23,14 +23,22 @@ const eyebrowText = texts['home.eyebrow']?.[lang] || 'Direct From Factory · UNI
 const headingText = texts['home.heading']?.[lang] || 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı';
 const introText = texts['home.intro']?.[lang] || 'Türkiye\'deki Seda Gıda fabrikamızın ve distribütörü olduğumuz markaların ürünlerini Karadağ\'a doğrudan ulaştırıyoruz.';
 
-const brandRelationText = texts['ui.brandRelation']?.[lang] || 'Öncü markalar ve güvenilir iş ortakları';
+const distributorIntro = texts['brands.distributorIntro']?.[lang] || 'Karadağ’daki distribütörlük portföyümüzde yer alan markalar.';
+const salesTitle = texts['brands.salesTitle']?.[lang] || 'Satış portföyümüzdeki markalar';
+const salesIntro = texts['brands.salesIntro']?.[lang] || 'Toptan satış portföyümüzde yer alan seçilmiş markalar.';
+
 const searchPlaceholder = texts['ui.search']?.[lang] || 'Ürün adı veya numarası ile arayın...';
 const clearText = texts['ui.clear']?.[lang] || 'Filtreleri Temizle';
 const askPriceText = texts['ui.askPrice']?.[lang] || 'Fiyat İçin İletişime Geçin';
 
+// Markaları Türlerine Göre Kesin Olarak Ayırıyoruz
 const distributorBrands = brands.filter(b => (b['Tür'] || '').toUpperCase() === 'DISTRIBUTOR');
 const salesBrands = brands.filter(b => (b['Tür'] || '').toUpperCase() === 'SALES');
-const marqueeBrands = [...brands, ...brands];
+
+// Kesintisiz Kayar Şerit (Marquee) İçin İkileme
+const marqueeDistributor = [...distributorBrands, ...distributorBrands];
+const marqueeSales = [...salesBrands, ...salesBrands];
+
 const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boolean))];
 ---
 
@@ -49,7 +57,7 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
       white-space: nowrap;
       display: flex;
       width: 100%;
-      padding: 1.5rem 0;
+      padding: 1.2rem 0;
       background: #0d221a;
       border-top: 1px solid #234d3c;
       border-bottom: 1px solid #234d3c;
@@ -65,14 +73,14 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 60px;
+      height: 55px;
       padding: 0 1rem;
       transition: transform 0.2s, filter 0.2s;
-      filter: grayscale(30%);
+      filter: grayscale(20%);
     }
     .brand-logo-item:hover { transform: scale(1.08); filter: grayscale(0%); }
 
-    /* Temiz Ürün Kartı (Tıklanınca detay açılır) */
+    /* Temiz Ürün Kartı */
     .product-card-clean {
       background: #142e23;
       border-radius: 12px;
@@ -113,26 +121,49 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
     </div>
   </section>
 
-  <!-- 2. BRANDS MARQUEE (Tek Satır Kayar Markalar) -->
-  <div style="background: #173f31; padding: 0.8rem 1.5rem; text-align: center; border-bottom: 1px solid #234d3c;">
-    <span style="font-size: 0.85rem; color: #d9b871; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">{brandRelationText}</span>
+  <!-- 2. AYRI MARQUEE 1: DİSTRİBÜTÖRLÜKLERİMİZ -->
+  <div style="background: #173f31; padding: 0.9rem 1.5rem; border-bottom: 1px solid #234d3c; display: flex; justify-content: space-between; align-items: center; max-width: 1280px; margin: 0 auto; border-radius: 8px 8px 0 0;">
+    <h3 style="margin: 0; color: #d9b871; font-size: 1rem; font-weight: 800;">🏆 Distribütörlüklerimiz</h3>
+    <span style="font-size: 0.75rem; color: #a3c2b5;">{distributorIntro}</span>
   </div>
-  <div class="marquee-container">
+  <div class="marquee-container" style="margin-bottom: 1.5rem;">
     <div class="marquee-track">
-      {marqueeBrands.map((b) => (
+      {marqueeDistributor.map((b) => (
         <div class="brand-logo-item brand-filter-btn" data-brand={b['Marka']} title={`${b['Marka']} ürünlerini filtrele`}>
           {b['Logo URL'] ? (
-            <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 50px; max-width: 140px; object-fit: contain;" />
+            <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 48px; max-width: 140px; object-fit: contain;" />
           ) : (
-            <span style="color: #d9b871; font-weight: 900; font-size: 1.2rem;">{b['Marka']}</span>
+            <span style="color: #d9b871; font-weight: 900; font-size: 1.1rem;">{b['Marka']}</span>
           )}
         </div>
       ))}
     </div>
   </div>
 
-  <!-- 3. CATALOG & SEARCH -->
-  <main style="max-width: 1280px; margin: 2.5rem auto; padding: 0 1.5rem;">
+  <!-- 3. AYRI MARQUEE 2: SATIŞ PORTFÖYÜMÜZDEKİ MARKALAR -->
+  <div style="background: #173f31; padding: 0.9rem 1.5rem; border-bottom: 1px solid #234d3c; display: flex; justify-content: space-between; align-items: center; max-width: 1280px; margin: 0 auto; border-radius: 8px 8px 0 0;">
+    <h3 style="margin: 0; color: #d9b871; font-size: 1rem; font-weight: 800;">📦 Satış Portföyümüzdeki Markalar</h3>
+    <span style="font-size: 0.75rem; color: #a3c2b5;">{salesIntro}</span>
+  </div>
+  <div class="marquee-container">
+    <div class="marquee-track">
+      {marqueeSales.map((b) => (
+        <div class="brand-logo-item brand-filter-btn" data-brand={b['Marka']} title={`${b['Marka']} ürünlerini filtrele`}>
+          {b['Logo URL'] ? (
+            <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 48px; max-width: 140px; object-fit: contain;" />
+          ) : (
+            <span style="color: #d9b871; font-weight: 900; font-size: 1.1rem;">{b['Marka']}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+  <div style="text-align: center; font-size: 0.75rem; color: #a3c2b5; padding: 0.6rem; background: #0d221a; margin-bottom: 2rem;">
+    👆 Herhangi bir markanın logosuna tıklayarak katalogda o markaya ait ürünleri filtreleyebilirsiniz.
+  </div>
+
+  <!-- 4. CATALOG & SEARCH -->
+  <main style="max-width: 1280px; margin: 0 auto 3rem auto; padding: 0 1.5rem;">
     <div style="background: #142e23; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #234d3c; display: flex; gap: 1rem; align-items: center;">
       <input type="text" id="searchInput" placeholder={searchPlaceholder} style="flex: 1; padding: 0.9rem 1.2rem; border-radius: 8px; border: 1px solid #234d3c; background: #0d221a; color: white; font-size: 1rem; outline: none;" />
       <button id="resetBtn" style="background: #234d3c; color: #f0f4ed; border: none; padding: 0.9rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer;">
@@ -218,7 +249,7 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
         <span id="cartTotalEuro" style="color: #d9b871; font-size: 1.25rem;">€0.00</span>
       </div>
       <div style="display: flex; gap: 0.8rem;">
-        <button id="clearCartBtn" style="background: #234d3c; color: #f0f4ed; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; cursor: pointer;">🗑️ Boşalt</button>
+        <button id="clearCartBtn" style="background: #234d3c; color: #f0f4ed; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; cursor: pointer;">🗑️️ Boşalt</button>
         <button id="sendCartWaBtn" style="flex: 1; background: #22c55e; color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 800; cursor: pointer;">💬 WhatsApp ile Sipariş</button>
       </div>
     </div>
@@ -264,7 +295,6 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
     }
     (window as any).changeQty = function(i: number, d: number) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); updateCartUI(); };
 
-    // Kart tıklanınca detay sayfasına git
     document.querySelectorAll('.product-card-clean').forEach((card: any) => {
       card.addEventListener('click', (e: any) => {
         if (!e.target.closest('.add-cart-btn')) {

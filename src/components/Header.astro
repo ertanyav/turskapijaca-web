@@ -1,22 +1,20 @@
 ---
-import { getPages, getTexts, getSettings } from '../lib/sheets';
+import { getPages, getTexts, getSettings, getCategories } from '../lib/sheets';
 
 const pathname = Astro.url.pathname;
 let currentLang = 'tr';
 if (pathname.startsWith('/en')) currentLang = 'en';
 else if (pathname.startsWith('/me')) currentLang = 'me';
 
-const [pages, texts, settings] = await Promise.all([getPages(), getTexts(), getSettings()]);
+const [pages, texts, settings, categories] = await Promise.all([
+  getPages(), getTexts(), getSettings(), getCategories()
+]);
 
-// AYARLAR sekmesinden Logo Çekimi
+// 1. AYARLAR'dan Logo Çekimi
 const logoSetting = settings.find(s => s.Anahtar === 'logo');
 const logoUrl = logoSetting ? logoSetting.Değer : '';
 
-// SAYFALAR tablosundan Menüde=EVET olanları Sıra'ya göre diz
-const menuPages = pages
-  .filter(p => p.Yayında?.trim() === 'EVET' && p.Menüde?.trim() === 'EVET')
-  .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
-
+// 2. Çeviri Yardımcısı
 function getText(key, defaultVal) {
   const found = texts.find(t => t.Anahtar === key);
   if (!found) return defaultVal;
@@ -24,131 +22,306 @@ function getText(key, defaultVal) {
   if (currentLang === 'me') return found.Crnogorski || defaultVal;
   return found.Türkçe || defaultVal;
 }
+
+// 3. 404'ü Önleyen Rota Oluşturucu (Master dosyadaki Adres sütununu birebir kullanır)
+function getPath(item) {
+  let path = item['Adres TR'];
+  if (currentLang === 'en') path = item['Adres EN'] || path;
+  if (currentLang === 'me') path = item['Adres ME'] || path;
+  
+  if (path === '/ana-sayfa' || path === '/home' || path === '/početna') {
+    return `/${currentLang}`;
+  }
+  return `/${currentLang}${path.startsWith('/') ? path : '/' + path}`;
+}
+
+// 4. Alt Menü (Dropdown) ve Hiyerarşi Mimarisinin Kurulması
+// Sayfalar: Sadece Yayında=EVET ve Menüde=EVET olanları al
+const rawMenuPages = pages.filter(p => p.Yayında?.trim().toUpperCase() === 'EVET' && p.Menüde?.trim().toUpperCase() === 'EVET').sort((a, b) => Number(a.Sıra) - Number(b.Sıra));
+const activeCategories = categories.filter(c => c.Yayında?.trim().toUpperCase() === 'EVET').sort((a, b) => Number(a.Sıra) - Number(b.Sıra));
+
+// Tek slash içerenler Ana Menü (Kök), birden fazla slash içerenler Alt Menü
+const rootPages = rawMenuPages.filter(p => p['Adres TR'].split('/').filter(Boolean).length === 1);
+const childPages = rawMenuPages.filter(p => p['Adres TR'].split('/').filter(Boolean).length > 1);
+
+// Hiyerarşiyi bağlama
+const menuTree = rootPages.map(root => {
+  const rootPathBase = root['Adres TR'];
+  let children = childPages.filter(child => child['Adres TR'].startsWith(rootPathBase + '/'));
+
+  // Ürünler menüsü altındaysa, kategorileri de alt menüye ekle
+  if (root.Kod === 'products') {
+    const catChildren = activeCategories.map(cat => ({
+      isCategory: true,
+      ...cat,
+      Kod: cat.Kod
+    }));
+    children = [...children, ...catChildren];
+  }
+
+  return { ...root, children };
+});
 ---
 
 <header class="site-header">
   <div class="header-container">
     <!-- Logo Alanı -->
-    <div class="logo-area">
-      <a href={`/${currentLang}`} class="logo-link" aria-label="Ana Sayfa">
-        <!-- Logo varsa resmi yükle, yoksa yedek metin göster -->
-        {logoUrl && (
-          <img src={logoUrl} alt="TURSKA PIJACA" class="logo-img" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='block';" />
-        )}
-        <span id="fallback-logo" class="logo-text" style={logoUrl ? "display:none;" : ""}>TURSKA PIJACA</span>
-      </a>
+    <a href={`/${currentLang}`} class="logo-link" aria-label="Ana Sayfa">
+      {logoUrl ? (
+         <img src={logoUrl} alt="TURSKA PIJACA" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      ) : null}
+      <span class="logo-text" style={logoUrl ? "display:none;" : ""}>TURSKA PIJACA</span>
+    </a>
+
+    <!-- Mobil Hamburger Butonu -->
+    <button id="menu-toggle" class="mobile-toggle" aria-label="Menüyü Aç">
+      <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+
+    <!-- Navigasyon (Menü, Alt Menüler ve Diller) -->
+    <div id="nav-wrapper" class="nav-wrapper">
+      <nav class="main-nav">
+        <ul>
+          {menuTree.map(item => {
+            const menuTitle = getText(`${item.Kod}.title`, item.Kod);
+            const href = getPath(item);
+            const hasChildren = item.children && item.children.length > 0;
+
+            return (
+              <li class={hasChildren ? 'has-dropdown' : ''}>
+                <a href={href} class="nav-link">
+                  {menuTitle} {hasChildren && <span class="caret">▾</span>}
+                </a>
+                
+                {hasChildren && (
+                  <ul class="dropdown-menu">
+                    {item.children.map(child => {
+                      const childHref = getPath(child);
+                      // Kategori ise kendi sekmesinden, Sayfa ise METINLER'den çeviri al
+                      let childTitle = '';
+                      if (child.isCategory) {
+                        childTitle = currentLang === 'en' ? child['Ad EN'] : currentLang === 'me' ? child['Ad ME'] : child['Ad TR'];
+                      } else {
+                        childTitle = getText(`${child.Kod}.title`, child.Kod);
+                      }
+
+                      return (
+                        <li><a href={childHref} class="dropdown-link">{childTitle}</a></li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <!-- Dil Düğmeleri -->
+      <div class="lang-switcher">
+        <a href="/tr" class={currentLang === 'tr' ? 'active' : ''}>TR</a>
+        <span class="divider">|</span>
+        <a href="/en" class={currentLang === 'en' ? 'active' : ''}>EN</a>
+        <span class="divider">|</span>
+        <a href="/me" class={currentLang === 'me' ? 'active' : ''}>ME</a>
+      </div>
     </div>
-
-    <!-- Menü Alanı (Canlı Site ile Birebir) -->
-    <nav class="main-nav">
-      <ul>
-        {menuPages.map((page) => {
-          // ÖNEMLİ: 404 hatasını çözen fiziksel rotalama. 
-          // Çeviri adresi yerine Astro'nun dosya ismine (Kod) gidiyoruz (örn: /tr/network)
-          let href = `/${currentLang}/${page.Kod}`;
-          if (page.Kod === 'home') {
-            href = `/${currentLang}`;
-          }
-
-          // Menü metnini METINLER sekmesinden alıyoruz (örn: Bayi ve dağıtım ağı)
-          const menuTitle = getText(`${page.Kod}.title`, page.Kod);
-
-          // Sayfada aktifliği kontrol etmek için
-          const isActive = pathname === href || pathname === href + '/';
-
-          return (
-            <li>
-              <a href={href} class={isActive ? 'active' : ''}>
-                {menuTitle}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
   </div>
 </header>
 
+<script>
+  // Mobil Menü Aç/Kapat
+  const toggleBtn = document.getElementById('menu-toggle');
+  const navWrapper = document.getElementById('nav-wrapper');
+  if (toggleBtn && navWrapper) {
+    toggleBtn.addEventListener('click', () => {
+      navWrapper.classList.toggle('is-open');
+    });
+  }
+</script>
+
 <style>
-  /* EKRAN GÖRÜNTÜSÜNDEKİ BEYAZ VE ŞIK HEADER TASARIMI */
   .site-header {
-    width: 100%;
-    background-color: #ffffff; /* Görseldeki beyaz bar */
-    border-bottom: 1px solid #eaeaea;
-    padding: 0 2rem;
-    height: 70px;
-    display: flex;
-    align-items: center;
+    background-color: #0b2218; /* Kurumsal Koyu Yeşil */
+    border-bottom: 1px solid rgba(255,255,255,0.1);
     position: relative;
     z-index: 1000;
   }
-  
   .header-container {
     max-width: 1400px;
-    width: 100%;
     margin: 0 auto;
+    padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  
   .logo-link {
-    text-decoration: none;
     display: flex;
     align-items: center;
+    text-decoration: none;
   }
-  
   .logo-img {
-    height: 35px;
+    height: 45px;
     width: auto;
     object-fit: contain;
   }
-  
   .logo-text {
-    color: #4b1b85; /* Görseldeki logoya en yakın mor/koyu ton */
+    color: #ffffff;
     font-weight: 800;
     font-size: 1.25rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
   }
   
+  /* Menü ve Navigasyon */
+  .nav-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
   .main-nav ul {
     display: flex;
     list-style: none;
-    gap: 1.5rem;
     margin: 0;
     padding: 0;
+    gap: 1.5rem;
   }
-  
-  .main-nav a {
-    color: #1f2937; /* Görseldeki siyah menü öğeleri */
+  .nav-link {
+    color: #cbd5e1;
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 500;
-    white-space: nowrap;
-    transition: color 0.2s ease, font-weight 0.2s;
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: color 0.2s;
   }
-  
-  .main-nav a:hover,
-  .main-nav a.active {
-    color: #0b2218; /* Üzerine gelindiğinde veya aktifken kurumsal koyu yeşil */
-    font-weight: 700;
+  .nav-link:hover {
+    color: #ffffff;
+  }
+  .caret {
+    font-size: 0.7rem;
   }
 
-  /* MOBİL UYUMLULUK (Sayfadan taşmayı önler) */
+  /* Alt Menü (Dropdown) Tasarımı */
+  .has-dropdown {
+    position: relative;
+  }
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #0f2e20;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    min-width: 220px;
+    padding: 0.5rem 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    z-index: 1001;
+  }
+  .has-dropdown:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  .dropdown-menu li {
+    display: block;
+    width: 100%;
+  }
+  .dropdown-link {
+    display: block;
+    padding: 0.6rem 1.25rem;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+  }
+  .dropdown-link:hover {
+    background-color: rgba(255,255,255,0.05);
+    color: #ffffff;
+  }
+
+  /* Dil Seçimi */
+  .lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .lang-switcher a {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .lang-switcher a.active, .lang-switcher a:hover {
+    color: #ffffff;
+  }
+  .lang-switcher .divider {
+    color: #475569;
+  }
+
+  /* Mobil Hamburger Menü */
+  .mobile-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+  }
+
+  /* Mobil Responsive Ayarlar */
   @media (max-width: 1024px) {
-    .site-header {
-      height: auto;
-      padding: 1rem;
+    .mobile-toggle {
+      display: block;
     }
-    .header-container {
+    .nav-wrapper {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background-color: #0b2218;
       flex-direction: column;
-      gap: 1rem;
+      align-items: stretch;
+      padding: 0;
+      gap: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .nav-wrapper.is-open {
+      max-height: 100vh;
+      padding: 1rem 0;
     }
     .main-nav ul {
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 0;
+    }
+    .nav-link {
+      padding: 1rem 2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .has-dropdown:hover .dropdown-menu {
+      position: static;
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      box-shadow: none;
+      background-color: rgba(0,0,0,0.15);
+      border: none;
+      border-radius: 0;
+      padding: 0;
+    }
+    .dropdown-link {
+      padding: 0.8rem 3rem;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+    .lang-switcher {
+      padding: 1.5rem 2rem;
       justify-content: center;
-      gap: 1rem;
     }
   }
 </style>

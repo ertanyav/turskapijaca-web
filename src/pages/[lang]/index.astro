@@ -18,243 +18,258 @@ const [products, texts, brands] = await Promise.all([
   getBrands()
 ]);
 
-const searchPlaceholder = texts['ui.search']?.[lang] || 'Ürün adı veya numarası ile arayın...';
-const clearText = texts['ui.clear']?.[lang] || 'Filtreleri Temizle';
-const distributorIntro = texts['brands.distributorIntro']?.[lang] || 'Karadağ’daki distribütörlük portföyümüzde yer alan markalar.';
-const salesTitle = texts['brands.salesTitle']?.[lang] || 'Satış portföyümüzdeki markalar';
-const askPriceText = texts['ui.askPrice']?.[lang] || 'Fiyat İçin İletişime Geçin';
+// ARTIK BU YAZILAR MASTER DOSYANIN 'METINLER' SEKMESİNDEN GELECEK!
+// Master'da 'hero_title' ve 'hero_desc' anahtarlarını oluşturmayı unutmayın.
+const heroTitle = texts['hero_title']?.[lang] || 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı';
+const heroDesc = texts['hero_desc']?.[lang] || 'Türkiye\'deki Seda Gıda fabrikamızın ve distribütörü olduğumuz markaların ürünlerini Karadağ\'a doğrudan ulaştırıyoruz.';
 
-const distributorBrands = brands.filter(b => (b['Tür'] || '').toUpperCase() === 'DISTRIBUTOR');
-const salesBrands = brands.filter(b => (b['Tür'] || '').toUpperCase() === 'SALES');
+const searchPlaceholder = texts['ui.search']?.[lang] || 'Ürün adı veya numarası...';
+const clearText = texts['ui.clear']?.[lang] || 'Temizle';
+const askPriceText = texts['ui.askPrice']?.[lang] || 'Fiyat Sorunuz';
+
+// Markaları tek satırda birleştiriyoruz
+const allBrands = brands.filter(b => b['Yayında'] === 'EVET' || true);
+// Kayar şeridin kesintisiz dönmesi için diziyi ikiye katlıyoruz
+const marqueeBrands = [...allBrands, ...allBrands];
 const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boolean))];
 ---
 
 <html lang={lang}>
 <head>
   <meta charset="utf-8" />
-  <title>TURSKA PIJACA | Direct B2B Food & Goods Wholesale Supply Montenegro</title>
+  <title>TURSKA PIJACA | Direct B2B Wholesale Supply Montenegro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* Kayar Şerit (Marquee) Animasyonu */
+    @keyframes scrollBrands {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .marquee-container {
+      overflow: hidden;
+      white-space: nowrap;
+      display: flex;
+      width: 100%;
+      padding: 1.5rem 0;
+      background: #0d221a;
+      border-top: 1px solid #234d3c;
+      border-bottom: 1px solid #234d3c;
+    }
+    .marquee-track {
+      display: flex;
+      gap: 3rem;
+      animation: scrollBrands 30s linear infinite;
+    }
+    .marquee-track:hover {
+      animation-play-state: paused;
+    }
+    .brand-logo-item {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 60px;
+      padding: 0 1rem;
+      transition: transform 0.2s, filter 0.2s;
+      filter: grayscale(40%);
+    }
+    .brand-logo-item:hover {
+      transform: scale(1.1);
+      filter: grayscale(0%);
+    }
+
+    /* Ürün Kartı Tıklanabilir Yapısı */
+    .product-card-box {
+      background: #142e23;
+      border-radius: 12px;
+      border: 1px solid #234d3c;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer; /* Tıklanabilir el işareti */
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      position: relative;
+    }
+    .product-card-box:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      border-color: #d9b871;
+    }
+    .card-spec-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #173f31;
+      padding: 0.35rem 0;
+      font-size: 0.78rem;
+    }
+    .card-spec-row:last-child { border-bottom: none; }
+  </style>
 </head>
 <body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #0d221a; color: #f0f4ed;">
   <Header lang={lang} texts={texts} />
 
   <!-- Hero Section -->
-  <section style="background: linear-gradient(135deg, #173f31 0%, #0d221a 100%); padding: 2.5rem 1.5rem; border-bottom: 2px solid #234d3c;">
+  <section style="background: linear-gradient(135deg, #173f31 0%, #0d221a 100%); padding: 3rem 1.5rem;">
     <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;">
       <div>
-        <span style="background: #d9b871; color: #173f31; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Direct From Factory</span>
-        <h1 style="font-size: 2.2rem; margin: 0.6rem 0 0.4rem 0; font-weight: 800; color: #f0f4ed; line-height: 1.25;">
-          TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı
+        <h1 style="font-size: 2.4rem; margin: 0 0 1rem 0; font-weight: 800; color: #f0f4ed; line-height: 1.2;">
+          {heroTitle}
         </h1>
-        <p style="color: #a3c2b5; font-size: 1rem; margin: 0; max-width: 800px; line-height: 1.5;">
-          Türkiye'deki <strong>Seda Gıda</strong> fabrikamızın ve distribütörü olduğumuz markaların ürünlerini Karadağ'a doğrudan ulaştırıyoruz.
+        <p style="color: #a3c2b5; font-size: 1.1rem; margin: 0; max-width: 800px; line-height: 1.6;">
+          {heroDesc}
         </p>
       </div>
-
-      <div style="background: #142e23; border: 1px solid #234d3c; padding: 1.2rem 1.8rem; border-radius: 12px; text-align: center;">
-        <span style="font-size: 2.2rem; font-weight: 900; color: #d9b871; display: block;">{products.length}</span>
-        <span style="font-size: 0.78rem; color: #a3c2b5; font-weight: 700; text-transform: uppercase;">Aktif Ürün</span>
+      <div style="background: #142e23; border: 1px solid #234d3c; padding: 1.5rem 2rem; border-radius: 12px; text-align: center;">
+        <span style="font-size: 2.5rem; font-weight: 900; color: #d9b871; display: block;">{products.length}</span>
+        <span style="font-size: 0.85rem; color: #a3c2b5; font-weight: 700; text-transform: uppercase;">Aktif Ürün</span>
       </div>
     </div>
   </section>
 
-  <!-- Markalar & Distribütörlükler Vitrini (LOGOLAR İLE) -->
-  <section style="background: #142e23; padding: 2.5rem 1.5rem; border-bottom: 1px solid #234d3c;">
-    <div style="max-width: 1280px; margin: 0 auto;">
-      
-      <!-- Distribütörlükler -->
-      <div style="margin-bottom: 2.5rem;">
-        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.4rem;">
-          <h2 style="font-size: 1.25rem; color: #d9b871; margin: 0; font-weight: 800;">🏆 Distribütörlüklerimiz</h2>
-          <span style="background: #d9b871; color: #173f31; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800;">OFFICIAL DISTRIBUTOR</span>
+  <!-- TEK SATIR KAYAR MARKALAR (MARQUEE) -->
+  <div class="marquee-container">
+    <div class="marquee-track">
+      {marqueeBrands.map((b, i) => (
+        <div class="brand-logo-item brand-filter-btn" data-brand={b['Marka']} title={`${b['Marka']} ürünlerini gör`}>
+          {b['Logo URL'] ? (
+            <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 50px; max-width: 140px; object-fit: contain;" />
+          ) : (
+            <span style="color: #d9b871; font-weight: 900; font-size: 1.2rem;">{b['Marka']}</span>
+          )}
         </div>
-        <p style="color: #a3c2b5; font-size: 0.88rem; margin: 0 0 1.2rem 0;">{distributorIntro}</p>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem;">
-          {distributorBrands.map(b => (
-            <div style="background: #173f31; border: 1px solid #234d3c; border-radius: 8px; padding: 0.8rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 85px;">
-              {b['Logo URL'] ? (
-                <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 48px; max-width: 100%; object-fit: contain;" />
-              ) : (
-                <span style="color: #f0f4ed; font-weight: bold; font-size: 0.9rem;">{b['Marka']}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <!-- Satış Portföyümüz (LOGOLAR İLE) -->
-      <div>
-        <h3 style="font-size: 1.15rem; color: #f0f4ed; margin: 0 0 0.4rem 0; font-weight: 700;">{salesTitle}</h3>
-        <p style="color: #a3c2b5; font-size: 0.88rem; margin: 0 0 1.2rem 0;">Toptan satış portföyümüzde yer alan seçilmiş markalar.</p>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.9rem;">
-          {salesBrands.map(b => (
-            <div style="background: #173f31; border: 1px solid #234d3c; border-radius: 8px; padding: 0.6rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 75px;">
-              {b['Logo URL'] ? (
-                <img src={b['Logo URL']} alt={b['Marka']} style="max-height: 42px; max-width: 100%; object-fit: contain;" />
-              ) : (
-                <span style="color: #a3c2b5; font-weight: 600; font-size: 0.85rem;">{b['Marka']}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
+      ))}
     </div>
-  </section>
+  </div>
+  <div style="text-align: center; font-size: 0.75rem; color: #a3c2b5; padding: 0.5rem; background: #0d221a;">
+    👆 İlgili markanın ürünlerini görmek için logoya tıklayınız.
+  </div>
 
-  <!-- Katalog & Canlı Arama -->
+  <!-- Katalog & Arama -->
   <main style="max-width: 1280px; margin: 2.5rem auto; padding: 0 1.5rem;">
-    
-    <!-- Search Bar -->
     <div style="background: #142e23; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #234d3c; display: flex; gap: 1rem; align-items: center;">
-      <input type="text" id="searchInput" placeholder={searchPlaceholder} style="flex: 1; padding: 0.85rem 1.2rem; border-radius: 8px; border: 1px solid #234d3c; background: #0d221a; color: white; font-size: 1rem; outline: none;" />
-      <button id="resetBtn" style="background: #234d3c; color: #f0f4ed; border: none; padding: 0.85rem 1.2rem; border-radius: 8px; font-weight: bold; cursor: pointer;">
+      <input type="text" id="searchInput" placeholder={searchPlaceholder} style="flex: 1; padding: 0.9rem 1.2rem; border-radius: 8px; border: 1px solid #234d3c; background: #0d221a; color: white; font-size: 1rem; outline: none;" />
+      <button id="resetBtn" style="background: #234d3c; color: #f0f4ed; border: none; padding: 0.9rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer;">
         {clearText}
       </button>
     </div>
 
-    <div style="display: grid; grid-template-columns: 250px 1fr; gap: 2rem;">
-      
-      <!-- Sol Sidebar: Kategoriler -->
-      <aside style="background: #142e23; border-radius: 12px; padding: 1.2rem; border: 1px solid #234d3c; height: fit-content;">
-        <h3 style="font-size: 0.85rem; text-transform: uppercase; color: #d9b871; font-weight: 800; margin: 0 0 1rem 0; border-bottom: 1px solid #234d3c; padding-bottom: 0.4rem;">
-          Kategoriler
-        </h3>
+    <div style="display: grid; grid-template-columns: 260px 1fr; gap: 2rem;">
+      <!-- Kategoriler -->
+      <aside style="background: #142e23; border-radius: 12px; padding: 1.5rem; border: 1px solid #234d3c; height: fit-content;">
+        <h3 style="font-size: 0.85rem; text-transform: uppercase; color: #d9b871; font-weight: 800; margin: 0 0 1rem 0; border-bottom: 1px solid #234d3c; padding-bottom: 0.5rem;">Kategoriler</h3>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <button class="cat-btn active" data-cat="ALL" style="text-align: left; padding: 0.5rem 0.7rem; border-radius: 6px; border: none; background: #d9b871; color: #173f31; font-weight: 800; cursor: pointer;">
-            Tüm Kategoriler ({products.length})
-          </button>
+          <button class="cat-btn active" data-cat="ALL" style="text-align: left; padding: 0.6rem 0.8rem; border-radius: 6px; border: none; background: #d9b871; color: #173f31; font-weight: 800; cursor: pointer;">Tüm Kategoriler</button>
           {uniqueCategories.map(cat => (
-            <button class="cat-btn" data-cat={cat} style="text-align: left; padding: 0.45rem 0.7rem; border-radius: 6px; border: none; background: transparent; color: #a3c2b5; font-weight: 600; cursor: pointer;">
-              {cat}
-            </button>
+            <button class="cat-btn" data-cat={cat} style="text-align: left; padding: 0.5rem 0.8rem; border-radius: 6px; border: none; background: transparent; color: #a3c2b5; font-weight: 600; cursor: pointer;">{cat}</button>
           ))}
         </div>
       </aside>
 
-      <!-- Ürün Kartları Grid -->
+      <!-- YENİ NESİL ÜRÜN KARTLARI -->
       <section>
-        <div id="productsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem;">
+        <div id="productsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
           {products.map(p => {
             const title = p[`Ad ${lang.toUpperCase()}`] || p['Ad TR'] || p['Ad EN'] || p['İç ad'] || 'Ürün';
             const code = p['Ürün no'] || p['Kayıt ID'] || '';
             const brand = p['Marka'] || 'TURSKA PIJACA';
             const cat = p['Kategori'] || '';
-            const pack = p['Ambalaj'] || '';
-            const packType = p['Ambalaj tipi'] || p['Paket tipi'] || 'Koli/Paket';
-            const origin = p['Menşe'] || 'Türkiye';
+            const pack = p['Ambalaj'] || '-';
+            const packType = p['Ambalaj tipi'] || p['Paket tipi'] || '-';
+            const origin = p['Menşe'] || 'TR';
             const image = p['Görsel URL'] && p['Görsel URL'].startsWith('http') ? p['Görsel URL'] : 'https://via.placeholder.com/300x300/142e23/d9b871?text=TP';
 
             let rawPrice = p['Fiyat EUR'] ? String(p['Fiyat EUR']).trim() : '';
             rawPrice = rawPrice.replace(/TRY|TL|EUR|€|\$/gi, '').trim();
             const hasPrice = (rawPrice && rawPrice !== '0' && rawPrice !== '0,00');
             const priceDisplay = hasPrice ? `€${parseFloat(rawPrice.replace(',', '.')).toFixed(2)}` : askPriceText;
-
             const detailUrl = `/${lang}/products/${code}`;
 
             return (
-              <div 
-                class="product-card" 
-                data-url={detailUrl}
-                data-id={code} 
-                data-title={title} 
-                data-price={hasPrice ? rawPrice.replace(',', '.') : '0'} 
-                data-cat={cat}
-                style="background: #142e23; border-radius: 12px; border: 1px solid #234d3c; padding: 1.1rem; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, border-color 0.2s;"
-              >
-                <div>
-                  <div style="height: 160px; background: white; border-radius: 8px; padding: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0.8rem; position: relative; overflow: hidden;">
-                    <img src={image} alt={title} loading="lazy" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-                    <span style="position: absolute; top: 6px; left: 6px; background: #173f31; color: #d9b871; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">{brand}</span>
+              <div class="product-card product-card-box" data-url={detailUrl} data-id={code} data-title={title} data-brand={brand} data-cat={cat}>
+                
+                <!-- Görsel ve Etiket -->
+                <div style="height: 180px; background: white; border-radius: 8px; padding: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; position: relative;">
+                  <img src={image} alt={title} loading="lazy" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                  <span style="position: absolute; top: 8px; left: 8px; background: #173f31; color: #d9b871; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 900;">{brand}</span>
+                </div>
+
+                <!-- Başlık -->
+                <h3 style="font-size: 1.05rem; margin: 0 0 0.8rem 0; color: #f0f4ed; font-weight: 800; line-height: 1.3; min-height: 2.6em;">
+                  {title}
+                </h3>
+
+                <!-- Detaylı Özellik Listesi -->
+                <div style="background: #0d221a; padding: 0.8rem; border-radius: 8px; margin-bottom: 1rem;">
+                  <div class="card-spec-row">
+                    <span style="color: #a3c2b5;">Ürün no:</span>
+                    <strong style="color: #f0f4ed;">{code}</strong>
                   </div>
-
-                  <span style="font-size: 0.7rem; color: #d9b871; font-weight: 800; text-transform: uppercase;">{cat}</span>
-                  <h3 style="font-size: 0.98rem; margin: 0.2rem 0 0.6rem 0; color: #f0f4ed; font-weight: 700; line-height: 1.3; min-height: 2.6em;">
-                    {title}
-                  </h3>
-
-                  <!-- Detaylı B2B Künye Bilgileri -->
-                  <div style="background: #0d221a; border: 1px solid #173f31; padding: 0.6rem; border-radius: 6px; font-size: 0.75rem; color: #a3c2b5; display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.8rem;">
-                    <div><strong style="color: #f0f4ed;">Ürün no:</strong> {code}</div>
-                    <div><strong style="color: #f0f4ed;">Marka:</strong> {brand}</div>
-                    {pack && <div><strong style="color: #f0f4ed;">Ambalaj:</strong> {pack}</div>}
-                    {packType && <div><strong style="color: #f0f4ed;">Ambalaj tipi:</strong> {packType}</div>}
-                    <div><strong style="color: #f0f4ed;">Menşe:</strong> {origin}</div>
+                  <div class="card-spec-row">
+                    <span style="color: #a3c2b5;">Marka:</span>
+                    <strong style="color: #f0f4ed;">{brand}</strong>
+                  </div>
+                  <div class="card-spec-row">
+                    <span style="color: #a3c2b5;">Ambalaj:</span>
+                    <strong style="color: #f0f4ed;">{pack}</strong>
+                  </div>
+                  <div class="card-spec-row">
+                    <span style="color: #a3c2b5;">Ambalaj tipi:</span>
+                    <strong style="color: #f0f4ed;">{packType}</strong>
+                  </div>
+                  <div class="card-spec-row">
+                    <span style="color: #a3c2b5;">Menşe:</span>
+                    <strong style="color: #f0f4ed;">{origin}</strong>
                   </div>
                 </div>
 
-                <div style="border-top: 1px solid #234d3c; padding-top: 0.8rem;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-                    <span style="font-size: 0.65rem; color: #a3c2b5; font-weight: bold; text-transform: uppercase;">B2B FİYAT</span>
-                    <span style="font-size: 1.2rem; font-weight: 900; color: #d9b871;">{priceDisplay}</span>
+                <!-- Alt Kısım: Fiyat & Buton -->
+                <div style="border-top: 2px solid #234d3c; padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 0.7rem; color: #a3c2b5; font-weight: bold; text-transform: uppercase;">NET FİYAT</span>
+                    <span style="font-size: 1.3rem; font-weight: 900; color: #d9b871;">{priceDisplay}</span>
                   </div>
 
-                  <!-- Sepete Ekle Butonu (Kart tıklamasını engeller) -->
-                  <button 
-                    class="add-cart-btn" 
-                    data-id={code} 
-                    data-title={title} 
-                    data-price={hasPrice ? rawPrice.replace(',', '.') : '0'} 
-                    style="width: 100%; background: #173f31; color: #d9b871; border: 1px solid #d9b871; padding: 0.55rem; border-radius: 6px; font-weight: 800; font-size: 0.85rem; cursor: pointer;"
-                  >
+                  <!-- Sepete Ekle Butonu (Kart tıklamasını durdurur) -->
+                  <button class="add-cart-btn" data-id={code} data-title={title} data-price={hasPrice ? rawPrice.replace(',', '.') : '0'} style="background: #d9b871; color: #173f31; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 900; font-size: 0.9rem; cursor: pointer; transition: transform 0.1s;">
                     ➕ Sepete Ekle
                   </button>
                 </div>
+
               </div>
             );
           })}
         </div>
       </section>
-
     </div>
   </main>
 
   <Footer lang={lang} texts={texts} />
 
-  <!-- 🛒 B2B Alışveriş Sepeti Çekmecesi -->
+  <!-- B2B Sepet Çekmecesi (Önceki kod ile aynı) -->
   <div id="cartDrawer" style="position: fixed; top: 0; right: -420px; width: 380px; height: 100vh; background: #142e23; border-left: 3px solid #d9b871; box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column;">
-    
-    <!-- Sepet Header -->
     <div style="padding: 1.2rem; background: #173f31; border-bottom: 1px solid #234d3c; display: flex; justify-content: space-between; align-items: center;">
       <h3 style="margin: 0; color: #d9b871; font-size: 1.2rem; font-weight: 800;">🛒 B2B Sipariş Sepetim</h3>
       <button id="closeCartBtn" style="background: transparent; border: none; color: #f0f4ed; font-size: 1.5rem; cursor: pointer;">✕</button>
     </div>
-
-    <!-- Sepet İçeriği -->
     <div id="cartItemsList" style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
       <p id="emptyCartMsg" style="color: #a3c2b5; text-align: center; margin-top: 2rem;">Sepetiniz boş.</p>
     </div>
-
-    <!-- Sepet Altlık (Net Toplam & Butonlar) -->
     <div style="padding: 1.2rem; background: #0d221a; border-top: 1px solid #234d3c;">
-      
-      <!-- Net Toplam (Küsuratlı) -->
       <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: 800; font-size: 1.1rem; border-bottom: 1px solid #173f31; padding-bottom: 0.8rem;">
         <span style="color: #a3c2b5;">Net Toplam:</span>
         <span id="cartTotalEuro" style="color: #d9b871; font-size: 1.25rem;">€0.00</span>
       </div>
-
       <div style="display: flex; gap: 0.8rem;">
-        <!-- Sepeti Boşalt Butonu -->
-        <button id="clearCartBtn" style="background: #234d3c; color: #f0f4ed; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;">
-          🗑️ Boşalt
-        </button>
-
-        <!-- WhatsApp Sipariş Gönder -->
-        <button id="sendCartWaBtn" style="flex: 1; background: #22c55e; color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 800; font-size: 0.95rem; cursor: pointer;">
-          💬 WhatsApp ile Sipariş Et
-        </button>
+        <button id="clearCartBtn" style="background: #234d3c; color: #f0f4ed; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; cursor: pointer;">🗑️ Boşalt</button>
+        <button id="sendCartWaBtn" style="flex: 1; background: #22c55e; color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 800; cursor: pointer;">💬 WhatsApp ile Sipariş</button>
       </div>
-
     </div>
   </div>
 
-  <!-- Client-side Logic (Tıklamalar, Sepet & Filtreler) -->
   <script>
+    // SEPET MANTIĞI
     let cart = JSON.parse(localStorage.getItem('tp_b2b_cart') || '[]');
-
     const cartDrawer = document.getElementById('cartDrawer');
     const openCartBtn = document.getElementById('openCartBtn');
     const closeCartBtn = document.getElementById('closeCartBtn');
@@ -265,13 +280,9 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
     const cartTotalEuro = document.getElementById('cartTotalEuro');
     const sendCartWaBtn = document.getElementById('sendCartWaBtn');
 
-    // Net Toplamı Küsuratlı Güncelleme
     function updateCartUI() {
-      if (!cartBadge || !cartItemsList || !cartTotalEuro || !emptyCartMsg) return;
-
-      const totalCount = cart.reduce((sum: number, item: any) => sum + item.qty, 0);
-      cartBadge.textContent = String(totalCount);
-
+      if (!cartBadge) return;
+      cartBadge.textContent = String(cart.reduce((sum: number, item: any) => sum + item.qty, 0));
       if (cart.length === 0) {
         emptyCartMsg.style.display = 'block';
         cartItemsList.innerHTML = '';
@@ -279,134 +290,102 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
         cartTotalEuro.textContent = '€0.00';
         return;
       }
-
       emptyCartMsg.style.display = 'none';
       cartItemsList.innerHTML = '';
-
       let grandTotal = 0;
-
       cart.forEach((item: any, index: number) => {
-        const itemPrice = parseFloat(item.price) || 0;
-        const itemTotal = itemPrice * item.qty;
-        grandTotal += itemTotal;
-
+        const p = parseFloat(item.price) || 0;
+        grandTotal += p * item.qty;
         const div = document.createElement('div');
         div.style.cssText = 'background: #173f31; padding: 0.8rem; border-radius: 8px; border: 1px solid #234d3c; display: flex; justify-content: space-between; align-items: center;';
         div.innerHTML = `
-          <div>
-            <strong style="color: #f0f4ed; font-size: 0.88rem; display: block;">${item.title}</strong>
-            <span style="font-size: 0.75rem; color: #a3c2b5;">Kod: ${item.id} · €${itemPrice.toFixed(2)}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <button onclick="changeQty(${index}, -1)" style="background: #234d3c; color: white; border: none; width: 24px; height: 24px; border-radius: 4px; font-weight: bold; cursor: pointer;">-</button>
-            <span style="font-weight: bold; color: #d9b871;">${item.qty}</span>
-            <button onclick="changeQty(${index}, 1)" style="background: #234d3c; color: white; border: none; width: 24px; height: 24px; border-radius: 4px; font-weight: bold; cursor: pointer;">+</button>
-          </div>
-        `;
+          <div><strong style="color:#f0f4ed;font-size:0.88rem;display:block">${item.title}</strong><span style="font-size:0.75rem;color:#a3c2b5">Kod: ${item.id} · €${p.toFixed(2)}</span></div>
+          <div style="display:flex;align-items:center;gap:0.5rem;"><button onclick="changeQty(${index},-1)" style="background:#234d3c;color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer">-</button><span style="font-weight:bold;color:#d9b871">${item.qty}</span><button onclick="changeQty(${index},1)" style="background:#234d3c;color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer">+</button></div>`;
         cartItemsList.appendChild(div);
       });
-
-      // Küsuratlı Net Toplam Formatı
       cartTotalEuro.textContent = `€${grandTotal.toFixed(2)}`;
       localStorage.setItem('tp_b2b_cart', JSON.stringify(cart));
     }
+    (window as any).changeQty = function(i: number, d: number) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); updateCartUI(); };
 
-    (window as any).changeQty = function(index: number, delta: number) {
-      cart[index].qty += delta;
-      if (cart[index].qty <= 0) cart.splice(index, 1);
-      updateCartUI();
-    };
-
-    // Tüm Kart Kutusuna Tıklayınca Açılma & Sepet Butonunda Durdurma
-    document.querySelectorAll('.product-card').forEach((card: any) => {
+    // KART TIKLAMA YÖNETİMİ
+    document.querySelectorAll('.product-card-box').forEach((card: any) => {
       card.addEventListener('click', (e: any) => {
-        const url = card.dataset.url;
-        if (url) window.location.href = url;
+        // Tıklanan eleman buton değilse detay sayfasına git
+        if (!e.target.closest('.add-cart-btn')) {
+          window.location.href = card.dataset.url;
+        }
       });
     });
 
+    // SEPETE EKLE BUTONU
     document.querySelectorAll('.add-cart-btn').forEach((btn: any) => {
       btn.addEventListener('click', (e: any) => {
-        e.stopPropagation(); // Kartın tıklama olayını durdurur
-
-        const id = btn.dataset.id;
-        const title = btn.dataset.title;
-        const price = btn.dataset.price;
-
+        e.stopPropagation(); // Kart tıklamasını burada kesinlikle durduruyoruz
+        const { id, title, price } = btn.dataset;
         const existing = cart.find((item: any) => item.id === id);
-        if (existing) {
-          existing.qty += 1;
-        } else {
-          cart.push({ id, title, price, qty: 1 });
-        }
-
+        if (existing) existing.qty += 1; else cart.push({ id, title, price, qty: 1 });
         updateCartUI();
         if (cartDrawer) cartDrawer.style.right = '0px';
       });
     });
 
-    // Sepeti Boşalt
-    clearCartBtn?.addEventListener('click', () => {
-      cart = [];
-      updateCartUI();
-    });
-
+    clearCartBtn?.addEventListener('click', () => { cart = []; updateCartUI(); });
     openCartBtn?.addEventListener('click', () => { if (cartDrawer) cartDrawer.style.right = '0px'; });
     closeCartBtn?.addEventListener('click', () => { if (cartDrawer) cartDrawer.style.right = '-420px'; });
-
-    // WhatsApp Siparişi
     sendCartWaBtn?.addEventListener('click', () => {
       if (cart.length === 0) return;
       let msg = "Hello TURSKA PIJACA, Wholesale B2B Order:\n\n";
-      cart.forEach((item: any) => {
-        msg += `- ${item.title} (Code: ${item.id}) x ${item.qty} pcs\n`;
-      });
+      cart.forEach((item: any) => { msg += `- ${item.title} (Code: ${item.id}) x ${item.qty} pcs\n`; });
       msg += `\nNet Total: ${cartTotalEuro?.textContent}`;
       window.open(`https://wa.me/38263256666?text=${encodeURIComponent(msg)}`, '_self');
     });
-
     updateCartUI();
 
-    // Arama & Filtreleme
+    // FİLTRELEME & MARKA TIKLAMA (MARQUEE)
     let selectedCat = 'ALL';
+    let selectedBrand = 'ALL';
     let searchQuery = '';
-    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
-    const resetBtn = document.getElementById('resetBtn');
 
     function filterProducts() {
-      document.querySelectorAll('.product-card').forEach((card: any) => {
+      document.querySelectorAll('.product-card-box').forEach((card: any) => {
         const title = card.dataset.title.toLowerCase();
         const code = card.dataset.id.toLowerCase();
         const cat = card.dataset.cat;
-
+        const brand = card.dataset.brand;
         const matchSearch = !searchQuery || title.includes(searchQuery) || code.includes(searchQuery);
         const matchCat = selectedCat === 'ALL' || cat === selectedCat;
-        card.style.display = matchSearch && matchCat ? 'flex' : 'none';
+        const matchBrand = selectedBrand === 'ALL' || brand === selectedBrand;
+        card.style.display = matchSearch && matchCat && matchBrand ? 'flex' : 'none';
       });
     }
 
-    searchInput?.addEventListener('input', (e: any) => {
-      searchQuery = e.target.value.toLowerCase().trim();
-      filterProducts();
+    // Marka Logolarına (Marquee) Tıklama İşlemi
+    document.querySelectorAll('.brand-filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e: any) => {
+        selectedBrand = e.currentTarget.dataset.brand;
+        filterProducts();
+        // Tıkladıktan sonra sayfayı ürünlere doğru hafifçe kaydır
+        document.getElementById('productsGrid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     });
 
+    document.getElementById('searchInput')?.addEventListener('input', (e: any) => { searchQuery = e.target.value.toLowerCase().trim(); filterProducts(); });
     document.querySelectorAll('.cat-btn').forEach(btn => {
       btn.addEventListener('click', (e: any) => {
-        document.querySelectorAll('.cat-btn').forEach(b => {
-          (b as HTMLElement).style.background = 'transparent';
-          (b as HTMLElement).style.color = '#a3c2b5';
-        });
-        e.currentTarget.style.background = '#d9b871';
-        e.currentTarget.style.color = '#173f31';
+        document.querySelectorAll('.cat-btn').forEach(b => { (b as HTMLElement).style.background = 'transparent'; (b as HTMLElement).style.color = '#a3c2b5'; });
+        e.currentTarget.style.background = '#d9b871'; e.currentTarget.style.color = '#173f31';
         selectedCat = e.currentTarget.dataset.cat;
         filterProducts();
       });
     });
-
-    resetBtn?.addEventListener('click', () => {
-      selectedCat = 'ALL';
-      searchQuery = '';
-      if (searchInput) searchInput.value = '';
+    document.getElementById('resetBtn')?.addEventListener('click', () => {
+      selectedCat = 'ALL'; selectedBrand = 'ALL'; searchQuery = '';
+      (document.getElementById('searchInput') as HTMLInputElement).value = '';
+      document.querySelectorAll('.cat-btn').forEach((b, i) => { 
+        (b as HTMLElement).style.background = i === 0 ? '#d9b871' : 'transparent'; 
+        (b as HTMLElement).style.color = i === 0 ? '#173f31' : '#a3c2b5'; 
+      });
       filterProducts();
     });
   </script>

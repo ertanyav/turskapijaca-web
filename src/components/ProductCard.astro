@@ -1,16 +1,27 @@
 ---
 const { product, lang = 'en' } = Astro.props;
 
-const titleKey = `Ad ${lang.toUpperCase()}`;
-const title = product[titleKey] || product['Ad EN'] || product['İç ad'];
-const category = product['Kategori'] || 'General';
-const price = product['Fiyat EUR'] ? `€${product['Fiyat EUR']}` : 'Request Quote';
-const code = product['Ürün no'] || product['Kayıt ID'];
-const image = product['Görsel URL'] || 'https://via.placeholder.com/300x300?text=TURSKA+PIJACA';
-const pack = product['Ambalaj'] || '';
+// Esnek Alan Yakalayıcılar
+const keys = Object.keys(product);
+
+// Ürün Adı Bulucu
+const nameKey = keys.find(k => k.toLowerCase().includes(`ad ${lang}`) || k.toLowerCase().includes(`ad_${lang}`) || k.toLowerCase().includes('ürün ad') || k.toLowerCase().includes('name')) || keys[1] || keys[0];
+const title = product[nameKey] || product['Ad EN'] || product['Ad TR'] || 'Ürün';
+
+// Fiyat Bulucu
+const priceKey = keys.find(k => k.toLowerCase().includes('fiyat') || k.toLowerCase().includes('price') || k.toLowerCase().includes('eur')) || '';
+const price = product[priceKey] ? `€${product[priceKey]}` : 'Quote';
+
+// Kod/SKU Bulucu
+const codeKey = keys.find(k => k.toLowerCase().includes('no') || k.toLowerCase().includes('id') || k.toLowerCase().includes('sku') || k.toLowerCase().includes('kod')) || keys[0];
+const code = product[codeKey] || '1';
+
+// Görsel URL Bulucu
+const imgKey = keys.find(k => k.toLowerCase().includes('görsel') || k.toLowerCase().includes('gorsel') || k.toLowerCase().includes('image') || k.toLowerCase().includes('url') || k.toLowerCase().includes('resim')) || '';
+const image = product[imgKey] && product[imgKey].startsWith('http') ? product[imgKey] : 'https://via.placeholder.com/300x300?text=TURSKA+PIJACA';
 
 const detailUrl = `/${lang}/products/${code}`;
-const waMessage = encodeURIComponent(`Hello TURSKA PIJACA, I would like to order: ${title} (Code: ${code})`);
+const waMessage = encodeURIComponent(`Hello TURSKA PIJACA, Order Quote: ${title} (Code: ${code})`);
 ---
 
 <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem; background: white; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -18,20 +29,19 @@ const waMessage = encodeURIComponent(`Hello TURSKA PIJACA, I would like to order
     <div style="height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 6px; background: #f8fafc; margin-bottom: 0.75rem;">
       <img src={image} alt={title} loading="lazy" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
     </div>
-    <span style="font-size: 0.75rem; background: #f1f5f9; color: #475569; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">{category}</span>
     <h3 style="font-size: 1rem; margin: 0.5rem 0 0.25rem 0; color: #0f172a;">
       <a href={detailUrl} style="text-decoration: none; color: inherit;">{title}</a>
     </h3>
-    {pack && <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 0.5rem 0;">📦 {pack}</p>}
+    <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 0.5rem 0;">Kod: {code}</p>
   </div>
 
   <div style="margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
     <div>
-      <span style="font-size: 0.7rem; color: #94a3b8; display: block;">Wholesale Price</span>
+      <span style="font-size: 0.7rem; color: #94a3b8; display: block;">B2B Price</span>
       <span style="font-size: 1.1rem; font-weight: bold; color: #059669;">{price}</span>
     </div>
     <a href={`https://wa.me/38263256666?text=${waMessage}`} target="_blank" style="background: #22c55e; color: white; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">
-      WhatsApp Order
+      WhatsApp
     </a>
   </div>
 </div>

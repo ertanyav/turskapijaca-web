@@ -1,0 +1,52 @@
+---
+const { lang = 'en' } = Astro.props;
+---
+
+<footer style="background: #0f172a; color: white; margin-top: 5rem; padding: 4rem 1.5rem 2rem 1.5rem; border-top: 4px solid #059669;">
+  <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2.5rem; margin-bottom: 3rem;">
+    
+    <!-- Sütun 1: Marka & Yapı -->
+    <div>
+      <h3 style="color: #10b981; font-size: 1.3rem; margin: 0 0 1rem 0; font-weight: 800;">TURSKA PIJACA</h3>
+      <p style="color: #94a3b8; font-size: 0.88rem; line-height: 1.6; margin-bottom: 1rem;">
+        <strong>TURSKA PIJACA</strong>, Karadağ'da yerleşik <strong>UNIVERCERT MNE D.O.O.</strong> şirketinin tescilli B2B markasıdır. Türkiye'deki fabrikamız <strong>Seda Gıda</strong> ürünlerinin ve temsil ettiğimiz üretici markaların Karadağ'daki doğrudan toptan tedarikçisiyiz.
+      </p>
+      <span style="background: #1e293b; color: #38bdf8; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid #334155; font-weight: bold;">
+        🏭 Direct Factory Representative
+      </span>
+    </div>
+
+    <!-- Sütun 2: Lojistik & Dağıtım Ağı -->
+    <div>
+      <h4 style="color: white; font-size: 1.05rem; margin: 0 0 1rem 0; border-bottom: 2px solid #059669; padding-bottom: 0.4rem; display: inline-block;">
+        Haftalık Lojistik & Filo
+      </h4>
+      <ul style="list-style: none; padding: 0; margin: 0; color: #94a3b8; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.6rem;">
+        <li>🚚 <strong>Fabrikadan Sevkiyat:</strong> Lojistik ortağımız ile Türkiye'den Karadağ'a her hafta düzenli transfer.</li>
+        <li>🚛 <strong>Karadağ İçi Dağıtım:</strong> Kendi özel araç filomuz ve lojistik ağımızla ülkenin tüm şehirlerine teslimat.</li>
+        <li>🏬 <strong>Horeca & Toptan:</strong> Otel, restoran, süpermarket zincirleri ve bayiler için kesintisiz stok.</li>
+      </ul>
+    </div>
+
+    <!-- Sütun 3: Resmi Şirket Bilgileri -->
+    <div>
+      <h4 style="color: white; font-size: 1.05rem; margin: 0 0 1rem 0; border-bottom: 2px solid #059669; padding-bottom: 0.4rem; display: inline-block;">
+        Kurumsal İletişim
+      </h4>
+      <p style="color: #cbd5e1; font-size: 0.85rem; margin: 0.3rem 0;"><strong>UNIVERCERT MNE D.O.O.</strong></p>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0;">Seda Gıda Official Representative</p>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0;">📍 Podgorica / Budva / Tivat, Montenegro</p>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0;">📞 +382 63 256 666</p>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0;">✉️ info@turskapijaca.com</p>
+    </div>
+
+  </div>
+
+  <div style="border-top: 1px solid #1e293b; text-align: center; padding-top: 1.8rem; font-size: 0.8rem; color: #64748b; max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>© 2026 TURSKA PIJACA — Registered trademark of UNIVERCERT MNE D.O.O.</div>
+    <div style="display: flex; gap: 1rem;">
+      <a href={`/${lang}/about`} target="_self" style="color: #94a3b8; text-decoration: none;">Corporate & Fleet</a> | 
+      <a href={`/${lang}/`} target="_self" style="color: #94a3b8; text-decoration: none;">Catalog API</a>
+    </div>
+  </div>
+</footer>

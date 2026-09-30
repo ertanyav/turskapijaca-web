@@ -5,14 +5,19 @@ export const SHEET_ID = '1BrGhsTDd75PRcVcHzT2Q3Sqtwp6-snAZjjn-Z4fvfLU';
 const PRODUCTS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=URUNLER`;
 const TEXTS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=METINLER`;
 
-// 1. Ürünleri Çeken Fonksiyon
 export async function getProducts() {
   try {
     const response = await fetch(PRODUCTS_URL);
     if (!response.ok) throw new Error('Google Sheets URUNLER yanıt vermedi');
     const csvText = await response.text();
 
-    return new Promise((resolve, reject) => {
+    // İzin veya Paylaşım Hatası Kontrolü
+    if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
+      console.error('❌ HATA: TP_MASTER paylaşım izni kapalı! Lütfen Google Sheets dosyasını "Bağlantıya sahip olan herkes" olarak ayarlayın.');
+      return [];
+    }
+
+    return new Promise((resolve) => {
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
@@ -22,35 +27,31 @@ export async function getProducts() {
             return;
           }
 
-          // Esnek Filtreleme (Yayında & Aktif durumları için)
-          const activeProducts = results.data.filter((item) => {
-            const keys = Object.keys(item);
-            const publishedKey = keys.find(k => k.trim().toLowerCase().includes('yayın') || k.trim().toLowerCase().includes('yayin'));
-            const statusKey = keys.find(k => k.trim().toLowerCase().includes('durum') || k.trim().toLowerCase().includes('aktif'));
-
-            const isPublished = publishedKey ? (item[publishedKey] && item[publishedKey].trim().toUpperCase() === 'EVET') : true;
-            const isActive = statusKey ? (item[statusKey] && item[statusKey].trim().toUpperCase() === 'AKTİF') : true;
-
-            return isPublished && isActive;
+          // En az bir hücresi dolu olan tüm satırları ekrana getir
+          const validRows = results.data.filter(row => {
+            return Object.values(row).some(val => val && val.toString().trim() !== '');
           });
 
-          resolve(activeProducts.length > 0 ? activeProducts : results.data);
+          resolve(validRows);
         },
-        error: (error) => reject(error),
+        error: () => resolve([])
       });
     });
   } catch (err) {
-    console.error('TP_MASTER URUNLER verisi çekilemedi:', err);
+    console.error('URUNLER çekilemedi:', err);
     return [];
   }
 }
 
-// 2. METİNLER Sekmesini Çeken Fonksiyon
 export async function getTexts() {
   try {
     const response = await fetch(TEXTS_URL);
-    if (!response.ok) throw new Error('Google Sheets METINLER yanıt vermedi');
+    if (!response.ok) throw new Error('METINLER yanıt vermedi');
     const csvText = await response.text();
+
+    if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
+      return {};
+    }
 
     return new Promise((resolve) => {
       Papa.parse(csvText, {
@@ -61,7 +62,8 @@ export async function getTexts() {
           if (results.data && results.data.length > 0) {
             results.data.forEach((row) => {
               const keys = Object.keys(row);
-              // Key/Anahtar/Kod sütununu bul
+              if (keys.length === 0) return;
+              
               const keyCol = keys.find(k => ['key', 'anahtar', 'kod', 'id', 'metin_kodu'].includes(k.trim().toLowerCase())) || keys[0];
               const keyVal = row[keyCol] ? row[keyCol].trim() : null;
 
@@ -78,11 +80,10 @@ export async function getTexts() {
           }
           resolve(dict);
         },
-        error: () => resolve({}),
+        error: () => resolve({})
       });
     });
   } catch (err) {
-    console.error('METINLER verisi çekilemedi:', err);
     return {};
   }
 }

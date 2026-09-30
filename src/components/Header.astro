@@ -1,44 +1,91 @@
 ---
-const { lang = 'en', texts = {} } = Astro.props;
-const logoUrl = 'https://lh3.googleusercontent.com/d/14BFS24JrQOpz1ALBLzUGd0T-0Jw4c0jy=w200';
+import { getPages, getTexts } from '../lib/sheets';
 
-const navCatalog = texts['ui.fullCatalog']?.[lang] || 'Katalog';
-const navDocs = texts['documents.intro']?.[lang] ? 'Dokümanlar' : 'Dokümanlar';
-const navAbout = texts['ui.company']?.[lang] || 'Kurumsal';
+// URL'den aktif dili tespit et (tr, en, me)
+const pathname = Astro.url.pathname;
+let currentLang = 'tr';
+if (pathname.startsWith('/en')) {
+  currentLang = 'en';
+} else if (pathname.startsWith('/me')) {
+  currentLang = 'me';
+}
+
+const pages = await getPages();
+const texts = await getTexts();
+
+// Sadece Menüde = EVET ve Yayında = EVET olan sayfaları al, Sıra'ya göre sırala
+const menuPages = pages
+  .filter(p => p.Yayında === 'EVET' && p.Menüde === 'EVET')
+  .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
+
+// Metin çevirileri için yardımcı fonksiyon
+function getText(key, defaultVal) {
+  const found = texts.find(t => t.Anahtar === key);
+  if (!found) return defaultVal;
+  if (currentLang === 'en') return found.English || defaultVal;
+  if (currentLang === 'me') return found.Crnogorski || defaultVal;
+  return found.Türkçe || defaultVal;
+}
 ---
 
-<header style="background: #153b2e; color: #f4f7f2; border-bottom: 3px solid #e5c58a; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-  <div style="max-width: 1280px; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-    
-    <!-- Logo & Alt Yazı -->
-    <a href={`/${lang}/`} target="_self" style="color: white; font-weight: 800; font-size: 1.5rem; text-decoration: none; display: flex; align-items: center; gap: 0.8rem;">
-      <img src={logoUrl} alt="TURSKA PIJACA Logo" style="height: 50px; width: auto; object-fit: contain;" />
-      <div>
-        <span style="color: #f4f7f2; letter-spacing: -0.5px; display: block; font-size: 1.45rem; font-weight: 900;">TURSKA PIJACA</span>
-        <span style="font-size: 0.72rem; color: #e5c58a; font-weight: 600; display: block; margin-top: -2px;">Turski Proizvodi</span>
-      </div>
-    </a>
-
-    <!-- Navigasyon, Sepet ve Dil Seçici -->
-    <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
-      <nav style="display: flex; gap: 1.2rem; align-items: center;">
-        <a href={`/${lang}/`} target="_self" style="color: #f4f7f2; text-decoration: none; font-weight: 700; font-size: 0.95rem;">{navCatalog}</a>
-        <a href={`/${lang}/documents`} target="_self" style="color: #b5cca8; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navDocs}</a>
-        <a href={`/${lang}/about`} target="_self" style="color: #b5cca8; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{navAbout}</a>
-      </nav>
-      
-      <!-- Sepet Butonu -->
-      <button id="openCartBtn" style="background: #e5c58a; color: #153b2e; border: none; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 10px rgba(229,197,138,0.3);">
-        🛒 <span>Sepetim</span>
-        <span id="cartBadge" style="background: #153b2e; color: #e5c58a; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.72rem; font-weight: 900;">0</span>
-      </button>
-
-      <!-- Sağ Üst Kurumsal Dil Butonları -->
-      <div style="background: #0f2920; border: 1px solid #285e4c; padding: 0.3rem; border-radius: 8px; display: flex; gap: 0.2rem;">
-        <a href="https://www.turskapijaca.com/en/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 800; text-decoration: none; ${lang === 'en' ? 'background: #e5c58a; color: #153b2e;' : 'color: #b5cca8;'}`}>EN</a>
-        <a href="https://www.turskapijaca.me/me/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 800; text-decoration: none; ${lang === 'me' ? 'background: #e5c58a; color: #153b2e;' : 'color: #b5cca8;'}`}>ME</a>
-        <a href="https://www.turskapijaca.com.tr/tr/" target="_self" style={`padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 800; text-decoration: none; ${lang === 'tr' ? 'background: #e5c58a; color: #153b2e;' : 'color: #b5cca8;'}`}>TR</a>
-      </div>
+<header class="site-header">
+  <div class="container header-container">
+    <div class="logo">
+      <a href={currentLang === 'en' ? '/home' : currentLang === 'me' ? '/početna' : '/ana-sayfa'}>
+        <strong>TURSKA PIJACA</strong>
+      </a>
     </div>
+
+    <nav class="main-nav">
+      <ul>
+        {menuPages.map((page) => {
+          // Dile göre uygun adres sütununu seç
+          let href = page['Adres TR'];
+          if (currentLang === 'en') href = page['Adres EN'] || href;
+          if (currentLang === 'me') href = page['Adres ME'] || href;
+
+          // Menü başlığı için METINLER tablosundan çeviri al (örn: catalog.title -> Tüm ürünler)
+          const titleKey = `${page.Kod}.title`;
+          const menuTitle = getText(titleKey, page.Kod);
+
+          return (
+            <li>
+              <a href={href}>{menuTitle}</a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   </div>
 </header>
+
+<style>
+  .site-header {
+    background: #fff;
+    border-bottom: 1px solid #eaeaea;
+    padding: 1rem 0;
+  }
+  .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  .main-nav ul {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .main-nav a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+  }
+  .main-nav a:hover {
+    color: #e53e3e;
+  }
+</style>

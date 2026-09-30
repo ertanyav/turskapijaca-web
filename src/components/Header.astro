@@ -8,11 +8,11 @@ else if (pathname.startsWith('/me')) currentLang = 'me';
 
 const [pages, texts, settings] = await Promise.all([getPages(), getTexts(), getSettings()]);
 
-// Logo Çekimi
+// AYARLAR sekmesinden Logo Çekimi
 const logoSetting = settings.find(s => s.Anahtar === 'logo');
 const logoUrl = logoSetting ? logoSetting.Değer : '';
 
-// Menü Filtreleme ve Sıralama
+// SAYFALAR tablosundan Menüde=EVET olanları Sıra'ya göre diz
 const menuPages = pages
   .filter(p => p.Yayında?.trim() === 'EVET' && p.Menüde?.trim() === 'EVET')
   .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
@@ -31,87 +31,124 @@ function getText(key, defaultVal) {
     <!-- Logo Alanı -->
     <div class="logo-area">
       <a href={`/${currentLang}`} class="logo-link" aria-label="Ana Sayfa">
-        {logoUrl ? (
+        <!-- Logo varsa resmi yükle, yoksa yedek metin göster -->
+        {logoUrl && (
           <img src={logoUrl} alt="TURSKA PIJACA" class="logo-img" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='block';" />
-        ) : null}
+        )}
         <span id="fallback-logo" class="logo-text" style={logoUrl ? "display:none;" : ""}>TURSKA PIJACA</span>
       </a>
     </div>
 
-    <!-- Mobil Menü Tetikleyici -->
-    <button class="mobile-toggle" id="mobile-toggle" aria-label="Menüyü Aç/Kapat">
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-    </button>
+    <!-- Menü Alanı (Canlı Site ile Birebir) -->
+    <nav class="main-nav">
+      <ul>
+        {menuPages.map((page) => {
+          // ÖNEMLİ: 404 hatasını çözen fiziksel rotalama. 
+          // Çeviri adresi yerine Astro'nun dosya ismine (Kod) gidiyoruz (örn: /tr/network)
+          let href = `/${currentLang}/${page.Kod}`;
+          if (page.Kod === 'home') {
+            href = `/${currentLang}`;
+          }
 
-    <!-- Menü Alanı -->
-    <div class="nav-wrapper" id="nav-wrapper">
-      <nav class="main-nav">
-        <ul>
-          {menuPages.map((page) => {
-            let subPath = page['Adres TR'];
-            if (currentLang === 'en') subPath = page['Adres EN'] || subPath;
-            if (currentLang === 'me') subPath = page['Adres ME'] || subPath;
+          // Menü metnini METINLER sekmesinden alıyoruz (örn: Bayi ve dağıtım ağı)
+          const menuTitle = getText(`${page.Kod}.title`, page.Kod);
 
-            let href = `/${currentLang}${subPath.startsWith('/') ? subPath : '/' + subPath}`;
-            if (subPath === '/ana-sayfa' || subPath === '/home' || subPath === '/početna') href = `/${currentLang}`;
+          // Sayfada aktifliği kontrol etmek için
+          const isActive = pathname === href || pathname === href + '/';
 
-            const menuTitle = getText(`${page.Kod}.title`, page.Kod);
-
-            return (
-              <li><a href={href}>{menuTitle}</a></li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <!-- Dil Seçimi -->
-      <div class="lang-switcher">
-        <a href="/tr" class={currentLang === 'tr' ? 'active' : ''}>TR</a>
-        <span class="divider">|</span>
-        <a href="/en" class={currentLang === 'en' ? 'active' : ''}>EN</a>
-        <span class="divider">|</span>
-        <a href="/me" class={currentLang === 'me' ? 'active' : ''}>ME</a>
-      </div>
-    </div>
+          return (
+            <li>
+              <a href={href} class={isActive ? 'active' : ''}>
+                {menuTitle}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   </div>
 </header>
 
-<script>
-  // Mobil menü aç/kapat mantığı
-  const toggle = document.getElementById('mobile-toggle');
-  const nav = document.getElementById('nav-wrapper');
-  if(toggle && nav) {
-    toggle.addEventListener('click', () => {
-      nav.classList.toggle('is-open');
-    });
-  }
-</script>
-
 <style>
+  /* EKRAN GÖRÜNTÜSÜNDEKİ BEYAZ VE ŞIK HEADER TASARIMI */
   .site-header {
     width: 100%;
-    background: #0b2218; /* Kurumsal yeşil */
-    border-bottom: 1px solid rgba(255, 255, Kurumsal, SEO uyumlu, ışık hızında ve mobil uygulamaya hazır bir web projesi inşa etmek harika bir hedef. Ancak bir yapay zeka olarak **canlı sitenizi, proje dosyalarınızı veya önceki sohbet geçmişimizi doğrudan göremiyorum.** 
+    background-color: #ffffff; /* Görseldeki beyaz bar */
+    border-bottom: 1px solid #eaeaea;
+    padding: 0 2rem;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 1000;
+  }
+  
+  .header-container {
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .logo-link {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+  }
+  
+  .logo-img {
+    height: 35px;
+    width: auto;
+    object-fit: contain;
+  }
+  
+  .logo-text {
+    color: #4b1b85; /* Görseldeki logoya en yakın mor/koyu ton */
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  
+  .main-nav ul {
+    display: flex;
+    list-style: none;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .main-nav a {
+    color: #1f2937; /* Görseldeki siyah menü öğeleri */
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.2s ease, font-weight 0.2s;
+  }
+  
+  .main-nav a:hover,
+  .main-nav a.active {
+    color: #0b2218; /* Üzerine gelindiğinde veya aktifken kurumsal koyu yeşil */
+    font-weight: 700;
+  }
 
-Bu kusursuz dönüşümü gerçekleştirebilmemiz için projenizin mevcut durumunu (kodları, içerikleri veya kullandığınız altyapıyı) benimle paylaşmanız gerekiyor. Siz taslağı veya kodları sağladığınızda, projeyi şu standartlarda baştan aşağı optimize edeceğiz:
-
-## 1. Kurumsal Menü ve İçerik Mimarisi
-*   **Ziyaretçi Odaklı Navigasyon:** Ana Sayfa, Kurumsal, Çözümler/Hizmetler, Referanslar ve İletişim gibi net, kullanıcıyı yormayan bir menü hiyerarşisi.
-*   **Profesyonel Metinler:** Marka güvenini artıran, kurumsal tona uygun, ancak anlaşılır ve "Harekete Geçirici Mesaj" (CTA) odaklı içerik düzenlemeleri.
-*   **Footer (Alt Bilgi) Zenginleştirmesi:** Kurumsal politikalar, hızlı linkler, KVKK/Gizlilik metinleri ve iletişim detaylarının eksiksiz ve yasal standartlara uygun yerleşimi.
-
-## 2. İleri Seviye SEO ve Link Yönetimi
-*   **Semantik Yapı:** Arama motorlarının sitenizi mükemmel okuması için doğru `<h1>` - `<h6>` hiyerarşisi ve semantik HTML5 etiketlerinin (header, nav, article) entegrasyonu.
-*   **Meta ve Schema Kurulumu:** Dinamik başlık, açıklama etiketleri ve arama sonuçlarında zengin görünüm sağlayan (Schema.org) işaretlemeleri.
-*   **Link ve Erişim Kontrolü:** Eksik "href" etiketlerinin tamamlanması, kırık link risklerini sıfırlayan sağlam bir site içi bağlantı stratejisi.
-
-## 3. Hız ve Görsel Optimizasyonu
-*   **Modern Görsel Formatları:** Tüm görsellerin kalite kaybı olmadan WebP formatında yapılandırılması ve `alt` (alternatif metin) etiketlerinin SEO için doldurulması.
-*   **Tembel Yükleme (Lazy Loading):** Sadece ekranda görünen görsellerin yüklenmesini sağlayarak sayfa açılış hızını maksimuma çıkarma.
-*   **Temiz Kod (Clean Code):** Gereksiz kod tekrarlarını kaldırarak Google Core Web Vitals (Önemli Web Verileri) testlerinden tam puan alacak modüler bir yapı.
-
-## 4. Mobil Uygulamaya (App) Hazırlık
-*   **Önce Mobil (Mobile-First):** Tasarımın ve menülerin (mobil uyumlu Hamburger menü, kolay tıklanabilir alanlar) tüm telefon ekranlarında kusursuz çalışması.
-*   **Veri ve API Odaklılık:** İleride projeyi iOS veya Android uygulamasına (React Native, Flutter vb.) dönüştürmek istediğinizde, menülerin ve içeriklerin kolayca çekilebilmesi için verilerin düzenli ve ayrıştırılabilir (JSON uyumlu veya Headless yapıya uygun) bir mimaride kodlanması.
-
-Mevcut projenizi hangi altyapıda (saf HTML/CSS/JS, React, Next.js, WordPress vb.) geliştiriyorsunuz? Düzenlenmesini istediğiniz kod bloklarını veya menü taslağınızı buraya yapıştırırsanız, tüm bu mimariyi tek seferde hazırlayıp size teslim edebilirim.
+  /* MOBİL UYUMLULUK (Sayfadan taşmayı önler) */
+  @media (max-width: 1024px) {
+    .site-header {
+      height: auto;
+      padding: 1rem;
+    }
+    .header-container {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .main-nav ul {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+  }
+</style>

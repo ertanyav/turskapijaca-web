@@ -1,0 +1,70 @@
+---
+import { getPages } from '../../../lib/sheets';
+import Layout from '../../../layouts/Layout.astro';
+// Eğer Header ve Footer Layout içinde gelmiyorsa buraya import edip sayfa içine ekleyebilirsin.
+
+export async function getStaticPaths() {
+  const pages = await getPages();
+  const paths = [];
+
+  pages.forEach(page => {
+    // Sadece Yayında olan sayfaları oluştur
+    if (!page.Yayında || !/evet/i.test(page.Yayında.toString())) return;
+
+    // Her dil için rota oluştur
+    ['TR', 'EN', 'ME'].forEach(langCode => {
+      const lang = langCode.toLowerCase();
+      const path = page[`Adres ${langCode}`];
+
+      // Ana sayfa yönlendirmeleri hariç tüm sayfaları dinamik olarak üret
+      if (path && !path.includes('ana-sayfa') && !path.includes('home') && !path.includes('početna')) {
+        const slug = path.replace(/^\//, ''); // Başındaki slash'i temizle
+        paths.push({
+          params: { lang, slug },
+          props: { page, lang }
+        });
+      }
+    });
+  });
+
+  return paths;
+}
+
+const { page, lang } = Astro.props;
+
+// Sayfa Başlığını Getir
+let pageTitle = page['Ad TR'] || '';
+if (lang === 'en') pageTitle = page['Ad EN'] || pageTitle;
+if (lang === 'me') pageTitle = page['Ad ME'] || pageTitle;
+---
+
+<Layout title={`${pageTitle} | Turska Pijaca`}>
+  <main class="page-container">
+    <div class="content-wrapper">
+      <h1>{pageTitle}</h1>
+      <p class="temp-content">
+        Bu sayfa Master Tablo üzerinden dinamik olarak oluşturulmuştur. 
+        ({page.Kod} içeriği buraya gelecek)
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .page-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    min-height: 60vh;
+  }
+  .content-wrapper h1 {
+    color: #0b2218;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #eaeaea;
+    padding-bottom: 0.5rem;
+  }
+  .temp-content {
+    color: #475569;
+    font-size: 1.1rem;
+  }
+</style>

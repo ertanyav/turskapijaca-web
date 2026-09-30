@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 
-// Google Sheets ID'niz (Kendi Sheet ID'nizi buraya yazabilirsiniz veya ortam değişkeni kullanabilirsiniz)
+// Google Sheets ID'niz
 const SHEET_ID = import.meta.env.PUBLIC_SHEET_ID || 'PROJE_SHEET_ID_BURAYA';
 
 // Ortak Google Sheets CSV veri çekme ve parse etme yardımcısı
@@ -45,5 +45,13 @@ export async function getPages() {
  */
 export async function getTexts() {
   const data = await fetchSheetData('METINLER');
+  return data;
+}
+
+/**
+ * DOKUMANLAR sekmesinden doküman verilerini çeker
+ */
+export async function getDocuments() {
+  const data = await fetchSheetData('DOKUMANLAR');
   return data;
 }

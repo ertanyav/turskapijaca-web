@@ -29,9 +29,9 @@ function getText(key, defaultVal) {
 ---
 
 <header class="site-header">
-  <div class="container header-container">
+  <div class="header-inner">
     <div class="logo">
-      <a href={currentLang === 'en' ? '/home' : currentLang === 'me' ? '/početna' : '/ana-sayfa'}>
+      <a href={currentLang === 'en' ? '/en/home' : currentLang === 'me' ? '/me/početna' : '/tr/ana-sayfa'}>
         <strong>TURSKA PIJACA</strong>
       </a>
     </div>
@@ -39,18 +39,27 @@ function getText(key, defaultVal) {
     <nav class="main-nav">
       <ul>
         {menuPages.map((page) => {
-          // Dile göre uygun adres sütununu seç
-          let href = page['Adres TR'];
-          if (currentLang === 'en') href = page['Adres EN'] || href;
-          if (currentLang === 'me') href = page['Adres ME'] || href;
+          // Master'dan gelen adresi al ve aktif dile göre [lang] prefix'i ile uyumlu hale getir
+          let rawPath = page['Adres TR'];
+          if (currentLang === 'en') rawPath = page['Adres EN'] || rawPath;
+          if (currentLang === 'me') rawPath = page['Adres ME'] || rawPath;
 
-          // Menü başlığı için METINLER tablosundan çeviri al (örn: catalog.title -> Tüm ürünler)
+          // Eğer yol slash ile başlamıyorsa ekle
+          if (!rawPath.startsWith('/')) rawPath = '/' + rawPath;
+
+          // Dil prefix'ini doğru konumlandırma (örnek: /tr/ana-sayfa, /en/products vb.)
+          let finalHref = `/${currentLang}${rawPath}`;
+          // Eğer ana sayfa kök dizin ise veya özel durum varsa temizle
+          if (rawPath === '/ana-sayfa' || rawPath === '/home' || rawPath === '/početna') {
+            finalHref = `/${currentLang}`;
+          }
+
           const titleKey = `${page.Kod}.title`;
           const menuTitle = getText(titleKey, page.Kod);
 
           return (
             <li>
-              <a href={href}>{menuTitle}</a>
+              <a href={finalHref}>{menuTitle}</a>
             </li>
           );
         })}
@@ -61,31 +70,40 @@ function getText(key, defaultVal) {
 
 <style>
   .site-header {
-    background: #fff;
-    border-bottom: 1px solid #eaeaea;
-    padding: 1rem 0;
+    width: 100%;
+    background: transparent; /* Sitenin kendi koyu yeşil arka planına uyum sağlar */
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
-  .header-container {
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+  }
+  .logo a {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
   }
   .main-nav ul {
     display: flex;
-    gap: 1.5rem;
     list-style: none;
+    gap: 1.5rem;
     margin: 0;
     padding: 0;
   }
   .main-nav a {
+    color: #e2e8f0;
     text-decoration: none;
-    color: #333;
-    font-weight: 500;
+    font-size: 0.95rem;
+    font-weight: 400;
+    transition: color 0.2s ease;
   }
   .main-nav a:hover {
-    color: #e53e3e;
+    color: #ffffff;
+    text-decoration: underline;
   }
 </style>

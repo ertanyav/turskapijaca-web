@@ -29,9 +29,13 @@ function getText(key, defaultVal) {
 }
 
 // Sayaçlar (Master kurallarına göre filtrelenmiş aktif veriler)
-const productCount = products.length; // 120 aktif ürün
-const categoryCount = categories.length; // Aktif kategoriler
-const brandCount = brands.length; // Aktif markalar
+const productCount = products.length;
+const categoryCount = categories.length;
+const brandCount = brands.length;
+
+// Markaları türlerine göre ayıralım (Master: DISTRIBUTOR ve SALES)
+const distributors = brands.filter(b => b.Tür === 'DISTRIBUTOR');
+const salesBrands = brands.filter(b => b.Tür === 'SALES');
 ---
 
 <html lang={currentLang}>
@@ -46,10 +50,13 @@ const brandCount = brands.length; // Aktif markalar
         background-color: #0b2218; /* Kurumsal koyu yeşil arka plan */
         color: #ffffff;
       }
-      .hero-section {
+      .main-container {
         max-width: 1400px;
-        margin: 2rem auto;
+        margin: 0 auto;
         padding: 0 2rem;
+      }
+      .hero-section {
+        margin: 2rem 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -57,7 +64,7 @@ const brandCount = brands.length; // Aktif markalar
         gap: 2rem;
       }
       .hero-content {
-        max-width: 700px;
+        max-width: 750px;
       }
       .hero-title {
         font-size: 2.75rem;
@@ -66,7 +73,7 @@ const brandCount = brands.length; // Aktif markalar
         margin-bottom: 1rem;
       }
       .hero-subtitle {
-        font-size: 1.2rem;
+        font-size: 1.25rem;
         color: #cbd5e1;
         line-height: 1.5;
         white-space: pre-line;
@@ -74,43 +81,81 @@ const brandCount = brands.length; // Aktif markalar
       .stats-box {
         display: flex;
         gap: 1.5rem;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 1.5rem 2rem;
+        padding: 1.5rem 2.5rem;
         border-radius: 12px;
         text-align: center;
       }
       .stat-item .number {
-        font-size: 2rem;
+        font-size: 2.25rem;
         font-weight: 700;
         color: #ffffff;
       }
       .stat-item .label {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #94a3b8;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        margin-top: 0.25rem;
+      }
+      .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 3rem 0 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #e2e8f0;
+      }
+      .brands-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+        margin-bottom: 3rem;
+      }
+      .brand-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 70px;
+        transition: background 0.2s;
+      }
+      .brand-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .brand-card img {
+        max-height: 45px;
+        max-width: 100%;
+        object-fit: contain;
+      }
+      .brand-card span {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #fff;
       }
     </style>
   </head>
   <body>
-    <!-- Üst Menü ve Logo Bileşeni -->
+    <!-- Üst Menü ve Logo -->
     <Header />
 
-    <!-- Ana İçerik / Hero Alanı -->
-    <main>
+    <main class="main-container">
+      <!-- Hero Alanı ve Sayaçlar -->
       <section class="hero-section">
         <div class="hero-content">
           <h1 class="hero-title">
             {getText('home.heroTitle', 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı')}
           </h1>
-          <!-- METINLER sekmesinden dinamik gelen ve istediğin ifadeyle tam uyumlu alt başlık -->
           <p class="hero-subtitle">
             {getText('home.heroSubtitle', 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.')}
           </p>
         </div>
 
-        <!-- Üçlü Sayaç Kutusu -->
         <div class="stats-box">
           <div class="stat-item">
             <div class="number">{productCount}</div>
@@ -126,6 +171,44 @@ const brandCount = brands.length; // Aktif markalar
           </div>
         </div>
       </section>
+
+      <!-- Distribütörlükler Bölümü -->
+      {distributors.length > 0 && (
+        <>
+          <div class="section-title">🏆 Distribütörlüklerimiz</div>
+          <div class="brands-grid">
+            {distributors.map((b) => (
+              <div class="brand-card">
+                {b['Logo URL'] ? (
+                  <img src={b['Logo URL']} alt={b.Marka} onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                  <span style="display:none;">{b.Marka}</span>
+                ) : (
+                  <span>{b.Marka}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <!-- Satış Portföyü Bölümü -->
+      {salesBrands.length > 0 && (
+        <>
+          <div class="section-title">📦 Satış Portföyümüzdeki Markalar</div>
+          <div class="brands-grid">
+            {salesBrands.map((b) => (
+              <div class="brand-card">
+                {b['Logo URL'] ? (
+                  <img src={b['Logo URL']} alt={b.Marka} onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                  <span style="display:none;">{b.Marka}</span>
+                ) : (
+                  <span>{b.Marka}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </main>
 
     <Footer />

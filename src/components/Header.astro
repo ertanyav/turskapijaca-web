@@ -10,44 +10,39 @@ const [pages, texts, settings, categories] = await Promise.all([
   getPages(), getTexts(), getSettings(), getCategories()
 ]);
 
-// Ayarlardan Logo ve Alt Başlık
-const logoSetting = settings.find(s => s.Anahtar === 'logo');
+const logoSetting = (settings || []).find(s => s.Anahtar === 'logo');
 const logoUrl = logoSetting ? logoSetting.Değer : '';
 
-// Metin Çevirici (Satır atlamalarını korumak için pre-line sınıfını kullanacağız)
 function getText(key, defaultVal) {
-  const found = texts.find(t => t.Anahtar === key);
+  const found = (texts || []).find(t => t.Anahtar === key);
   if (!found) return defaultVal;
   if (currentLang === 'en') return found.English || defaultVal;
   if (currentLang === 'me') return found.Crnogorski || defaultVal;
   return found.Türkçe || defaultVal;
 }
 
-// Dinamik URL Oluşturucu (Master Tablodaki Adres Sütunlarına Göre)
 function getPath(item) {
+  if (!item) return `/${currentLang}`;
   let path = item['Adres TR'] || '';
   if (currentLang === 'en') path = item['Adres EN'] || path;
   if (currentLang === 'me') path = item['Adres ME'] || path;
   
-  if (!path) return `/${currentLang}`;
-  if (path.includes('ana-sayfa') || path.includes('home') || path.includes('početna')) {
+  if (!path || path.includes('ana-sayfa') || path.includes('home') || path.includes('početna')) {
     return `/${currentLang}`;
   }
   return `/${currentLang}/${path.replace(/^\//, '')}`;
 }
 
-// Menü Hiyerarşisi
-const menuPages = pages
-  .filter(p => /evet/i.test(p.Yayında) && /evet/i.test(p.Menüde))
-  .sort((a, b) => Number(a.Sıra) - Number(b.Sıra));
+const menuPages = (pages || [])
+  .filter(p => p.Yayında && /evet/i.test(p.Yayında.toString()) && p.Menüde && /evet/i.test(p.Menüde.toString()))
+  .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
 
-const activeCategories = categories.sort((a, b) => Number(a.Sıra) - Number(b.Sıra));
+const activeCategories = (categories || [])
+  .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
 ---
 
 <header class="site-header">
   <div class="header-container">
-    
-    <!-- LOGO VE BAŞLIKLAR (Turski Proizvodi eklendi) -->
     <a href={`/${currentLang}`} class="logo-area" aria-label="Ana Sayfa">
       {logoUrl && (
         <img src={logoUrl} alt="Turska Pijaca Logo" class="logo-img" onerror="this.style.display='none'" />
@@ -58,12 +53,10 @@ const activeCategories = categories.sort((a, b) => Number(a.Sıra) - Number(b.S�
       </div>
     </a>
 
-    <!-- MOBİL BUTON -->
     <button id="menu-toggle" class="mobile-toggle" aria-label="Menü">
       <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     </button>
 
-    <!-- ANA MENÜ -->
     <div id="nav-wrapper" class="nav-wrapper">
       <nav class="main-nav">
         <ul>
@@ -78,7 +71,6 @@ const activeCategories = categories.sort((a, b) => Number(a.Sıra) - Number(b.S�
                   {menuTitle} {isProducts && <span class="caret">▾</span>}
                 </a>
 
-                {/* ÜRÜNLER İÇİN KATEGORİ RESİMLİ MEGA MENÜ */}
                 {isProducts && activeCategories.length > 0 && (
                   <div class="mega-menu">
                     <div class="mega-menu-grid">
@@ -86,7 +78,6 @@ const activeCategories = categories.sort((a, b) => Number(a.Sıra) - Number(b.S�
                         const catImg = cat['Resim'] || cat['Görsel'] || cat['Fotoğraf'] || '';
                         const catName = currentLang === 'en' ? cat['Ad EN'] : currentLang === 'me' ? cat['Ad ME'] : cat['Ad TR'];
                         
-                        // Kategori linkini oluştur
                         let catPath = cat['Adres TR'] || '';
                         if (currentLang === 'en') catPath = cat['Adres EN'] || catPath;
                         if (currentLang === 'me') catPath = cat['Adres ME'] || catPath;
@@ -108,7 +99,6 @@ const activeCategories = categories.sort((a, b) => Number(a.Sıra) - Number(b.S�
         </ul>
       </nav>
 
-      <!-- DİLLER -->
       <div class="lang-switcher">
         <a href="/tr" class={currentLang === 'tr' ? 'active' : ''}>TR</a>
         <span class="divider">|</span>
@@ -131,7 +121,6 @@ const activeCategories = categories.sort((a, b) => Number(a.Sıra) - Number(b.S�
 </script>
 
 <style>
-  /* 1. SABİT (STICKY) HEADER - KAYMA SORUNU ÇÖZÜLDÜ */
   .site-header {
     position: sticky;
     top: 0;
@@ -141,196 +130,39 @@ const activeCategories = categories.sort((a, b) => Number(a.Sıra) - Number(b.S�
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     width: 100%;
   }
-
-  .header-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0.75rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  /* 2. LOGO VE ALT BAŞLIK (TURSKI PROIZVODI) */
-  .logo-area {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    text-decoration: none;
-  }
-  .logo-img {
-    height: 50px;
-    width: auto;
-    object-fit: contain;
-  }
-  .logo-text-group {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .logo-title {
-    color: #4b1b85;
-    font-weight: 900;
-    font-size: 1.4rem;
-    line-height: 1.1;
-    letter-spacing: 0.5px;
-  }
-  .logo-subtitle {
-    color: #0b2218;
-    font-weight: 600;
-    font-size: 0.85rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
-  /* 3. SATIR ATLAMALARI KORUYAN CSS SINIFI */
-  .multiline-text {
-    white-space: pre-line;
-  }
-
-  /* NAVİGASYON */
-  .nav-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 2.5rem;
-  }
-  .main-nav ul {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 1.5rem;
-    align-items: center;
-  }
-  .nav-link {
-    color: #1f2937;
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 600;
-    padding: 1rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    transition: color 0.2s;
-  }
-  .nav-link:hover {
-    color: #e11d48; /* Vurgu rengi */
-  }
-
-  /* 4. KATEGORİLER İÇİN RESİMLİ MEGA MENÜ */
-  .has-mega-menu {
-    position: relative;
-  }
-  .mega-menu {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(15px);
-    background: #ffffff;
-    border: 1px solid #eaeaea;
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-    border-radius: 12px;
-    padding: 1.5rem;
-    width: 600px; /* Menü genişliği */
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    z-index: 1000;
-  }
-  .has-mega-menu:hover .mega-menu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
-  }
-  .mega-menu-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-  }
-  .mega-menu-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-decoration: none;
-    text-align: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: background 0.2s;
-  }
-  .mega-menu-item:hover {
-    background: #f8fafc;
-  }
-  .mega-menu-item img {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 2px solid #eaeaea;
-  }
-  .mega-menu-item span {
-    color: #1f2937;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  /* DİLLER */
-  .lang-switcher {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .lang-switcher a {
-    color: #64748b;
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
-  .lang-switcher a.active, .lang-switcher a:hover {
-    color: #4b1b85;
-  }
-  .lang-switcher .divider {
-    color: #cbd5e1;
-  }
-
-  /* MOBİL */
+  .header-container { max-width: 1400px; margin: 0 auto; padding: 0.75rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+  .logo-area { display: flex; align-items: center; gap: 1rem; text-decoration: none; }
+  .logo-img { height: 50px; width: auto; object-fit: contain; }
+  .logo-text-group { display: flex; flex-direction: column; justify-content: center; }
+  .logo-title { color: #4b1b85; font-weight: 900; font-size: 1.4rem; line-height: 1.1; letter-spacing: 0.5px; }
+  .logo-subtitle { color: #0b2218; font-weight: 600; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; }
+  .multiline-text { white-space: pre-line; }
+  .nav-wrapper { display: flex; align-items: center; gap: 2.5rem; }
+  .main-nav ul { display: flex; list-style: none; margin: 0; padding: 0; gap: 1.5rem; align-items: center; }
+  .nav-link { color: #1f2937; text-decoration: none; font-size: 0.95rem; font-weight: 600; padding: 1rem 0; display: flex; align-items: center; gap: 0.4rem; transition: color 0.2s; }
+  .nav-link:hover { color: #e11d48; }
+  .has-mega-menu { position: relative; }
+  .mega-menu { position: absolute; top: 100%; left: 50%; transform: translateX(-50%) translateY(15px); background: #ffffff; border: 1px solid #eaeaea; box-shadow: 0 15px 30px rgba(0,0,0,0.1); border-radius: 12px; padding: 1.5rem; width: 600px; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 1000; }
+  .has-mega-menu:hover .mega-menu { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+  .mega-menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .mega-menu-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; text-align: center; gap: 0.5rem; padding: 0.5rem; border-radius: 8px; transition: background 0.2s; }
+  .mega-menu-item:hover { background: #f8fafc; }
+  .mega-menu-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #eaeaea; }
+  .mega-menu-item span { color: #1f2937; font-size: 0.85rem; font-weight: 600; }
+  .lang-switcher { display: flex; align-items: center; gap: 0.5rem; }
+  .lang-switcher a { color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: 700; }
+  .lang-switcher a.active, .lang-switcher a:hover { color: #4b1b85; }
+  .lang-switcher .divider { color: #cbd5e1; }
   .mobile-toggle { display: none; background: none; border: none; cursor: pointer; color: #1f2937; }
 
   @media (max-width: 1024px) {
     .mobile-toggle { display: block; }
-    .nav-wrapper {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      width: 100%;
-      background: #ffffff;
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 0;
-      gap: 0;
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+    .nav-wrapper { position: absolute; top: 100%; left: 0; width: 100%; background: #ffffff; flex-direction: column; align-items: flex-start; padding: 0; gap: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .nav-wrapper.is-open { max-height: 80vh; overflow-y: auto; }
     .main-nav ul { flex-direction: column; width: 100%; gap: 0; }
     .nav-link { padding: 1rem 2rem; border-bottom: 1px solid #eaeaea; width: 100%; }
-    
-    .has-mega-menu:hover .mega-menu { display: none; } /* Mobilde mega menüyü basitleştirmek için gizlenir veya alt alta dizilir */
-    .mega-menu {
-      position: static;
-      transform: none;
-      width: 100%;
-      box-shadow: none;
-      border: none;
-      border-bottom: 1px solid #eaeaea;
-      border-radius: 0;
-      padding: 1rem;
-      opacity: 1;
-      visibility: visible;
-      display: none;
-    }
+    .has-mega-menu:hover .mega-menu { display: none; }
+    .mega-menu { position: static; transform: none; width: 100%; box-shadow: none; border: none; border-bottom: 1px solid #eaeaea; border-radius: 0; padding: 1rem; opacity: 1; visibility: visible; display: none; }
     .has-mega-menu.active .mega-menu { display: block; }
     .mega-menu-grid { grid-template-columns: repeat(2, 1fr); }
     .lang-switcher { padding: 1rem 2rem; width: 100%; justify-content: flex-start; }

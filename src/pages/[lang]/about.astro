@@ -13,6 +13,7 @@ export async function getStaticPaths() {
 
 const { lang } = Astro.params;
 const texts = await getTexts();
+const aboutBody = texts['about.body']?.[lang] || 'Türkiye’deki üretim ve tedarik kaynaklarına doğrudan erişim, seçili ürünlerde güçlü bir tedarik avantajı sağlar.';
 ---
 
 <html lang={lang}>
@@ -21,48 +22,42 @@ const texts = await getTexts();
   <title>Kurumsal & Lojistik Gücümüz | TURSKA PIJACA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
-<body style="margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a;">
+<body style="margin: 0; font-family: system-ui, sans-serif; background: #0d221a; color: #f0f4ed;">
   <Header lang={lang} texts={texts} />
 
   <main style="max-width: 1000px; margin: 3rem auto; padding: 0 1.5rem;">
-    <div style="background: white; border-radius: 16px; padding: 3rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+    <div style="background: #142e23; border-radius: 16px; padding: 3rem; border: 1px solid #234d3c;">
       
-      <span style="background: #059669; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">
+      <span style="background: #d9b871; color: #173f31; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase;">
         UNIVERCERT MNE D.O.O.
       </span>
 
-      <h1 style="font-size: 2.2rem; color: #0f172a; margin: 1rem 0 1.5rem 0; font-weight: 800;">
+      <h1 style="font-size: 2.2rem; color: #f0f4ed; margin: 1rem 0 1.5rem 0; font-weight: 800;">
         TURSKA PIJACA — Fabrikadan Doğrudan Karadağ'a B2B Toptan Tedarik
       </h1>
 
-      <div style="font-size: 1.05rem; line-height: 1.8; color: #334155;">
-        <p>
-          <strong>TURSKA PIJACA</strong>, Karadağ'da yerleşik <strong>UNIVERCERT MNE D.O.O.</strong> şirketinin tescilli B2B gıda ve tüketim ürünleri markasıdır. Karadağ genelindeki Otel, Restoran, Kafe (Horeca), Süpermarket Zincirleri ve Toptancı Bayiler için en yüksek standartta tedarik zinciri sağlıyoruz.
-        </p>
+      <div style="font-size: 1.05rem; line-height: 1.8; color: #a3c2b5;">
+        <p style="white-space: pre-line;">{aboutBody}</p>
 
-        <div style="background: #f1f5f9; padding: 1.5rem; border-left: 4px solid #059669; margin: 2rem 0; border-radius: 0 12px 12px 0;">
-          <h3 style="margin: 0 0 0.5rem 0; color: #0f172a;">🏭 Seda Gıda Fabrikası ve Temsilcilik Gücü</h3>
-          <p style="margin: 0;">
-            Platformumuz, Türkiye'deki öz fabrikamız olan <strong>Seda Gıda</strong>'nın resmi Karadağ temsilcisidir. Fabrikamızda ürettiğimiz kendi markalarımızın yanı sıra, distribütörü olduğumuz seçkin üretici markaları da doğrudan fabrikadan alarak <strong>aracısız ve en uygun fiyatlarla</strong> sunuyoruz.
+        <div style="background: #173f31; padding: 1.5rem; border-left: 4px solid #d9b871; margin: 2rem 0; border-radius: 0 12px 12px 0;">
+          <h3 style="margin: 0 0 0.5rem 0; color: #d9b871;">🏭 Seda Gıda Fabrikası Temsilciliği</h3>
+          <p style="margin: 0; color: #f0f4ed;">
+            Platformumuz, Türkiye'deki öz fabrikamız olan <strong>Seda Gıda</strong>'nın resmi Karadağ temsilcisidir. Fabrikamızda ürettiğimiz kendi markalarımızın yanı sıra, distribütörü olduğumuz üretici markaları da doğrudan fabrikadan alarak aracısız sunuyoruz.
           </p>
         </div>
 
-        <h2 style="font-size: 1.5rem; color: #0f172a; margin-top: 2rem;">🚚 Kesintisiz Lojistik ve Dağıtım Ağımız</h2>
+        <h2 style="font-size: 1.4rem; color: #d9b871; margin-top: 2rem;">🚚 Kesintisiz Lojistik ve Dağıtım Ağımız</h2>
         <ul style="list-style-type: none; padding: 0; margin: 1rem 0;">
-          <li style="padding: 0.8rem 0; border-bottom: 1px solid #f1f5f9;">
-            <strong>Haftalık Fabrika Transferi:</strong> Lojistik ortağımız ile Türkiye fabrikamızdan Karadağ depomuza her hafta kesintisiz ürün transferi gerçekleştirilmektedir.
+          <li style="padding: 0.8rem 0; border-bottom: 1px solid #234d3c;">
+            <strong>Haftalık Fabrika Sevkiyatı:</strong> Türkiye fabrikamızdan Karadağ depomuza her hafta düzenli transfer.
           </li>
-          <li style="padding: 0.8rem 0; border-bottom: 1px solid #f1f5f9;">
-            <strong>Karadağ Genelinde Öz Araç Filosu:</strong> Karadağ içinde kendi dağıtım araçlarımız ve lojistik ağımızla Podgorica, Budva, Tivat, Kotor, Herceg Novi, Bar, Nikšić ve ülkenin her noktasına zamanında teslimat sağlıyoruz.
-          </li>
-          <li style="padding: 0.8rem 0;">
-            <strong>Toptan Tedarik Güvencesi:</strong> Horeca ve perakende sektörüne özel palet ve koli bazlı B2B stok güvencesi sunuyoruz.
+          <li style="padding: 0.8rem 0; border-bottom: 1px solid #234d3c;">
+            <strong>Karadağ Genelinde Özel Dağıtım Filosu:</strong> Podgorica, Budva, Tivat, Kotor, Nikšić ve Karadağ'ın tüm şehirlerine toptan teslimat.
           </li>
         </ul>
 
         <div style="margin-top: 2.5rem; text-align: center;">
-          <!-- AYNI PENCEREDE AÇILIR (target="_self") -->
-          <a href={`/${lang}/`} target="_self" style="background: #0f172a; color: white; padding: 0.9rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+          <a href={`/${lang}/`} target="_self" style="background: #d9b871; color: #173f31; padding: 0.9rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 800; display: inline-block;">
             ← Ürün Kataloğuna Dön
           </a>
         </div>
@@ -71,6 +66,6 @@ const texts = await getTexts();
     </div>
   </main>
 
-  <Footer lang={lang} />
+  <Footer lang={lang} texts={texts} />
 </body>
 </html>

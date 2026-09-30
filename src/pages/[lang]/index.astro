@@ -21,21 +21,23 @@ const [products, texts, brands] = await Promise.all([
 const eyebrowText = texts['home.eyebrow']?.[lang] || 'Direct From Factory · UNIVERCERT MNE D.O.O.';
 const headingText = texts['home.heading']?.[lang] || 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı';
 
-// Master dosyadaki formata ve "Türkiye’den Karadağ’a." sonrası yeni satır kuralına birebir uyum:
-let introText = texts['home.intro']?.[lang] || '';
-if (!introText) {
-  if (lang === 'tr') introText = 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.';
-  else if (lang === 'me') introText = 'Od Turske do Crne Gore.\nDirektno snabdijevanje, jaka distribucija.';
-  else introText = 'From Turkey to Montenegro.\nDirect supply, strong distribution.';
+// Google Sheets'ten gelen metni alıp "Türkiye’den Karadağ’a." sonrasına kesinlikle <br> ekliyoruz
+let rawIntro = texts['home.intro']?.[lang] || '';
+if (!rawIntro) {
+  if (lang === 'tr') rawIntro = 'Türkiye’den Karadağ’a. Doğrudan tedarik, güçlü dağıtım.';
+  else if (lang === 'me') rawIntro = 'Od Turske do Crne Gore. Direktno snabdijevanje, jaka distribucija.';
+  else rawIntro = 'From Turkey to Montenegro. Direct supply, strong distribution.';
+}
+
+let formattedIntro = rawIntro;
+if (lang === 'tr' && formattedIntro.includes('Türkiye’den Karadağ’a.')) {
+  formattedIntro = formattedIntro.replace('Türkiye’den Karadağ’a.', 'Türkiye’den Karadağ’a.<br>');
+} else if (lang === 'en' && formattedIntro.includes('From Turkey to Montenegro.')) {
+  formattedIntro = formattedIntro.replace('From Turkey to Montenegro.', 'From Turkey to Montenegro.<br>');
+} else if (lang === 'me' && formattedIntro.includes('Od Turske do Crne Gore.')) {
+  formattedIntro = formattedIntro.replace('Od Turske do Crne Gore.', 'Od Turske do Crne Gore.<br>');
 } else {
-  // Cümleden sonra satır yoksa otomatik ekle, varsa koru
-  if (lang === 'tr' && introText.includes('Türkiye’den Karadağ’a.') && !introText.includes('Türkiye’den Karadağ’a.\n')) {
-    introText = introText.replace('Türkiye’den Karadağ’a.', 'Türkiye’den Karadağ’a.\n');
-  } else if (lang === 'en' && introText.includes('From Turkey to Montenegro.') && !introText.includes('From Turkey to Montenegro.\n')) {
-    introText = introText.replace('From Turkey to Montenegro.', 'From Turkey to Montenegro.\n');
-  } else if (lang === 'me' && introText.includes('Od Turske do Crne Gore.') && !introText.includes('Od Turske do Crne Gore.\n')) {
-    introText = introText.replace('Od Turske do Crne Gore.', 'Od Turske do Crne Gore.\n');
-  }
+  formattedIntro = formattedIntro.replace('. ', '.<br>');
 }
 
 const distributorIntro = texts['brands.distributorIntro']?.[lang] || 'Karadağ’daki distribütörlük portföyümüzde yer alan markalar.';
@@ -176,10 +178,8 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
         <h1 style="font-size: 2.4rem; margin: 0 0 0.8rem 0; font-weight: 800; color: #f4f7f2; line-height: 1.25;">
           {headingText}
         </h1>
-        <!-- Master uyumlu satır atlama kuralı aktif -->
-        <p style="color: #b5cca8; font-size: 1.15rem; margin: 0; max-width: 800px; line-height: 1.6; white-space: pre-line;">
-          {introText}
-        </p>
+        <!-- Kesin satır atlamalı intro paragrafı -->
+        <p style="color: #b5cca8; font-size: 1.15rem; margin: 0; max-width: 800px; line-height: 1.6;" set:html={formattedIntro} />
       </div>
       
       <!-- Sayaçlar Kartı -->
@@ -338,7 +338,7 @@ const uniqueCategories = [...new Set(products.map(p => p['Kategori']).filter(Boo
 
   <Footer lang={lang} texts={texts} />
 
-  <!-- B2B Sepet Çekmecesi (localStorage temizleme düzeltmesi ile) -->
+  <!-- B2B Sepet Çekmecesi -->
   <div id="cartDrawer" style="position: fixed; top: 0; right: -420px; width: 380px; height: 100vh; background: #14352a; border-left: 3px solid #e5c58a; box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column;">
     <div style="padding: 1.2rem; background: #153b2e; border-bottom: 1px solid #285e4c; display: flex; justify-content: space-between; align-items: center;">
       <h3 style="margin: 0; color: #e5c58a; font-size: 1.2rem; font-weight: 800;">🛒 B2B Sipariş Sepetim</h3>

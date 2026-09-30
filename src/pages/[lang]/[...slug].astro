@@ -1,5 +1,5 @@
 ---
-import { getPages } from '../../lib/sheets';
+import { getPages, getTexts } from '../../lib/sheets';
 import Header from '../../components/Header.astro';
 
 export async function getStaticPaths() {
@@ -15,9 +15,9 @@ export async function getStaticPaths() {
       const lang = langCode.toLowerCase();
       const path = page[`Adres ${langCode}`];
 
-      // Ana sayfa yönlendirmeleri hariç tüm sayfaları dinamik olarak üret
+      // Ana sayfa yönlendirmeleri hariç tüm alt sayfaları dinamik olarak üret
       if (path && !path.includes('ana-sayfa') && !path.includes('home') && !path.includes('početna')) {
-        const slug = path.replace(/^\//, ''); // Başındaki slash'i temizle
+        const slug = path.replace(/^\//, ''); // Başındaki slash işaretini temizle
         paths.push({
           params: { lang, slug },
           props: { page, lang }
@@ -30,19 +30,21 @@ export async function getStaticPaths() {
 }
 
 const { page, lang } = Astro.props;
+const texts = await getTexts();
+const currentLang = lang || 'tr';
 
-// Sayfa Başlığını Getir
-let pageTitle = page['Ad TR'] || '';
-if (lang === 'en') pageTitle = page['Ad EN'] || pageTitle;
-if (lang === 'me') pageTitle = page['Ad ME'] || pageTitle;
+// Sayfa başlığını dile göre Master'dan çek
+let pageTitle = page['Ad TR'] || page.Kod;
+if (currentLang === 'en') pageTitle = page['Ad EN'] || pageTitle;
+if (currentLang === 'me') pageTitle = page['Ad ME'] || pageTitle;
 ---
 
 <!DOCTYPE html>
-<html lang={lang}>
+<html lang={currentLang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{pageTitle} | Turska Pijaca</title>
+    <title>{pageTitle} | TURSKA PIJACA</title>
     <style>
       body {
         margin: 0;
@@ -87,7 +89,7 @@ if (lang === 'me') pageTitle = page['Ad ME'] || pageTitle;
     </style>
   </head>
   <body>
-    <!-- Üst Menü -->
+    <!-- Üst Menü ve Logo -->
     <Header />
 
     <main class="page-container">
@@ -99,6 +101,5 @@ if (lang === 'me') pageTitle = page['Ad ME'] || pageTitle;
         </p>
       </div>
     </main>
-
   </body>
 </html>

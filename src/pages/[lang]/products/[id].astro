@@ -6,8 +6,8 @@ import { getProducts, getTextDictionary } from '../../../lib/sheets';
 const { lang = 'tr', id } = Astro.params;
 const [products, dict] = await Promise.all([ getProducts(), getTextDictionary(lang) ]);
 
-// urunno, kayitid veya kod eşleşmesini arıyoruz
-const product = products.find(p => String(p.urunno) === id || String(p.kayitid) === id || String(p.id) === id);
+// urunno baz alınarak eşleşme yapılıyor
+const product = products.find(p => String(p.urunno) === id || String(p.kayitid) === id);
 
 if (!product) return Astro.redirect(`/${lang}`);
 
@@ -15,11 +15,11 @@ const name = product[`ad${lang}`] || product.adtr || product.icad;
 const desc = product[`aciklama${lang}`] || product.aciklamatr || product.aciklama || '';
 const img = product.gorselurl || 'https://via.placeholder.com/600?text=No+Image';
 
-// Dinamik Etiketler
-const txtBrand = dict['product.brand'] || dict['urun.marka'] || 'Marka';
-const txtCode = dict['product.code'] || dict['urun.kodu'] || 'Ürün Kodu';
-const txtCategory = dict['product.category'] || dict['urun.kategori'] || 'Kategori';
-const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Sepete Ekle';
+// Otomatik Çoklu Dil Koruması (Tabloda Yoksa Bile Çevirir)
+const txtBrand = dict['product.brand'] || (lang === 'en' ? 'Brand' : lang === 'me' ? 'Brend' : 'Marka');
+const txtCode = dict['product.code'] || (lang === 'en' ? 'Product Code' : lang === 'me' ? 'Šifra Proizvoda' : 'Ürün Kodu');
+const txtCategory = dict['product.category'] || (lang === 'en' ? 'Category' : lang === 'me' ? 'Kategorija' : 'Kategori');
+const txtAddToCart = dict['product.addtocart'] || (lang === 'en' ? 'Add to Cart' : lang === 'me' ? 'Dodaj u Korpu' : 'Sepete Ekle');
 ---
 
 <!DOCTYPE html>
@@ -31,11 +31,11 @@ const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Se
       body { margin: 0; font-family: system-ui; background: #f8fafc; color: #0f172a; }
       .container { max-width: 1200px; margin: 4rem auto; padding: 0 1.5rem; }
       .product-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; }
-      .product-img { width: 100%; max-height: 500px; object-fit: contain; background: #f8fafc; border-radius: 8px; padding: 1rem; }
+      .product-img { width: 100%; max-height: 500px; object-fit: contain; padding: 1rem; }
       .product-info h1 { font-size: 2.2rem; color: #0b2218; margin-top: 0; }
       .meta-box { background: #f1f5f9; padding: 1rem; border-radius: 8px; margin: 1.5rem 0; }
       .meta-box div { margin-bottom: 0.5rem; font-size: 0.95rem; }
-      .meta-box strong { color: #0b2218; width: 100px; display: inline-block; }
+      .meta-box strong { color: #0b2218; width: 110px; display: inline-block; }
       .desc { font-size: 1.1rem; line-height: 1.8; color: #475569; }
       .btn-add { background: #34d399; color: #0b2218; border: none; padding: 1rem 2rem; font-size: 1.1rem; font-weight: 800; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 2rem; }
       @media (max-width: 768px) { .product-wrap { grid-template-columns: 1fr; } }
@@ -49,12 +49,12 @@ const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Se
         <div class="product-info">
           <h1>{name}</h1>
           <div class="meta-box">
-            <div><strong>{txtCode}:</strong> {id}</div>
+            <div><strong>{txtCode}:</strong> {product.urunno || product.kayitid || id}</div>
             <div><strong>{txtBrand}:</strong> {product.marka || '-'}</div>
             <div><strong>{txtCategory}:</strong> {product.kategori || '-'}</div>
           </div>
           <p class="desc">{desc}</p>
-          <button class="btn-add" onclick={`addToCart('${id}', '${name.replace(/'/g, "\\'")}')`}>🛒 {txtAddToCart}</button>
+          <button class="btn-add" onclick={`addToCart('${product.urunno || id}', '${name.replace(/'/g, "\\'")}')`}>🛒 {txtAddToCart}</button>
         </div>
       </div>
     </main>

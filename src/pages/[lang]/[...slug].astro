@@ -1,6 +1,7 @@
 ---
 import Header from '../../components/Header.astro';
-import { getPages } from '../../lib/sheets';
+import Footer from '../../components/Footer.astro';
+import { getPages, getTexts, getDocuments } from '../../lib/sheets';
 
 const { lang, slug } = Astro.params;
 const validLangs = ['tr', 'en', 'me'];
@@ -9,41 +10,80 @@ if (!validLangs.includes(lang)) {
   return Astro.redirect('/tr');
 }
 
-const pages = await getPages();
+const [pages, texts, documents] = await Promise.all([
+  getPages(),
+  getTexts(),
+  getDocuments()
+]);
 
-// Gelen URL adresini, Google Sheet'teki sütunlarla eşleştirme
+// İlgili sayfayı adrese göre bul
 const currentPage = pages.find(p => {
   const pathStr = p[`adres${lang}`] || p['adrestr'] || p.kod;
   if (!pathStr) return false;
-  // Tabloda başa slash (/) konmuşsa bile onu temizleyip hatasız kıyaslama yapıyoruz
   const cleanPath = String(pathStr).replace(/^\//, '').toLowerCase();
   return cleanPath === (slug || '').toLowerCase();
 });
 
-// Ziyaretçi tabloda OLMAYAN uydurma bir linke girerse, 404 hata sayfası yerine ana sayfaya döndür
 if (!currentPage) {
   return Astro.redirect(`/${lang}`);
 }
 
 const pageTitle = currentPage[`ad${lang}`] || currentPage['adtr'] || currentPage.kod;
+const pageContent = currentPage[`icerik${lang}`] || currentPage['iceriktr'] || currentPage[`aciklama${lang}`] || currentPage['aciklamatr'] || '';
 ---
+
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{pageTitle} | TURSKA PIJACA</title>
+    <style>
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #0f172a; }
+      .container { max-width: 1100px; margin: 3.5rem auto; padding: 0 1.5rem; min-height: 60vh; }
+      .content-card {
+        background: white;
+        padding: 3rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+      }
+      .content-card h1 { color: #0b2218; font-size: 2.2rem; margin-top: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
+      .body-text { font-size: 1.1rem; line-height: 1.8; color: #334155; }
+      .doc-list { list-style: none; padding: 0; margin-top: 2rem; }
+      .doc-item { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 0.8rem; border: 1px solid #e2e8f0; }
+      .doc-btn { background: #0b2218; color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+    </style>
   </head>
-  <body style="margin: 0; font-family: system-ui, sans-serif; background: #f8fafc;">
+  <body>
     <Header />
-    <main style="max-width: 1200px; margin: 3rem auto; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-      <h1 style="color: #0b2218; font-size: 2.2rem; border-bottom: 2px solid #eaeaea; padding-bottom: 1rem;">
-        {pageTitle}
-      </h1>
-      <div style="margin-top: 2rem; color: #475569; line-height: 1.6;">
-        <p>Sayfa Kodu: <strong style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; color:#0b2218;">{currentPage.kod}</strong></p>
-        <p>Sihirli sayfa yönlendiricisi devrede! İçerikler, tablondaki bu satırdan ekrana basılacak.</p>
+
+    <main class="container">
+      <div class="content-card">
+        <h1>{pageTitle}</h1>
+        
+        {pageContent ? (
+          <div class="body-text" set:html={pageContent} />
+        ) : (
+          <div class="body-text">
+            <p>TP_MASTER tablosunda bu sayfa için eklenmiş olan içerikler yüklenmektedir.</p>
+          </div>
+        )}
+
+        {/* Eğer Belgeler/Dokümanlar sayfasıysa tablodaki dokümanları listele */}
+        {currentPage.kod && currentPage.kod.toLowerCase().includes('dokuman') && documents && documents.length > 0 && (
+          <ul class="doc-list">
+            {documents.map(doc => (
+              <li class="doc-item">
+                <span>📄 {doc[`ad${lang}`] || doc['adtr'] || 'Doküman'}</span>
+                <a href={doc.url || doc.link || '#'} target="_blank" class="doc-btn">İndir / İncele</a>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </main>
+
+    <Footer lang={lang} />
   </body>
 </html>

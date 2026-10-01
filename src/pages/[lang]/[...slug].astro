@@ -1,13 +1,13 @@
 ---
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getPages, getTexts, getProducts, getCategories, getBrands, getTextDictionary } from '../../lib/sheets';
+import { getPages, getTexts, getProducts, getCategories, getBrands, getDealers, getTextDictionary } from '../../lib/sheets';
 
 const { lang = 'tr', slug } = Astro.params;
 const target = (slug || '').toLowerCase();
 
-const [pages, texts, products, categories, brands, dict] = await Promise.all([
-  getPages(), getTexts(), getProducts(), getCategories(), getBrands(), getTextDictionary(lang)
+const [pages, texts, products, categories, brands, dealers, dict] = await Promise.all([
+  getPages(), getTexts(), getProducts(), getCategories(), getBrands(), getDealers(), getTextDictionary(lang)
 ]);
 
 const currentPage = pages.find(p => {
@@ -20,15 +20,16 @@ const currentPage = pages.find(p => {
 const matchedCategory = categories.find(c => target === String(c.adrestr || '').replace(/^\//, '').toLowerCase());
 const isProductPage = (currentPage && (currentPage.kod === 'products' || currentPage.kod === 'catalog' || target.includes('urunler'))) || matchedCategory;
 
-// Özel Sayfalar (Markalar, Bayiler vb. gösterimi için)
-const showBrands = currentPage && (currentPage.kod.includes('marka') || currentPage.kod.includes('brand') || currentPage.kod.includes('distributor'));
+// Özel sayfaları algılama
+const isBrandsPage = currentPage && (currentPage.kod === 'brands' || currentPage.kod === 'markalar');
+const isDealersPage = currentPage && (currentPage.kod === 'network' || currentPage.kod === 'bayiler');
 
 let displayedProducts = products || [];
 if (matchedCategory) {
   displayedProducts = displayedProducts.filter(p => (p.kategori || '').toUpperCase() === (matchedCategory.kod || '').toUpperCase());
 }
 
-let pageTitle = currentPage ? (currentPage[`ad${lang}`] || currentPage.adtr) : (matchedCategory ? matchedCategory[`ad${lang}`] || matchedCategory.adtr : '');
+let pageTitle = currentPage ? (currentPage[`ad${lang}`] || currentPage.adtr) : (matchedCategory ? matchedCategory[`ad${lang}`] || matchedCategory.adtr : 'Sayfa');
 let pageParagraphs = [];
 
 if (texts && currentPage) {
@@ -42,12 +43,12 @@ if (texts && currentPage) {
   });
 }
 
-// Master Tablodan Çekilen Dinamik Arayüz Yazıları
-const txtCategories = dict['common.categories'] || dict['ortak.kategoriler'] || 'Kategoriler';
-const txtBrands = dict['common.brands'] || dict['ortak.markalar'] || 'Markalar';
-const txtAllProducts = dict['common.allproducts'] || dict['ortak.tumurunler'] || 'Tüm Ürünler';
-const txtProductDetail = dict['product.detail'] || dict['urun.detay'] || 'Ürün Detayı';
-const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Sepete Ekle';
+// Master Tablodan Çoklu Dil Varsayılanları
+const txtCategories = dict['common.categories'] || (lang === 'en' ? 'Categories' : lang === 'me' ? 'Kategorije' : 'Kategoriler');
+const txtBrands = dict['common.brands'] || (lang === 'en' ? 'Brands' : lang === 'me' ? 'Brendovi' : 'Markalar');
+const txtAllProducts = dict['common.allproducts'] || (lang === 'en' ? 'All Products' : lang === 'me' ? 'Svi proizvodi' : 'Tüm Ürünler');
+const txtProductDetail = dict['product.detail'] || (lang === 'en' ? 'Detail' : lang === 'me' ? 'Detalji' : 'Detay');
+const txtAddToCart = dict['product.addtocart'] || (lang === 'en' ? 'Add' : lang === 'me' ? 'Dodaj' : 'Sepete Ekle');
 ---
 
 <!DOCTYPE html>
@@ -60,24 +61,25 @@ const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Se
       .container { max-width: 1250px; margin: 3rem auto; padding: 0 1.5rem; min-height: 60vh; }
       .catalog-layout { display: grid; grid-template-columns: 260px 1fr; gap: 2rem; margin-top: 2rem; }
       .filter-sidebar { background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; height: fit-content; }
-      .filter-group { margin-bottom: 1.5rem; }
-      .filter-group h4 { color: #0b2218; margin: 0 0 0.8rem 0; }
       .filter-list { list-style: none; padding: 0; margin: 0; }
       .filter-list li { margin-bottom: 0.5rem; }
-      .filter-list a { color: #475569; text-decoration: none; font-size: 0.9rem; }
+      .filter-list a { color: #475569; text-decoration: none; font-size: 0.95rem; }
+      .filter-list a:hover { color: #34d399; }
       
       .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
       .product-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
       .product-img { width: 100%; height: 200px; object-fit: contain; padding: 10px; border-bottom: 1px solid #f1f5f9; }
       .product-info { padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; }
-      .product-meta { font-size: 0.8rem; color: #64748b; margin-bottom: 0.8rem; }
       
       .btn-group { display: flex; gap: 0.5rem; margin-top: auto; }
       .btn-detail { flex: 1; text-align: center; background: #f1f5f9; color: #0f172a; padding: 0.5rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
       .btn-cart { flex: 1; text-align: center; background: #34d399; color: #0b2218; padding: 0.5rem; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
-      
-      .brands-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-top: 2rem;}
-      .brand-card { background: white; border: 1px solid #e2e8f0; padding: 1.5rem; text-align: center; border-radius: 12px; font-weight: bold;}
+
+      /* Markalar ve Bayiler Özel Izgarası */
+      .entities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+      .entity-card { background: white; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.5rem;}
+      .entity-img { width: 100%; height: 80px; object-fit: contain; margin-bottom: 1rem;}
+      .entity-type { font-size: 0.75rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 4px; width: fit-content;}
     </style>
   </head>
   <body>
@@ -88,14 +90,14 @@ const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Se
       {isProductPage ? (
         <div class="catalog-layout">
           <aside class="filter-sidebar">
-            <div class="filter-group">
+            <div style="margin-bottom: 1.5rem;">
               <h4>{txtCategories}</h4>
               <ul class="filter-list">
                 <li><a href={`/${lang}/ürünler/tüm-ürünler`}>{txtAllProducts}</a></li>
                 {categories.map(c => <li><a href={`/${lang}/${(c.adrestr || '').replace(/^\//, '')}`.toLowerCase()}>{c[`ad${lang}`] || c.adtr}</a></li>)}
               </ul>
             </div>
-            <div class="filter-group">
+            <div>
               <h4>{txtBrands}</h4>
               <ul class="filter-list">
                 {brands.map(b => <li><a href="#">{b.marka}</a></li>)}
@@ -105,14 +107,15 @@ const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Se
 
           <section class="products-grid">
             {displayedProducts.map(p => {
-              const name = p[`ad${lang}`] || p.adtr || p.icad;
+              const name = p[`ad${lang}`] || p.adtr || p.icad || 'Ürün';
+              // Master tabloda ürün kodunun olduğu sütun urunno
               const pId = p.urunno || p.kayitid || p.id || '1';
               return (
                 <div class="product-card">
-                  <img src={p.gorselurl || 'https://via.placeholder.com/400?text=No+Image'} class="product-img" loading="lazy" />
+                  <img src={p.gorselurl || 'https://via.placeholder.com/400'} class="product-img" loading="lazy" />
                   <div class="product-info">
                     <h3 style="margin:0 0 0.4rem 0; font-size:1rem;">{name}</h3>
-                    <div class="product-meta">{txtBrands}: {p.marka || '-'} | No: {pId}</div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.8rem;">{txtBrands}: {p.marka || '-'} | No: {pId}</div>
                     <div class="btn-group">
                       <a href={`/${lang}/products/${pId}`} class="btn-detail">{txtProductDetail}</a>
                       <button class="btn-cart" onclick={`addToCart('${pId}', '${name.replace(/'/g, "\\'")}')`}>{txtAddToCart}</button>
@@ -127,12 +130,28 @@ const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Se
         <div style="background:white; padding:2.5rem; border-radius:16px; border:1px solid #e2e8f0;">
           {pageParagraphs.map(txt => <p style="font-size:1.05rem; line-height:1.8; color:#334155;">{txt}</p>)}
           
-          {/* Sayfa Markalar/Bayiler sayfası ise dinamik listeyi basar */}
-          {showBrands && brands && brands.length > 0 && (
-            <div class="brands-grid">
-              {brands.map(b => (
-                <div class="brand-card">
-                  {b.gorselurl ? <img src={b.gorselurl} style="width:100%; height:80px; object-fit:contain;" /> : b.marka}
+          {/* Markalar Tablosu Gösterimi */}
+          {isBrandsPage && brands && (
+            <div class="entities-grid">
+              {brands.filter(b => (b.yayinda || '').toUpperCase() === 'EVET').map(b => (
+                <div class="entity-card">
+                  {b.gorselurl ? <img src={b.gorselurl} class="entity-img" /> : <h3>{b.marka}</h3>}
+                  <div class="entity-type">{b.tur}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Bayiler Tablosu Gösterimi */}
+          {isDealersPage && dealers && (
+            <div class="entities-grid">
+              {dealers.filter(d => (d.yayinda || '').toUpperCase() === 'EVET').map(d => (
+                <div class="entity-card">
+                  <h3 style="margin: 0; color: #0b2218;">{d.ad}</h3>
+                  <div class="entity-type">{d.tur} - {d.sehir}</div>
+                  {d.adres && <div style="font-size: 0.9rem; color: #475569; margin-top:0.5rem;">📍 {d.adres}</div>}
+                  {d.telefon && <div style="font-size: 0.9rem; color: #475569;">📞 {d.telefon}</div>}
+                  {d.weburl && <a href={d.weburl} target="_blank" style="font-size: 0.9rem; color: #34d399; margin-top:0.5rem;">Websitesini Ziyaret Et</a>}
                 </div>
               ))}
             </div>
@@ -140,14 +159,12 @@ const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Se
         </div>
       )}
     </main>
-
     <script>
       function addToCart(id, name) {
         const cart = JSON.parse(localStorage.getItem('tp_cart') || '[]');
         cart.push({ id, name, qty: 1 });
         localStorage.setItem('tp_cart', JSON.stringify(cart));
         window.dispatchEvent(new Event('cartUpdated'));
-        alert(name + " sepete eklendi!");
       }
       window.addToCart = addToCart;
     </script>

@@ -1,5 +1,5 @@
 ---
+// Kullanıcı siteye kök adresten girerse şimdilik varsayılan olarak /tr klasörüne yönlendiriyoruz.
+// 3 farklı domaini (.com, .com.tr, .me) bağladığımızda domain algılama kodlarını buraya yazacağız.
+return Astro.redirect('/tr');
 ---
-<script is:inline>
-  window.location.href = '/en/';
-</script>

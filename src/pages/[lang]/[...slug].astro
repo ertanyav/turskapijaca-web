@@ -1,51 +1,61 @@
 ---
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getPages, getTexts } from '../../lib/sheets';
+import { getPages, getTexts, getProducts, getCategories, getBrands } from '../../lib/sheets';
 
 const { lang = 'tr', slug } = Astro.params;
 const validLangs = ['tr', 'en', 'me'];
+if (!validLangs.includes(lang)) return Astro.redirect('/tr');
 
-if (!validLangs.includes(lang)) {
-  return Astro.redirect('/tr');
-}
-
-let pages = [];
-let texts = [];
-
-try {
-  const res = await Promise.all([getPages(), getTexts()]);
-  pages = res[0] || [];
-  texts = res[1] || [];
-} catch (e) {}
+const [pages, texts, products, categories, brands] = await Promise.all([
+  getPages(), getTexts(), getProducts(), getCategories(), getBrands()
+]);
 
 const target = (slug || '').toLowerCase();
 
+// Tıklanan adresin tespiti
 const currentPage = pages.find(p => {
   if (!p) return false;
   const aTR = String(p.adrestr || '').replace(/^\//, '').toLowerCase();
   const aEN = String(p.adresen || '').replace(/^\//, '').toLowerCase();
   const aME = String(p.adresme || '').replace(/^\//, '').toLowerCase();
-  const kod = String(p.kod || '').toLowerCase();
-  
-  return target === aTR || target === aEN || target === aME || target === kod;
+  return target === aTR || target === aEN || target === aME || target === (p.kod || '').toLowerCase();
 });
 
-if (!currentPage && target !== '') {
-  return Astro.redirect(`/${lang}`);
+// Eğer adres herhangi bir kategori adresiyle eşleşiyorsa
+const matchedCategory = categories.find(c => {
+  const cTR = String(c.adrestr || '').replace(/^\//, '').toLowerCase();
+  const cEN = String(c.adresen || '').replace(/^\//, '').toLowerCase();
+  const cME = String(c.adresme || '').replace(/^\//, '').toLowerCase();
+  return target === cTR || target === cEN || target === cME;
+});
+
+const isProductPage = (currentPage && (currentPage.kod === 'products' || currentPage.kod === 'catalog')) || matchedCategory;
+
+// Filtrelenmiş ürün listesi
+let displayedProducts = products || [];
+if (matchedCategory) {
+  displayedProducts = displayedProducts.filter(p => (p.kategori || '').toUpperCase() === (matchedCategory.kod || '').toUpperCase());
 }
 
-let pageTitle = currentPage ? currentPage.kod : 'Sayfa';
-let pageContent = '';
+// METINLER sekmesindeki tüm ilgili paragrafları topla
+let pageTitle = currentPage ? currentPage.kod : (matchedCategory ? matchedCategory.adtr : 'Sayfa');
+let pageParagraphs = [];
 
 if (texts && texts.length > 0 && currentPage) {
   const langCol = lang === 'en' ? 'english' : lang === 'me' ? 'crnogorski' : 'turkce';
-  
-  const titleRow = texts.find(t => (t.anahtar || '').toLowerCase() === `${(currentPage.kod || '').toLowerCase()}.title`);
-  if (titleRow) pageTitle = titleRow[langCol] || titleRow.turkce || currentPage.kod;
+  const pagePrefix = `${(currentPage.kod || '').toLowerCase()}.`;
 
-  const descRow = texts.find(t => (t.anahtar || '').toLowerCase() === `${(currentPage.kod || '').toLowerCase()}.description` || (t.anahtar || '').toLowerCase() === `${(currentPage.kod || '').toLowerCase()}.text`);
-  if (descRow) pageContent = descRow[langCol] || descRow.turkce || '';
+  texts.forEach(t => {
+    const key = (t.anahtar || '').toLowerCase();
+    if (key.startsWith(pagePrefix)) {
+      if (key.endsWith('.title')) {
+        pageTitle = t[langCol] || t.turkce || pageTitle;
+      } else if (t[langCol] || t.turkce) {
+        pageParagraphs.push(t[langCol] || t.turkce);
+      }
+    }
+  });
 }
 ---
 
@@ -57,26 +67,87 @@ if (texts && texts.length > 0 && currentPage) {
     <title>{pageTitle} | TURSKA PIJACA</title>
     <style>
       body { margin: 0; font-family: system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; }
-      .container { max-width: 1000px; margin: 3.5rem auto; padding: 0 1.5rem; min-height: 50vh; }
-      .content-card { background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+      .container { max-width: 1250px; margin: 3rem auto; padding: 0 1.5rem; min-height: 60vh; }
+      .content-card { background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
       .content-card h1 { color: #0b2218; font-size: 2rem; margin-top: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
-      .body-text { font-size: 1.1rem; line-height: 1.8; color: #334155; white-space: pre-wrap; }
+      .paragraph { font-size: 1.05rem; line-height: 1.8; color: #334155; margin-bottom: 1.2rem; }
+      
+      /* Ürün Kataloğu ve Filtre Stilleri */
+      .catalog-layout { display: grid; grid-template-columns: 260px 1fr; gap: 2rem; margin-top: 2rem; }
+      .filter-sidebar { background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; height: fit-content; }
+      .filter-group { margin-bottom: 1.5rem; }
+      .filter-group h4 { color: #0b2218; margin: 0 0 0.8rem 0; font-size: 1rem; }
+      .filter-list { list-style: none; padding: 0; margin: 0; }
+      .filter-list li { margin-bottom: 0.5rem; }
+      .filter-list a { color: #475569; text-decoration: none; font-size: 0.9rem; }
+      .filter-list a:hover { color: #34d399; }
+      
+      .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
+      .product-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; }
+      .product-img { width: 100%; height: 200px; object-fit: contain; padding: 10px; background: #fff; border-bottom: 1px solid #f1f5f9; }
+      .product-info { padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; }
+      .product-title { font-size: 1rem; font-weight: 700; color: #0b2218; margin: 0 0 0.4rem 0; }
+      .product-meta { font-size: 0.8rem; color: #64748b; margin-bottom: 0.8rem; }
+      .product-link { margin-top: auto; display: block; text-align: center; background: #0b2218; color: white; padding: 0.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.85rem; }
+      
+      @media (max-width: 768px) { .catalog-layout { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>
     <Header />
     <main class="container">
-      <div class="content-card">
-        <h1>{pageTitle}</h1>
-        
-        {pageContent ? (
-          <div class="body-text" set:html={pageContent} />
-        ) : (
-          <div class="body-text">
-            <p>Bu sayfa içeriği yakında güncellenecektir.</p>
+      {isProductPage ? (
+        <div>
+          <h1>{matchedCategory ? (matchedCategory[`ad${lang}`] || matchedCategory.adtr) : 'Tüm Ürünler Kataloğu'}</h1>
+          <div class="catalog-layout">
+            <aside class="filter-sidebar">
+              <div class="filter-group">
+                <h4>Kategoriler</h4>
+                <ul class="filter-list">
+                  <li><a href={`/${lang}/ürünler/tüm-ürünler`}>Tüm Ürünler</a></li>
+                  {categories.map(c => (
+                    <li><a href={`/${lang}/${(c.adrestr || '').replace(/^\//, '')}`.toLowerCase()}>{c[`ad${lang}`] || c.adtr}</a></li>
+                  ))}
+                </ul>
+              </div>
+              <div class="filter-group">
+                <h4>Markalar</h4>
+                <ul class="filter-list">
+                  {brands.map(b => <li><a href="#">{b.marka}</a></li>)}
+                </ul>
+              </div>
+            </aside>
+
+            <section class="products-grid">
+              {displayedProducts.map(p => {
+                const name = p[`ad${lang}`] || p.adtr || p.icad || p.kod;
+                const img = p.gorselurl || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
+                const pId = p.kayitid || p.urunno || '1';
+
+                return (
+                  <div class="product-card">
+                    <img src={img} alt={name} class="product-img" loading="lazy" />
+                    <div class="product-info">
+                      <h3 class="product-title">{name}</h3>
+                      <div class="product-meta">Marka: {p.marka || '-'} | Kod: {p.kayitid || '-'}</div>
+                      <a href={`/${lang}/products/${pId}`} class="product-link">Ürün Detayı</a>
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div class="content-card">
+          <h1>{pageTitle}</h1>
+          {pageParagraphs.length > 0 ? (
+            pageParagraphs.map(pText => <p class="paragraph">{pText}</p>)
+          ) : (
+            <p class="paragraph">Bu sayfa içeriği yakında güncellenecektir.</p>
+          )}
+        </div>
+      )}
     </main>
     <Footer lang={lang} />
   </body>

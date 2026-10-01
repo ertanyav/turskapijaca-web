@@ -1,34 +1,187 @@
 ---
 import Header from '../../components/Header.astro';
-import { getPages } from '../../lib/sheets';
+import Footer from '../../components/Footer.astro';
+import { getPages, getProducts, getCategories, getBrands } from '../../lib/sheets';
 
 const { lang } = Astro.params;
 const validLangs = ['tr', 'en', 'me'];
 
-// Güvenlik: Desteklenmeyen bir dil girilirse anında Türkçe'ye at
 if (!validLangs.includes(lang)) {
   return Astro.redirect('/tr');
 }
 
-// Ana Sayfa SEO verilerini çek
-const pages = await getPages();
-const homePage = pages.find(p => p.kod === 'ANA_SAYFA') || {};
+// Verileri paralel çek
+const [pages, products, categories, brands] = await Promise.all([
+  getPages(),
+  getProducts(),
+  getCategories(),
+  getBrands()
+]);
 
-// Dil tablosundan başlıkları bul, bulamazsa yedeği kullan
-const title = homePage[`ad${lang}`] || homePage['adtr'] || 'Turska Pijaca';
+const homePage = pages.find(p => p.kod === 'ANA_SAYFA') || {};
+const title = homePage[`ad${lang}`] || homePage['adtr'] || 'Turska Pijaca | B2B Toptan Ticaret';
+
+const heroTexts = {
+  tr: { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli Ürünleri Balkanlar ile Buluşuyor", desc: "Toptan alımlarınız için doğrudan üreticiler ve doğrulama yapılmış B2B tedarikçileri.", btn: "Ürünleri İncele" },
+  en: { badge: "B2B WHOLESALE SOURCING PORTAL", title: "Premium Turkish Products Exported to the Balkans", desc: "Direct manufacturer connections and verified suppliers for your bulk procurement.", btn: "Explore Products" },
+  me: { badge: "B2B PORTAL ZA VELEPRODAJU", title: "Vrhunski Turski Proizvodi na Balkonskom Tržištu", desc: "Direktna povezanost sa proizvođačima i proverenim dobavljačima za vašu veleprodaju.", btn: "Pregledaj Proizvode" }
+};
+const t = heroTexts[lang] || heroTexts.tr;
 ---
+
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
+    <style>
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #0f172a; }
+      
+      /* Hero Section */
+      .hero {
+        background: linear-gradient(135deg, #0b2218 0%, #143d2c 100%);
+        color: white;
+        padding: 5rem 1.5rem;
+        text-align: center;
+      }
+      .hero-badge {
+        display: inline-block;
+        background: rgba(52, 211, 153, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.3);
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-bottom: 1.5rem;
+      }
+      .hero h1 { font-size: 2.8rem; margin: 0 0 1rem 0; font-weight: 800; line-height: 1.2; }
+      .hero p { font-size: 1.2rem; color: #cbd5e1; max-width: 700px; margin: 0 auto 2rem auto; }
+      .hero-btn {
+        display: inline-block;
+        background-color: #34d399;
+        color: #0b2218;
+        font-weight: 800;
+        padding: 0.9rem 2.2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: transform 0.2s, background 0.2s;
+      }
+      .hero-btn:hover { background-color: #10b981; transform: translateY(-2px); }
+
+      /* Section Layout */
+      .section-container { max-width: 1250px; margin: 4rem auto; padding: 0 1.5rem; }
+      .section-header { text-align: center; margin-bottom: 2.5rem; }
+      .section-header h2 { font-size: 2rem; color: #0b2218; margin: 0; }
+      .section-header p { color: #64748b; margin-top: 0.5rem; }
+
+      /* Categories Grid */
+      .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+      .category-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        text-decoration: none;
+        color: #0f172a;
+        font-weight: 700;
+        transition: all 0.2s;
+      }
+      .category-card:hover { border-color: #34d399; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+
+      /* Products Grid */
+      .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem; }
+      .product-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+      }
+      .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+      .product-img { width: 100%; height: 200px; object-fit: cover; background: #f1f5f9; }
+      .product-info { padding: 1.25rem; display: flex; flex-direction: column; flex-grow: 1; }
+      .product-title { font-size: 1.1rem; font-weight: 700; color: #0b2218; margin: 0 0 0.5rem 0; }
+      .product-code { font-size: 0.8rem; color: #64748b; margin-bottom: 1rem; }
+      .product-link {
+        margin-top: auto;
+        display: block;
+        text-align: center;
+        background: #0b2218;
+        color: white;
+        padding: 0.6rem;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+      .product-link:hover { background: #143d2c; }
+    </style>
   </head>
-  <body style="margin: 0; font-family: system-ui, sans-serif; background: #f8fafc;">
+  <body>
     <Header />
-    <main style="max-width: 1200px; margin: 3rem auto; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-      <h1 style="color: #0b2218; font-size: 2.5rem;">{title}</h1>
-      <p style="color: #475569; font-size: 1.2rem;">Dinamik ana sayfamız ve dil altyapımız kusursuz çalışıyor.</p>
-    </main>
+
+    <section class="hero">
+      <div class="hero-badge">{t.badge}</div>
+      <h1>{t.title}</h1>
+      <p>{t.desc}</p>
+      <a href="#products" class="hero-btn">{t.btn}</a>
+    </section>
+
+    {categories && categories.length > 0 && (
+      <section class="section-container">
+        <div class="section-header">
+          <h2>Kategoriler</h2>
+          <p>Toptan tedarik kategorilerimizi keşfedin</p>
+        </div>
+        <div class="categories-grid">
+          {categories.map(c => {
+            const catName = c[`ad${lang}`] || c['adtr'] || c['kod'] || 'Kategori';
+            return <div class="category-card">{catName}</div>;
+          })}
+        </div>
+      </section>
+    )}
+
+    <section id="products" class="section-container">
+      <div class="section-header">
+        <h2>Öne Çıkan Ürünler</h2>
+        <p>Balkan pazarı için doğrudan fabrika fiyatlı ürünler</p>
+      </div>
+
+      {products && products.length > 0 ? (
+        <div class="products-grid">
+          {products.map(p => {
+            const name = p[`ad${lang}`] || p['adtr'] || p['kod'] || 'Ürün';
+            const img = p.gorsel || p.resim || p.image || 'https://via.placeholder.com/400x300?text=TURSKA+PIJACA';
+            const pId = p.id || p.kod || '1';
+
+            return (
+              <div class="product-card">
+                <img src={img} alt={name} class="product-img" loading="lazy" />
+                <div class="product-info">
+                  <h3 class="product-title">{name}</h3>
+                  <div class="product-code">Kod: {p.kod || 'TP-01'}</div>
+                  <a href={`/${lang}/products/${pId}`} class="product-link">
+                    Detayları Göster
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style="text-align: center; padding: 3rem; background: white; border-radius: 12px; color: #64748b;">
+          Master tabloda henüz ürün bulunmuyor veya yüklendi.
+        </div>
+      )}
+    </section>
+
+    <Footer lang={lang} />
   </body>
 </html>

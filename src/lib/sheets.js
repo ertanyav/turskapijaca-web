@@ -22,6 +22,13 @@ async function fetchSheetData(tabName) {
   }
 }
 
+// Sütun isimlerindeki Türkçe karakter veya kelime farklarını tolere eden yardımcı fonksiyon
+function getValueByFlexibleKey(row, keyPattern) {
+  if (!row) return '';
+  const matchKey = Object.keys(row).find(k => keyPattern.test(k));
+  return matchKey ? row[matchKey] : '';
+}
+
 export async function getPages() { return await fetchSheetData('SAYFALAR'); }
 export async function getTexts() { return await fetchSheetData('METINLER'); }
 export async function getDocuments() { return await fetchSheetData('DOKUMANLAR'); }
@@ -29,22 +36,44 @@ export async function getSettings() { return await fetchSheetData('AYARLAR'); }
 
 export async function getProducts() {
   const data = await fetchSheetData('URUNLER');
-  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()) && item.Durum && /aktif/i.test(item.Durum.toString()));
+  return data.filter(item => {
+    const yayin = getValueByFlexibleKey(item, /yayın|yayin/i);
+    const durum = getValueByFlexibleKey(item, /durum/i);
+    return (!yayin || /evet/i.test(yayin)) && (!durum || /aktif/i.test(durum));
+  });
 }
 
 export async function getBrands() {
   const data = await fetchSheetData('MARKALAR');
-  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()));
+  return data.filter(item => {
+    const yayin = getValueByFlexibleKey(item, /yayın|yayin/i);
+    return !yayin || /evet/i.test(yayin);
+  });
 }
 
 export async function getCategories() {
   const data = await fetchSheetData('KATEGORILER');
-  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()));
+  return data.filter(item => {
+    const yayin = getValueByFlexibleKey(item, /yayın|yayin/i);
+    return !yayin || /evet/i.test(yayin);
+  });
 }
 
 export async function getMenu() {
   const pages = await getPages();
+  if (!pages || pages.length === 0) return [];
+  
   return pages
-    .filter(p => p.Yayında && /evet/i.test(p.Yayında.toString()) && p.Menüde && /evet/i.test(p.Menüde.toString()))
-    .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
+    .filter(p => {
+      const yayin = getValueByFlexibleKey(p, /yayın|yayin/i);
+      const menude = getValueByFlexibleKey(p, /menü|menu/i);
+      const isYayinda = !yayin || /evet|true|1/i.test(yayin.toString());
+      const isMenude = !menude || /evet|true|1/i.test(menude.toString());
+      return isYayinda && isMenude;
+    })
+    .sort((a, b) => {
+      const siraA = Number(getValueByFlexibleKey(a, /sıra|sira/i) || 99);
+      const siraB = Number(getValueByFlexibleKey(b, /sıra|sira/i) || 99);
+      return siraA - siraB;
+    });
 }

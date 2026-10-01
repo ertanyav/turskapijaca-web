@@ -1,7 +1,7 @@
 ---
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getPages, getProducts, getCategories, getBrands } from '../../lib/sheets';
+import { getPages, getProducts, getCategories } from '../../lib/sheets';
 
 const { lang } = Astro.params;
 const validLangs = ['tr', 'en', 'me'];
@@ -10,12 +10,10 @@ if (!validLangs.includes(lang)) {
   return Astro.redirect('/tr');
 }
 
-// Verileri paralel çek
-const [pages, products, categories, brands] = await Promise.all([
+const [pages, products, categories] = await Promise.all([
   getPages(),
   getProducts(),
-  getCategories(),
-  getBrands()
+  getCategories()
 ]);
 
 const homePage = pages.find(p => p.kod === 'ANA_SAYFA') || {};
@@ -37,8 +35,6 @@ const t = heroTexts[lang] || heroTexts.tr;
     <title>{title}</title>
     <style>
       body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #0f172a; }
-      
-      /* Hero Section */
       .hero {
         background: linear-gradient(135deg, #0b2218 0%, #143d2c 100%);
         color: white;
@@ -67,44 +63,29 @@ const t = heroTexts[lang] || heroTexts.tr;
         padding: 0.9rem 2.2rem;
         border-radius: 8px;
         text-decoration: none;
-        transition: transform 0.2s, background 0.2s;
       }
-      .hero-btn:hover { background-color: #10b981; transform: translateY(-2px); }
-
-      /* Section Layout */
       .section-container { max-width: 1250px; margin: 4rem auto; padding: 0 1.5rem; }
       .section-header { text-align: center; margin-bottom: 2.5rem; }
       .section-header h2 { font-size: 2rem; color: #0b2218; margin: 0; }
-      .section-header p { color: #64748b; margin-top: 0.5rem; }
-
-      /* Categories Grid */
-      .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+      .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
       .category-card {
         background: white;
         padding: 1.5rem;
         border-radius: 12px;
         border: 1px solid #e2e8f0;
         text-align: center;
-        text-decoration: none;
-        color: #0f172a;
         font-weight: 700;
-        transition: all 0.2s;
       }
-      .category-card:hover { border-color: #34d399; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-
-      /* Products Grid */
       .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem; }
       .product-card {
         background: white;
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid #e2e8f0;
-        transition: all 0.2s;
         display: flex;
         flex-direction: column;
       }
-      .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
-      .product-img { width: 100%; height: 200px; object-fit: cover; background: #f1f5f9; }
+      .product-img { width: 100%; height: 220px; object-fit: cover; background: #f1f5f9; }
       .product-info { padding: 1.25rem; display: flex; flex-direction: column; flex-grow: 1; }
       .product-title { font-size: 1.1rem; font-weight: 700; color: #0b2218; margin: 0 0 0.5rem 0; }
       .product-code { font-size: 0.8rem; color: #64748b; margin-bottom: 1rem; }
@@ -118,9 +99,7 @@ const t = heroTexts[lang] || heroTexts.tr;
         border-radius: 6px;
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.9rem;
       }
-      .product-link:hover { background: #143d2c; }
     </style>
   </head>
   <body>
@@ -137,7 +116,6 @@ const t = heroTexts[lang] || heroTexts.tr;
       <section class="section-container">
         <div class="section-header">
           <h2>Kategoriler</h2>
-          <p>Toptan tedarik kategorilerimizi keşfedin</p>
         </div>
         <div class="categories-grid">
           {categories.map(c => {
@@ -151,14 +129,14 @@ const t = heroTexts[lang] || heroTexts.tr;
     <section id="products" class="section-container">
       <div class="section-header">
         <h2>Öne Çıkan Ürünler</h2>
-        <p>Balkan pazarı için doğrudan fabrika fiyatlı ürünler</p>
       </div>
 
       {products && products.length > 0 ? (
         <div class="products-grid">
           {products.map(p => {
             const name = p[`ad${lang}`] || p['adtr'] || p['kod'] || 'Ürün';
-            const img = p.gorsel || p.resim || p.image || 'https://via.placeholder.com/400x300?text=TURSKA+PIJACA';
+            // gorselurl key'i TP_MASTER'daki 'Görsel URL' sütunundan çekilir
+            const img = p.gorselurl || p.gorsel || p.resim || p.image || 'https://via.placeholder.com/400x300?text=TURSKA+PIJACA';
             const pId = p.id || p.kod || '1';
 
             return (
@@ -177,7 +155,7 @@ const t = heroTexts[lang] || heroTexts.tr;
         </div>
       ) : (
         <div style="text-align: center; padding: 3rem; background: white; border-radius: 12px; color: #64748b;">
-          Master tabloda henüz ürün bulunmuyor veya yüklendi.
+          Ürünler yükleniyor...
         </div>
       )}
     </section>

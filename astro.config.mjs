@@ -1,4 +1,14 @@
 import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
 
-// Ekstra paket gerektirmeyen standart Astro konfigürasyonu
-export default defineConfig({});
+export default defineConfig({
+  // Projeyi tam dinamik sunucu moduna alıyoruz
+  output: 'server',
+  adapter: cloudflare({
+    imageService: 'cloudflare'
+  }),
+  // Gelecekte domainlere göre yönlendirme yapabilmek için altyapı
+  build: {
+    format: 'directory'
+  }
+});

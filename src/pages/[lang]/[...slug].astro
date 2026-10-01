@@ -9,24 +9,31 @@ if (!validLangs.includes(lang)) return Astro.redirect('/tr');
 
 const [pages, texts] = await Promise.all([ getPages(), getTexts() ]);
 
+// Tıklanan URL'deki adresi adrestr, adresen, adresme sütunlarıyla tam eşleme
 const currentPage = pages.find(p => {
-  const pathStr = p[`adres${lang}`] || p['adrestr'] || p.kod;
-  if (!pathStr) return false;
-  return String(pathStr).replace(/^\//, '').toLowerCase() === (slug || '').toLowerCase();
+  const target = (slug || '').toLowerCase();
+  const aTR = String(p.adrestr || '').replace(/^\//, '').toLowerCase();
+  const aEN = String(p.adresen || '').replace(/^\//, '').toLowerCase();
+  const aME = String(p.adresme || '').replace(/^\//, '').toLowerCase();
+  const kod = String(p.kod || '').toLowerCase();
+  
+  return target === aTR || target === aEN || target === aME || target === kod;
 });
 
 if (!currentPage) return Astro.redirect(`/${lang}`);
 
-// Sayfa başlığı artık kesinlikle tıklanan menünün o dildeki adına eşitleniyor
+// Seçilen dil başlığını alır
 const pageTitle = currentPage[`ad${lang}`] || currentPage['adtr'] || currentPage.kod;
 
-// METINLER sekmesinden o sayfaya ait metni çekiyoruz
+// METINLER sekmesinden turkce, english, crnogorski sütunlarına bakarak içeriği çeker
 let pageContent = '';
 if (texts && texts.length > 0) {
-  const langKey = lang === 'en' ? 'english' : lang === 'me' ? 'crnogorski' : 'turkce';
-  const matchingText = texts.find(t => t.kod === currentPage.kod || t.sayfa === currentPage.kod);
-  if (matchingText) {
-    pageContent = matchingText[langKey] || matchingText[`icerik${lang}`] || matchingText['turkce'] || '';
+  const langColMap = { tr: 'turkce', en: 'english', me: 'crnogorski' };
+  const targetCol = langColMap[lang] || 'turkce';
+  
+  const match = texts.find(t => t.kod === currentPage.kod || t.sayfa === currentPage.kod);
+  if (match) {
+    pageContent = match[targetCol] || match['turkce'] || match[`icerik${lang}`] || '';
   }
 }
 ---
@@ -41,7 +48,7 @@ if (texts && texts.length > 0) {
       body { margin: 0; font-family: system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; }
       .container { max-width: 1000px; margin: 3.5rem auto; padding: 0 1.5rem; min-height: 50vh; }
       .content-card { background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-      .content-card h1 { color: #0b2218; font-size: 2.2rem; margin-top: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
+      .content-card h1 { color: #0b2218; font-size: 2rem; margin-top: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
       .body-text { font-size: 1.1rem; line-height: 1.8; color: #334155; white-space: pre-wrap; }
     </style>
   </head>
@@ -55,7 +62,7 @@ if (texts && texts.length > 0) {
           <div class="body-text" set:html={pageContent} />
         ) : (
           <div class="body-text">
-            <p>Bu sayfa için içerik yakında güncellenecektir.</p>
+            <p>Bu sayfa içeriği yakında güncellenecektir.</p>
           </div>
         )}
       </div>

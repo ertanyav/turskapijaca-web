@@ -1,37 +1,27 @@
 ---
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getPages, getProducts, getCategories } from '../../lib/sheets';
+import { getProducts, getCategories } from '../../lib/sheets';
 
 const { lang } = Astro.params;
 const validLangs = ['tr', 'en', 'me'];
 if (!validLangs.includes(lang)) return Astro.redirect('/tr');
 
-const [pages, products, categories] = await Promise.all([ getPages(), getProducts(), getCategories() ]);
-const homePage = pages.find(p => p.kod === 'ANA_SAYFA') || {};
-const title = homePage[`ad${lang}`] || homePage['adtr'] || 'Turska Pijaca | B2B Toptan Ticaret';
+const [products, categories] = await Promise.all([ getProducts(), getCategories() ]);
 
-function fixDriveUrl(url) {
-  if (!url) return '';
-  if (url.includes('drive.google.com/file/d/')) {
-    const id = url.split('/file/d/')[1].split('/')[0];
-    return `https://lh3.googleusercontent.com/d/${id}`;
-  }
-  return url;
-}
-
-const t = {
+const heroTexts = {
   tr: { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli Ürünleri Balkanlar ile Buluşuyor", desc: "Toptan alımlarınız için doğrudan üreticiler ve B2B tedarikçileri.", btn: "Ürünleri İncele" },
   en: { badge: "B2B WHOLESALE SOURCING PORTAL", title: "Premium Turkish Products Exported to the Balkans", desc: "Direct manufacturer connections for bulk procurement.", btn: "Explore Products" },
   me: { badge: "B2B PORTAL ZA VELEPRODAJU", title: "Vrhunski Turski Proizvodi na Balkonskom Tržištu", desc: "Direktna povezanost sa proizvođačima za vašu veleprodaju.", btn: "Pregledaj Proizvode" }
-}[lang] || {};
+};
+const t = heroTexts[lang] || heroTexts.tr;
 ---
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
+    <title>TURSKA PIJACA | B2B Portal</title>
     <style>
       body { margin: 0; font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
       .hero { background: linear-gradient(135deg, #0b2218 0%, #143d2c 100%); color: white; padding: 4.5rem 1.5rem; text-align: center; }
@@ -41,6 +31,9 @@ const t = {
       .hero-btn { display: inline-block; background-color: #34d399; color: #0b2218; font-weight: 800; padding: 0.85rem 2rem; border-radius: 8px; text-decoration: none; }
       .section-container { max-width: 1250px; margin: 3.5rem auto; padding: 0 1.5rem; }
       .section-header h2 { font-size: 1.8rem; color: #0b2218; text-align: center; margin-bottom: 2rem; }
+      .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 4rem; }
+      .category-card { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; text-decoration: none; color: #0b2218; }
+      .cat-img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 0.8rem; background: #f1f5f9; }
       .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.8rem; }
       .product-card { background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
       .product-img { width: 100%; height: 210px; object-fit: contain; background: #fff; padding: 12px; border-bottom: 1px solid #f1f5f9; }
@@ -60,16 +53,34 @@ const t = {
       <a href="#products" class="hero-btn">{t.btn}</a>
     </section>
 
-    <section id="products" class="section-container">
-      <div class="section-header"><h2>Aktif Ürün Kataloğu</h2></div>
+    <section class="section-container">
+      {categories && categories.length > 0 && (
+        <>
+          <div class="section-header"><h2>Kategoriler</h2></div>
+          <div class="categories-grid">
+            {categories.map(c => {
+              const nameKey = currentLang === 'en' ? 'aden' : currentLang === 'me' ? 'adme' : 'adtr';
+              const name = c[nameKey] || c.adtr || c.kod;
+              const img = c.gorselurl || '';
+              return (
+                <div class="category-card">
+                  {img && <img src={img} alt={name} class="cat-img" loading="lazy" />}
+                  <div>{name}</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <div id="products" class="section-header"><h2>Aktif Ürün Kataloğu</h2></div>
       {products && products.length > 0 ? (
         <div class="products-grid">
           {products.map(p => {
-            const name = p[`ad${lang}`] || p['adtr'] || p.icad || p.kod || 'Ürün';
-            // Görsel URL eşlemesi
-            const rawImg = p.gorselurl || p.gorsel || p.resim || '';
-            const img = fixDriveUrl(rawImg) || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
-            const pId = p.kayitid || p.urunno || p.kod || '1';
+            const nameKey = currentLang === 'en' ? 'aden' : currentLang === 'me' ? 'adme' : 'adtr';
+            const name = p[nameKey] || p.adtr || p.icad || p.kod || 'Ürün';
+            const img = p.gorselurl || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
+            const pId = p.kayitid || p.urunno || '1';
             const price = p.fiyateur ? `${p.fiyateur}` : '';
 
             return (

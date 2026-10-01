@@ -3,34 +3,48 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { getPages, getTexts } from '../../lib/sheets';
 
-const { lang, slug } = Astro.params;
+const { lang = 'tr', slug } = Astro.params;
 const validLangs = ['tr', 'en', 'me'];
-if (!validLangs.includes(lang)) return Astro.redirect('/tr');
 
-const [pages, texts] = await Promise.all([ getPages(), getTexts() ]);
+if (!validLangs.includes(lang)) {
+  return Astro.redirect('/tr');
+}
+
+let pages = [];
+let texts = [];
+
+try {
+  const res = await Promise.all([getPages(), getTexts()]);
+  pages = res[0] || [];
+  texts = res[1] || [];
+} catch (e) {}
+
+const target = (slug || '').toLowerCase();
 
 const currentPage = pages.find(p => {
-  const target = (slug || '').toLowerCase();
+  if (!p) return false;
   const aTR = String(p.adrestr || '').replace(/^\//, '').toLowerCase();
   const aEN = String(p.adresen || '').replace(/^\//, '').toLowerCase();
   const aME = String(p.adresme || '').replace(/^\//, '').toLowerCase();
+  const kod = String(p.kod || '').toLowerCase();
   
-  return target === aTR || target === aEN || target === aME || target === (p.kod || '').toLowerCase();
+  return target === aTR || target === aEN || target === aME || target === kod;
 });
 
-if (!currentPage) return Astro.redirect(`/${lang}`);
+if (!currentPage && target !== '') {
+  return Astro.redirect(`/${lang}`);
+}
 
-// METINLER sekmesindeki ilgili başlık ve metinleri çeker
-let pageTitle = currentPage.kod;
+let pageTitle = currentPage ? currentPage.kod : 'Sayfa';
 let pageContent = '';
 
-if (texts && texts.length > 0) {
+if (texts && texts.length > 0 && currentPage) {
   const langCol = lang === 'en' ? 'english' : lang === 'me' ? 'crnogorski' : 'turkce';
   
-  const titleRow = texts.find(t => (t.anahtar || '').toLowerCase() === `${currentPage.kod}.title`);
+  const titleRow = texts.find(t => (t.anahtar || '').toLowerCase() === `${(currentPage.kod || '').toLowerCase()}.title`);
   if (titleRow) pageTitle = titleRow[langCol] || titleRow.turkce || currentPage.kod;
 
-  const descRow = texts.find(t => (t.anahtar || '').toLowerCase() === `${currentPage.kod}.description` || (t.anahtar || '').toLowerCase() === `${currentPage.kod}.text`);
+  const descRow = texts.find(t => (t.anahtar || '').toLowerCase() === `${(currentPage.kod || '').toLowerCase()}.description` || (t.anahtar || '').toLowerCase() === `${(currentPage.kod || '').toLowerCase()}.text`);
   if (descRow) pageContent = descRow[langCol] || descRow.turkce || '';
 }
 ---

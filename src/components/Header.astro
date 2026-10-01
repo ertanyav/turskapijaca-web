@@ -1,170 +1,131 @@
 ---
-import { getPages, getTexts, getSettings, getCategories } from '../lib/sheets';
+import { getMenu } from '../lib/sheets';
+const menuItems = await getMenu();
 
-const pathname = Astro.url.pathname;
-let currentLang = 'tr';
-if (pathname.startsWith('/en')) currentLang = 'en';
-else if (pathname.startsWith('/me')) currentLang = 'me';
+// Mevcut dili belirle (URL'den: örn. /tr, /en, /me)
+const { pathname } = Astro.url;
+const segments = pathname.split('/').filter(Boolean);
+const currentLang = segments[0] || 'tr'; 
 
-const [pages, texts, settings, categories] = await Promise.all([
-  getPages(), getTexts(), getSettings(), getCategories()
-]);
+// Dillerin tanımları
+const languages = [
+  { code: 'tr', label: 'TR', pathPrefix: '/tr' },
+  { code: 'en', label: 'EN', pathPrefix: '/en' },
+  { code: 'me', label: 'ME', pathPrefix: '/me' }
+];
 
-const logoSetting = (settings || []).find(s => s.Anahtar === 'logo');
-const logoUrl = logoSetting ? logoSetting.Değer : '';
-
-function getText(key, defaultVal) {
-  const found = (texts || []).find(t => t.Anahtar === key);
-  if (!found) return defaultVal;
-  if (currentLang === 'en') return found.English || defaultVal;
-  if (currentLang === 'me') return found.Crnogorski || defaultVal;
-  return found.Türkçe || defaultVal;
-}
-
-function getPath(item) {
-  if (!item) return `/${currentLang}`;
-  let path = item['Adres TR'] || '';
-  if (currentLang === 'en') path = item['Adres EN'] || path;
-  if (currentLang === 'me') path = item['Adres ME'] || path;
-  
-  if (!path || path.includes('ana-sayfa') || path.includes('home') || path.includes('početna')) {
-    return `/${currentLang}`;
+// Dil değiştirici fonksiyon
+function getLangPath(targetLangCode) {
+  if (segments.length === 0) return `/${targetLangCode}`;
+  const newSegments = [...segments];
+  newSegments[0] = targetLangCode;
+  // Eğer ana sayfadaysa ve yönlendirme yapılıyorsa
+  if (newSegments.length === 1 && (newSegments[0] === 'tr' || newSegments[0] === 'en' || newSegments[0] === 'me')) {
+    return `/${targetLangCode}`;
   }
-  return `/${currentLang}/${path.replace(/^\//, '')}`;
+  return '/' + newSegments.join('/');
 }
-
-const menuPages = (pages || [])
-  .filter(p => p.Yayında && /evet/i.test(p.Yayında.toString()) && p.Menüde && /evet/i.test(p.Menüde.toString()))
-  .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
-
-const activeCategories = (categories || [])
-  .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
 ---
 
-<header class="site-header">
+<header class="main-header">
   <div class="header-container">
-    <a href={`/${currentLang}`} class="logo-area" aria-label="Ana Sayfa">
-      {logoUrl && (
-        <img src={logoUrl} alt="Turska Pijaca Logo" class="logo-img" onerror="this.style.display='none'" />
-      )}
-      <div class="logo-text-group">
-        <span class="logo-title">TURSKA PIJACA</span>
-        <span class="logo-subtitle">Turski Proizvodi</span>
-      </div>
-    </a>
+    <div class="logo">
+      <a href={`/${currentLang}`}>
+        <!-- Projede logo görseli yoksa metin olarak göster -->
+        <span>TURSKA PIJACA</span>
+      </a>
+    </div>
 
-    <button id="menu-toggle" class="mobile-toggle" aria-label="Menü">
-      <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-    </button>
+    <nav class="main-menu">
+      <ul>
+        {menuItems.map(item => {
+          const langUpper = currentLang.toUpperCase();
+          const itemName = item[`Ad ${langUpper}`];
+          const itemPath = item[`Adres ${langUpper}`] ? `/${currentLang}${item[`Adres ${langUpper}`]}` : `/${currentLang}`;
+          const isHome = item.Kod === 'ANA_SAYFA';
+          const finalPath = isHome ? `/${currentLang}` : itemPath;
+          
+          return (
+            <li>
+              <a href={finalPath}>{itemName}</a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
 
-    <div id="nav-wrapper" class="nav-wrapper">
-      <nav class="main-nav">
-        <ul>
-          {menuPages.map(page => {
-            const menuTitle = getText(`${page.Kod}.title`, page.Kod);
-            const href = getPath(page);
-            const isProducts = page.Kod === 'products' || page.Kod === 'urunler';
-
-            return (
-              <li class={isProducts ? 'has-mega-menu' : ''}>
-                <a href={href} class="nav-link">
-                  {menuTitle} {isProducts && <span class="caret">▾</span>}
-                </a>
-
-                {isProducts && activeCategories.length > 0 && (
-                  <div class="mega-menu">
-                    <div class="mega-menu-grid">
-                      {activeCategories.map(cat => {
-                        const catImg = cat['Resim'] || cat['Görsel'] || cat['Fotoğraf'] || '';
-                        const catName = currentLang === 'en' ? cat['Ad EN'] : currentLang === 'me' ? cat['Ad ME'] : cat['Ad TR'];
-                        
-                        let catPath = cat['Adres TR'] || '';
-                        if (currentLang === 'en') catPath = cat['Adres EN'] || catPath;
-                        if (currentLang === 'me') catPath = cat['Adres ME'] || catPath;
-                        const catHref = `/${currentLang}/${catPath.replace(/^\//, '')}`;
-
-                        return (
-                          <a href={catHref} class="mega-menu-item">
-                            {catImg && <img src={catImg} alt={catName} loading="lazy" />}
-                            <span class="multiline-text">{catName}</span>
-                          </a>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div class="lang-switcher">
-        <a href="/tr" class={currentLang === 'tr' ? 'active' : ''}>TR</a>
-        <span class="divider">|</span>
-        <a href="/en" class={currentLang === 'en' ? 'active' : ''}>EN</a>
-        <span class="divider">|</span>
-        <a href="/me" class={currentLang === 'me' ? 'active' : ''}>ME</a>
-      </div>
+    <div class="language-switcher">
+      {languages.map(lang => (
+        <a 
+          href={getLangPath(lang.code)} 
+          class={currentLang === lang.code ? 'active' : ''}
+        >
+          {lang.label}
+        </a>
+      ))}
     </div>
   </div>
 </header>
 
-<script>
-  const toggleBtn = document.getElementById('menu-toggle');
-  const navWrapper = document.getElementById('nav-wrapper');
-  if (toggleBtn && navWrapper) {
-    toggleBtn.addEventListener('click', () => {
-      navWrapper.classList.toggle('is-open');
-    });
-  }
-</script>
-
 <style>
-  .site-header {
+  .main-header {
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     position: sticky;
     top: 0;
-    z-index: 9999;
-    background-color: #ffffff;
-    border-bottom: 1px solid #eaeaea;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    width: 100%;
+    z-index: 100;
   }
-  .header-container { max-width: 1400px; margin: 0 auto; padding: 0.75rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-  .logo-area { display: flex; align-items: center; gap: 1rem; text-decoration: none; }
-  .logo-img { height: 50px; width: auto; object-fit: contain; }
-  .logo-text-group { display: flex; flex-direction: column; justify-content: center; }
-  .logo-title { color: #4b1b85; font-weight: 900; font-size: 1.4rem; line-height: 1.1; letter-spacing: 0.5px; }
-  .logo-subtitle { color: #0b2218; font-weight: 600; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; }
-  .multiline-text { white-space: pre-line; }
-  .nav-wrapper { display: flex; align-items: center; gap: 2.5rem; }
-  .main-nav ul { display: flex; list-style: none; margin: 0; padding: 0; gap: 1.5rem; align-items: center; }
-  .nav-link { color: #1f2937; text-decoration: none; font-size: 0.95rem; font-weight: 600; padding: 1rem 0; display: flex; align-items: center; gap: 0.4rem; transition: color 0.2s; }
-  .nav-link:hover { color: #e11d48; }
-  .has-mega-menu { position: relative; }
-  .mega-menu { position: absolute; top: 100%; left: 50%; transform: translateX(-50%) translateY(15px); background: #ffffff; border: 1px solid #eaeaea; box-shadow: 0 15px 30px rgba(0,0,0,0.1); border-radius: 12px; padding: 1.5rem; width: 600px; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 1000; }
-  .has-mega-menu:hover .mega-menu { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
-  .mega-menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-  .mega-menu-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; text-align: center; gap: 0.5rem; padding: 0.5rem; border-radius: 8px; transition: background 0.2s; }
-  .mega-menu-item:hover { background: #f8fafc; }
-  .mega-menu-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #eaeaea; }
-  .mega-menu-item span { color: #1f2937; font-size: 0.85rem; font-weight: 600; }
-  .lang-switcher { display: flex; align-items: center; gap: 0.5rem; }
-  .lang-switcher a { color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: 700; }
-  .lang-switcher a.active, .lang-switcher a:hover { color: #4b1b85; }
-  .lang-switcher .divider { color: #cbd5e1; }
-  .mobile-toggle { display: none; background: none; border: none; cursor: pointer; color: #1f2937; }
-
-  @media (max-width: 1024px) {
-    .mobile-toggle { display: block; }
-    .nav-wrapper { position: absolute; top: 100%; left: 0; width: 100%; background: #ffffff; flex-direction: column; align-items: flex-start; padding: 0; gap: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .nav-wrapper.is-open { max-height: 80vh; overflow-y: auto; }
-    .main-nav ul { flex-direction: column; width: 100%; gap: 0; }
-    .nav-link { padding: 1rem 2rem; border-bottom: 1px solid #eaeaea; width: 100%; }
-    .has-mega-menu:hover .mega-menu { display: none; }
-    .mega-menu { position: static; transform: none; width: 100%; box-shadow: none; border: none; border-bottom: 1px solid #eaeaea; border-radius: 0; padding: 1rem; opacity: 1; visibility: visible; display: none; }
-    .has-mega-menu.active .mega-menu { display: block; }
-    .mega-menu-grid { grid-template-columns: repeat(2, 1fr); }
-    .lang-switcher { padding: 1rem 2rem; width: 100%; justify-content: flex-start; }
+  .header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo a {
+    text-decoration: none;
+    color: #0b2218;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+  }
+  .main-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 2rem;
+  }
+  .main-menu a {
+    text-decoration: none;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+  }
+  .main-menu a:hover {
+    color: #10b981;
+  }
+  .language-switcher {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .language-switcher a {
+    text-decoration: none;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .language-switcher a:hover {
+    background-color: #f1f5f9;
+    color: #1e293b;
+  }
+  .language-switcher a.active {
+    background-color: #0b2218;
+    color: #ffffff;
   }
 </style>

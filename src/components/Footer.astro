@@ -1,52 +1,88 @@
 ---
-const { lang = 'en', texts = {} } = Astro.props;
+const { lang = 'tr' } = Astro.props;
 
-const tagline = texts['footer.tagline']?.[lang] || 'Türkiye’den Karadağ’a. Doğrudan tedarik, güçlü dağıtım.';
-const addressText = texts['ui.address']?.[lang] || 'Adres';
-const phoneText = texts['ui.phone']?.[lang] || 'Telefon';
+const labels = {
+  tr: {
+    about: "Türkiye ve Balkanlar arasındaki B2B toptan ticaret ve tedarik köprünüz.",
+    quickLinks: "Hızlı Bağlantılar",
+    contact: "İletişim & Destek",
+    rights: "Tüm hakları saklıdır. TP Master CMS altyapısı ile desteklenmektedir."
+  },
+  en: {
+    about: "Your B2B wholesale trade & sourcing bridge between Türkiye and the Balkans.",
+    quickLinks: "Quick Links",
+    contact: "Contact & Support",
+    rights: "All rights reserved. Powered by TP Master CMS."
+  },
+  me: {
+    about: "Vaš B2B most za veleprodaju i nabavku između Turske i Balkana.",
+    quickLinks: "Brzi Linkovi",
+    contact: "Kontakt i Podrška",
+    rights: "Sva prava zadržana. Pokreće TP Master CMS."
+  }
+};
+
+const currentText = labels[lang] || labels.tr;
 ---
 
-<footer style="background: #0d221a; color: #f0f4ed; margin-top: 5rem; padding: 4rem 1.5rem 2rem 1.5rem; border-top: 4px solid #d9b871;">
-  <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2.5rem; margin-bottom: 3rem;">
-    
-    <!-- Sütun 1: Marka & Yapı -->
-    <div>
-      <h3 style="color: #d9b871; font-size: 1.3rem; margin: 0 0 0.8rem 0; font-weight: 800;">TURSKA PIJACA</h3>
-      <p style="color: #a3c2b5; font-size: 0.88rem; line-height: 1.6; margin-bottom: 1rem;">
-        {tagline}
-      </p>
-      <div style="background: #173f31; color: #d9b871; padding: 0.5rem 0.8rem; border-radius: 8px; font-size: 0.8rem; border: 1px solid #234d3c; font-weight: bold; display: inline-block;">
-        🏛️ Registered Brand of UNIVERCERT MNE D.O.O.
-      </div>
+<footer class="main-footer">
+  <div class="footer-container">
+    <div class="footer-col">
+      <h3 class="footer-brand">TURSKA PIJACA</h3>
+      <p>{currentText.about}</p>
     </div>
 
-    <!-- Sütun 2: Fabrika & Lojistik -->
-    <div>
-      <h4 style="color: #d9b871; font-size: 1.05rem; margin: 0 0 1rem 0; border-bottom: 2px solid #173f31; padding-bottom: 0.4rem; display: inline-block;">
-        Fabrika & Lojistik Ağı
-      </h4>
-      <ul style="list-style: none; padding: 0; margin: 0; color: #a3c2b5; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.6rem;">
-        <li>🏭 <strong>Seda Gıda Fabrikası:</strong> Temsilciliğimiz altındaki öz üretim ve distribütörlük markaları.</li>
-        <li>🚚 <strong>Haftalık Sevkiyat:</strong> Türkiye fabrikamızdan Karadağ depomuza her hafta düzenli transfer.</li>
-        <li>🚛 <strong>Yerel Dağıtım:</strong> Özel araç filomuz ile Karadağ'ın her noktasına toptan teslimat.</li>
+    <div class="footer-col">
+      <h4>{currentText.quickLinks}</h4>
+      <ul>
+        <li><a href={`/${lang}`}>Ana Sayfa</a></li>
+        <li><a href={`/${lang}/urunler`}>Ürün Kataloğu</a></li>
+        <li><a href={`/${lang}/hakkimizda`}>Hakkımızda</a></li>
       </ul>
     </div>
 
-    <!-- Sütun 3: İletişim -->
-    <div>
-      <h4 style="color: #d9b871; font-size: 1.05rem; margin: 0 0 1rem 0; border-bottom: 2px solid #173f31; padding-bottom: 0.4rem; display: inline-block;">
-        Kurumsal İletişim
-      </h4>
-      <p style="color: #f0f4ed; font-size: 0.85rem; margin: 0.3rem 0;"><strong>UNIVERCERT MNE D.O.O.</strong></p>
-      <p style="color: #a3c2b5; font-size: 0.85rem; margin: 0.3rem 0;">📍 NASELJE SVETE PETKE BB, 85310 Budva, Montenegro</p>
-      <p style="color: #a3c2b5; font-size: 0.85rem; margin: 0.3rem 0;">📞 {phoneText}: +382 63 256 666</p>
-      <p style="color: #a3c2b5; font-size: 0.85rem; margin: 0.3rem 0;">✉️ E-posta: info@turskapijaca.com</p>
+    <div class="footer-col">
+      <h4>{currentText.contact}</h4>
+      <p>📍 Podgorica / Montenegro & İstanbul / Türkiye</p>
+      <p>✉️ info@turskapijaca.com</p>
     </div>
-
   </div>
 
-  <div style="border-top: 1px solid #173f31; text-align: center; padding-top: 1.8rem; font-size: 0.8rem; color: #a3c2b5; max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-    <div>© 2026 TURSKA PIJACA — Official B2B Supply Platform</div>
-    <div>UNIVERCERT MNE D.O.O. · Seda Gıda Representative</div>
+  <div class="footer-bottom">
+    <p>&copy; {new Date().getFullYear()} Turska Pijaca. {currentText.rights}</p>
   </div>
 </footer>
+
+<style>
+  .main-footer {
+    background-color: #06150f;
+    color: #94a3b8;
+    padding: 3rem 1.5rem 1.5rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 4rem;
+  }
+  .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 3rem;
+  }
+  .footer-brand { color: #ffffff; font-size: 1.3rem; margin-bottom: 0.8rem; }
+  .footer-col h4 { color: #ffffff; font-size: 1.05rem; margin-bottom: 1rem; }
+  .footer-col ul { list-style: none; padding: 0; margin: 0; }
+  .footer-col li { margin-bottom: 0.5rem; }
+  .footer-col a { color: #94a3b8; text-decoration: none; transition: color 0.2s; }
+  .footer-col a:hover { color: #34d399; }
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 2.5rem auto 0 auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    text-align: center;
+    font-size: 0.85rem;
+  }
+  @media (max-width: 768px) {
+    .footer-container { grid-template-columns: 1fr; gap: 2rem; }
+  }
+</style>

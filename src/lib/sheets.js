@@ -22,13 +22,11 @@ async function fetchSheetData(tabName) {
   }
 }
 
-// Ana Fonksiyonlar
 export async function getPages() { return await fetchSheetData('SAYFALAR'); }
 export async function getTexts() { return await fetchSheetData('METINLER'); }
 export async function getDocuments() { return await fetchSheetData('DOKUMANLAR'); }
 export async function getSettings() { return await fetchSheetData('AYARLAR'); }
 
-// Filtrelenmiş Ürün, Marka ve Kategoriler
 export async function getProducts() {
   const data = await fetchSheetData('URUNLER');
   return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()) && item.Durum && /aktif/i.test(item.Durum.toString()));

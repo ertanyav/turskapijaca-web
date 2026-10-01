@@ -11,12 +11,20 @@ const [pages, products, categories] = await Promise.all([ getPages(), getProduct
 const homePage = pages.find(p => p.kod === 'ANA_SAYFA') || {};
 const title = homePage[`ad${lang}`] || homePage['adtr'] || 'Turska Pijaca | B2B Toptan Ticaret';
 
-const heroTexts = {
-  tr: { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli Ürünleri Balkanlar ile Buluşuyor", desc: "Toptan alımlarınız için doğrudan üreticiler ve doğrulama yapılmış B2B tedarikçileri.", btn: "Ürünleri İncele" },
-  en: { badge: "B2B WHOLESALE SOURCING PORTAL", title: "Premium Turkish Products Exported to the Balkans", desc: "Direct manufacturer connections and verified suppliers for your bulk procurement.", btn: "Explore Products" },
-  me: { badge: "B2B PORTAL ZA VELEPRODAJU", title: "Vrhunski Turski Proizvodi na Balkonskom Tržištu", desc: "Direktna povezanost sa proizvođačima i proverenim dobavljačima za vašu veleprodaju.", btn: "Pregledaj Proizvode" }
-};
-const t = heroTexts[lang] || heroTexts.tr;
+function fixDriveUrl(url) {
+  if (!url) return '';
+  if (url.includes('drive.google.com/file/d/')) {
+    const id = url.split('/file/d/')[1].split('/')[0];
+    return `https://lh3.googleusercontent.com/d/${id}`;
+  }
+  return url;
+}
+
+const t = {
+  tr: { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli Ürünleri Balkanlar ile Buluşuyor", desc: "Toptan alımlarınız için doğrudan üreticiler ve B2B tedarikçileri.", btn: "Ürünleri İncele" },
+  en: { badge: "B2B WHOLESALE SOURCING PORTAL", title: "Premium Turkish Products Exported to the Balkans", desc: "Direct manufacturer connections for bulk procurement.", btn: "Explore Products" },
+  me: { badge: "B2B PORTAL ZA VELEPRODAJU", title: "Vrhunski Turski Proizvodi na Balkonskom Tržištu", desc: "Direktna povezanost sa proizvođačima za vašu veleprodaju.", btn: "Pregledaj Proizvode" }
+}[lang] || {};
 ---
 <!DOCTYPE html>
 <html lang={lang}>
@@ -26,24 +34,19 @@ const t = heroTexts[lang] || heroTexts.tr;
     <title>{title}</title>
     <style>
       body { margin: 0; font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
-      .hero { background: linear-gradient(135deg, #0b2218 0%, #143d2c 100%); color: white; padding: 5rem 1.5rem; text-align: center; }
-      .hero-badge { display: inline-block; background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.4rem 1rem; border-radius: 30px; font-size: 0.85rem; font-weight: 700; margin-bottom: 1.5rem; }
-      .hero h1 { font-size: 2.8rem; margin: 0 0 1rem 0; font-weight: 800; line-height: 1.2; }
-      .hero p { font-size: 1.2rem; color: #cbd5e1; max-width: 700px; margin: 0 auto 2rem auto; }
-      .hero-btn { display: inline-block; background-color: #34d399; color: #0b2218; font-weight: 800; padding: 0.9rem 2.2rem; border-radius: 8px; text-decoration: none; }
-      .section-container { max-width: 1250px; margin: 4rem auto; padding: 0 1.5rem; }
-      .section-header { text-align: center; margin-bottom: 2.5rem; }
-      .section-header h2 { font-size: 2rem; color: #0b2218; margin: 0; }
-      .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
-      .category-card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; transition: transform 0.2s; }
-      .category-card:hover { transform: translateY(-3px); border-color: #34d399; }
-      .cat-img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 0.8rem; background: #f1f5f9; }
-      .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem; }
+      .hero { background: linear-gradient(135deg, #0b2218 0%, #143d2c 100%); color: white; padding: 4.5rem 1.5rem; text-align: center; }
+      .hero-badge { display: inline-block; background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.4rem 1rem; border-radius: 30px; font-size: 0.85rem; font-weight: 700; margin-bottom: 1.2rem; }
+      .hero h1 { font-size: 2.5rem; margin: 0 0 1rem 0; font-weight: 800; }
+      .hero p { font-size: 1.15rem; color: #cbd5e1; max-width: 650px; margin: 0 auto 1.8rem auto; }
+      .hero-btn { display: inline-block; background-color: #34d399; color: #0b2218; font-weight: 800; padding: 0.85rem 2rem; border-radius: 8px; text-decoration: none; }
+      .section-container { max-width: 1250px; margin: 3.5rem auto; padding: 0 1.5rem; }
+      .section-header h2 { font-size: 1.8rem; color: #0b2218; text-align: center; margin-bottom: 2rem; }
+      .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.8rem; }
       .product-card { background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
-      .product-img { width: 100%; height: 220px; object-fit: contain; background: #fff; padding: 10px; border-bottom: 1px solid #f1f5f9; }
-      .product-info { padding: 1.25rem; display: flex; flex-direction: column; flex-grow: 1; }
-      .product-title { font-size: 1.1rem; font-weight: 700; color: #0b2218; margin: 0 0 0.5rem 0; }
-      .product-code { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+      .product-img { width: 100%; height: 210px; object-fit: contain; background: #fff; padding: 12px; border-bottom: 1px solid #f1f5f9; }
+      .product-info { padding: 1.2rem; display: flex; flex-direction: column; flex-grow: 1; }
+      .product-title { font-size: 1.05rem; font-weight: 700; color: #0b2218; margin: 0 0 0.4rem 0; }
+      .product-code { font-size: 0.8rem; color: #64748b; margin-bottom: 0.4rem; }
       .product-price { font-weight: 800; color: #059669; margin-bottom: 1rem; }
       .product-link { margin-top: auto; display: block; text-align: center; background: #0b2218; color: white; padding: 0.6rem; border-radius: 6px; text-decoration: none; font-weight: 600; }
     </style>
@@ -57,40 +60,24 @@ const t = heroTexts[lang] || heroTexts.tr;
       <a href="#products" class="hero-btn">{t.btn}</a>
     </section>
 
-    {categories && categories.length > 0 && (
-      <section class="section-container">
-        <div class="section-header"><h2>Kategoriler</h2></div>
-        <div class="categories-grid">
-          {categories.map(c => {
-            const catName = c[`ad${lang}`] || c['adtr'] || c.kod || 'Kategori';
-            const catImg = c.gorselurl || c.gorsel || c.resim || '';
-            return (
-              <div class="category-card">
-                {catImg && <img src={catImg} alt={catName} class="cat-img" loading="lazy" />}
-                <div>{catName}</div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    )}
-
     <section id="products" class="section-container">
       <div class="section-header"><h2>Aktif Ürün Kataloğu</h2></div>
       {products && products.length > 0 ? (
         <div class="products-grid">
           {products.map(p => {
             const name = p[`ad${lang}`] || p['adtr'] || p.icad || p.kod || 'Ürün';
-            const img = p.gorselurl || p.gorsel || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
+            // Görsel URL eşlemesi
+            const rawImg = p.gorselurl || p.gorsel || p.resim || '';
+            const img = fixDriveUrl(rawImg) || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
             const pId = p.kayitid || p.urunno || p.kod || '1';
-            const price = p.fiyateur ? `${p.fiyateur} EUR` : '';
+            const price = p.fiyateur ? `${p.fiyateur}` : '';
 
             return (
               <div class="product-card">
                 <img src={img} alt={name} class="product-img" loading="lazy" />
                 <div class="product-info">
                   <h3 class="product-title">{name}</h3>
-                  <div class="product-code">ID: {p.kayitid || p.urunno || '-'}</div>
+                  <div class="product-code">Kod: {p.kayitid || p.urunno || '-'}</div>
                   {price && <div class="product-price">{price}</div>}
                   <a href={`/${lang}/products/${pId}`} class="product-link">Detayları Göster</a>
                 </div>
@@ -98,7 +85,9 @@ const t = heroTexts[lang] || heroTexts.tr;
             );
           })}
         </div>
-      ) : ( <div style="text-align: center; padding: 3rem;">Aktif ürün bulunamadı.</div> )}
+      ) : (
+        <div style="text-align: center; padding: 3rem;">Aktif ürün bulunamadı.</div>
+      )}
     </section>
     <Footer lang={lang} />
   </body>

@@ -33,6 +33,7 @@ async function fetchSheetData(tabName) {
 export const getPages = () => fetchSheetData('SAYFALAR');
 export const getTexts = () => fetchSheetData('METINLER');
 export const getBrands = () => fetchSheetData('MARKALAR');
+export const getDealers = () => fetchSheetData('BAYILER'); // BAYİLER EKLENDİ
 export const getSettings = () => fetchSheetData('AYARLAR');
 export const getDocuments = () => fetchSheetData('BELGELER');
 

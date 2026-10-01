@@ -34,14 +34,11 @@ function getLangPath(targetLangCode) {
 <header class="main-header">
   <div class="header-container">
     <a href={`/${currentLang}`} class="logo-link">
-      {logoUrl ? (
-        <img src={logoUrl} alt="TURSKA PIJACA" class="site-logo" />
-      ) : (
-        <div class="brand-text-wrap">
-          <span class="brand-badge">B2B</span>
-          <span class="brand-title">TURSKA PIJACA</span>
-        </div>
-      )}
+      {logoUrl && <img src={logoUrl} alt="TURSKA PIJACA" class="site-logo" />}
+      <div class="brand-text-wrap">
+        <span class="brand-title">TURSKA PIJACA</span>
+        <span class="brand-subtitle">Turski Proizvodi</span>
+      </div>
     </a>
 
     <nav class="main-menu">
@@ -57,13 +54,25 @@ function getLangPath(targetLangCode) {
 
           const cleanAddress = String(rawAddress).replace(/^\//, '');
           const finalPath = `/${currentLang}/${cleanAddress}`.toLowerCase();
-          const isCurrent = pathname.toLowerCase().includes(cleanAddress.toLowerCase());
+          const hasChildren = item.children && item.children.length > 0;
 
           return (
-            <li>
-              <a href={finalPath} class={isCurrent ? 'active' : ''}>
-                {name}
-              </a>
+            <li class={`menu-item ${hasChildren ? 'has-dropdown' : ''}`}>
+              <a href={finalPath}>{name} {hasChildren && <span class="arrow">▾</span>}</a>
+              {hasChildren && (
+                <ul class="dropdown-menu">
+                  {item.children.map(child => {
+                    const childName = child[langKey] || child.adtr || child.kod;
+                    const childAddr = child[addrKey] || child.adrestr || child.kod;
+                    const cleanChildAddr = String(childAddr).replace(/^\//, '');
+                    return (
+                      <li>
+                        <a href={`/${currentLang}/${cleanChildAddr}`.toLowerCase()}>{childName}</a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </li>
           );
         })}
@@ -83,16 +92,36 @@ function getLangPath(targetLangCode) {
 <style>
   .main-header { background-color: #0b2218; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
   .header-container { max-width: 1300px; margin: 0 auto; padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-  .logo-link { display: flex; align-items: center; text-decoration: none; }
-  .site-logo { height: 48px; width: auto; object-fit: contain; }
-  .brand-text-wrap { display: flex; align-items: center; gap: 0.5rem; }
-  .brand-badge { background: #34d399; color: #0b2218; font-size: 0.7rem; font-weight: 900; padding: 0.2rem 0.4rem; border-radius: 4px; }
-  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.3rem; }
+  .logo-link { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; }
+  .site-logo { height: 44px; width: auto; object-fit: contain; }
+  .brand-text-wrap { display: flex; flex-direction: column; }
+  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.25rem; letter-spacing: 0.5px; line-height: 1.1; }
+  .brand-subtitle { color: #34d399; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }
   .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.8rem; align-items: center; }
-  .main-menu a { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; }
-  .main-menu a:hover, .main-menu a.active { color: #34d399; }
+  .menu-item { position: relative; }
+  .main-menu a { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; padding: 0.5rem 0; display: flex; align-items: center; gap: 0.3rem; }
+  .main-menu a:hover { color: #34d399; }
+  
+  /* Dropdown Styles */
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #06150f;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.5rem 0;
+    min-width: 200px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    flex-direction: column;
+    gap: 0 !important;
+  }
+  .dropdown-menu a { padding: 0.6rem 1.2rem; color: #94a3b8; font-size: 0.88rem; white-space: nowrap; }
+  .dropdown-menu a:hover { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+  .has-dropdown:hover .dropdown-menu { display: flex; }
+
   .language-switcher { display: flex; gap: 0.3rem; background: rgba(255, 255, 255, 0.08); padding: 0.25rem; border-radius: 6px; }
   .language-switcher a { text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 4px; }
   .language-switcher a.active { background-color: #34d399; color: #0b2218; }
-  @media (max-width: 768px) { .header-container { flex-direction: column; gap: 0.8rem; } .main-menu ul { gap: 1rem; flex-wrap: wrap; justify-content: center; } }
 </style>

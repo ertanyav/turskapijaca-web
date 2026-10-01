@@ -1,27 +1,34 @@
 ---
-import { getMenu } from '../lib/sheets';
-const menuItems = await getMenu();
+import { getMenu, getPages } from '../lib/sheets';
 
-// Mevcut dili belirle (URL'den: örn. /tr, /en, /me)
+let menuItems = [];
+try {
+  menuItems = await getMenu();
+  if (!menuItems || menuItems.length === 0) {
+    const allPages = await getPages();
+    menuItems = allPages || [];
+  }
+} catch (e) {
+  console.error("Header menu error:", e);
+}
+
 const { pathname } = Astro.url;
 const segments = pathname.split('/').filter(Boolean);
-const currentLang = segments[0] || 'tr'; 
+const currentLang = (segments[0] === 'en' || segments[0] === 'me' || segments[0] === 'tr') ? segments[0] : 'tr';
 
-// Dillerin tanımları
 const languages = [
-  { code: 'tr', label: 'TR', pathPrefix: '/tr' },
-  { code: 'en', label: 'EN', pathPrefix: '/en' },
-  { code: 'me', label: 'ME', pathPrefix: '/me' }
+  { code: 'tr', label: 'TR' },
+  { code: 'en', label: 'EN' },
+  { code: 'me', label: 'ME' }
 ];
 
-// Dil değiştirici fonksiyon
 function getLangPath(targetLangCode) {
   if (segments.length === 0) return `/${targetLangCode}`;
   const newSegments = [...segments];
-  newSegments[0] = targetLangCode;
-  // Eğer ana sayfadaysa ve yönlendirme yapılıyorsa
-  if (newSegments.length === 1 && (newSegments[0] === 'tr' || newSegments[0] === 'en' || newSegments[0] === 'me')) {
-    return `/${targetLangCode}`;
+  if (['tr', 'en', 'me'].includes(newSegments[0])) {
+    newSegments[0] = targetLangCode;
+  } else {
+    newSegments.unshift(targetLangCode);
   }
   return '/' + newSegments.join('/');
 }
@@ -31,23 +38,30 @@ function getLangPath(targetLangCode) {
   <div class="header-container">
     <div class="logo">
       <a href={`/${currentLang}`}>
-        <!-- Projede logo görseli yoksa metin olarak göster -->
-        <span>TURSKA PIJACA</span>
+        <span class="brand-title">TURSKA PIJACA</span>
       </a>
     </div>
 
     <nav class="main-menu">
       <ul>
+        <li>
+          <a href={`/${currentLang}`}>
+            {currentLang === 'en' ? 'Home' : currentLang === 'me' ? 'Početna' : 'Ana Sayfa'}
+          </a>
+        </li>
         {menuItems.map(item => {
-          const langUpper = currentLang.toUpperCase();
-          const itemName = item[`Ad ${langUpper}`];
-          const itemPath = item[`Adres ${langUpper}`] ? `/${currentLang}${item[`Adres ${langUpper}`]}` : `/${currentLang}`;
-          const isHome = item.Kod === 'ANA_SAYFA';
-          const finalPath = isHome ? `/${currentLang}` : itemPath;
+          const langKey = currentLang.toUpperCase();
+          const name = item[`Ad ${langKey}`] || item['Ad TR'] || item.Kod || '';
+          const rawAddress = item[`Adres ${langKey}`] || item['Adres TR'] || '';
           
+          if (!name || item.Kod === 'ANA_SAYFA') return null;
+
+          const path = rawAddress.startsWith('/') ? rawAddress : `/${rawAddress}`;
+          const finalPath = `/${currentLang}${path}`;
+
           return (
             <li>
-              <a href={finalPath}>{itemName}</a>
+              <a href={finalPath}>{name}</a>
             </li>
           );
         })}
@@ -69,11 +83,11 @@ function getLangPath(targetLangCode) {
 
 <style>
   .main-header {
-    background-color: #ffffff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: #0b2218;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 1000;
   }
   .header-container {
     max-width: 1400px;
@@ -85,47 +99,53 @@ function getLangPath(targetLangCode) {
   }
   .logo a {
     text-decoration: none;
-    color: #0b2218;
+  }
+  .brand-title {
+    color: #ffffff;
     font-weight: 800;
-    font-size: 1.5rem;
-    letter-spacing: -0.5px;
+    font-size: 1.4rem;
+    letter-spacing: 0.5px;
   }
   .main-menu ul {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
-    gap: 2rem;
+    gap: 1.8rem;
+    align-items: center;
   }
   .main-menu a {
     text-decoration: none;
-    color: #475569;
-    font-weight: 600;
+    color: #cbd5e1;
+    font-weight: 500;
     font-size: 0.95rem;
     transition: color 0.2s;
   }
   .main-menu a:hover {
-    color: #10b981;
+    color: #34d399;
   }
   .language-switcher {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.2rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   .language-switcher a {
     text-decoration: none;
-    color: #64748b;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.25rem 0.5rem;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.6rem;
     border-radius: 4px;
     transition: all 0.2s;
   }
   .language-switcher a:hover {
-    background-color: #f1f5f9;
-    color: #1e293b;
+    color: #ffffff;
   }
   .language-switcher a.active {
-    background-color: #0b2218;
-    color: #ffffff;
+    background-color: #34d399;
+    color: #0b2218;
   }
 </style>

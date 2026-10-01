@@ -1,10 +1,15 @@
 ---
 import { getMenu, getLogoUrl } from '../lib/sheets';
 
-const menuItems = await getMenu() || [];
-const logoUrl = await getLogoUrl();
+let menuItems = [];
+let logoUrl = '';
 
-const { pathname } = Astro.url;
+try {
+  menuItems = (await getMenu()) || [];
+  logoUrl = (await getLogoUrl()) || '';
+} catch (e) {}
+
+const { pathname = '' } = Astro.url;
 const segments = pathname.split('/').filter(Boolean);
 const currentLang = ['tr', 'en', 'me'].includes(segments[0]) ? segments[0] : 'tr';
 
@@ -52,7 +57,6 @@ function getLangPath(targetLangCode) {
 
           const cleanAddress = String(rawAddress).replace(/^\//, '');
           const finalPath = `/${currentLang}/${cleanAddress}`.toLowerCase();
-
           const isCurrent = pathname.toLowerCase().includes(cleanAddress.toLowerCase());
 
           return (
@@ -88,7 +92,7 @@ function getLangPath(targetLangCode) {
   .main-menu a { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; }
   .main-menu a:hover, .main-menu a.active { color: #34d399; }
   .language-switcher { display: flex; gap: 0.3rem; background: rgba(255, 255, 255, 0.08); padding: 0.25rem; border-radius: 6px; }
-  .language-switcher a { text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 4px; transition: all 0.2s; }
+  .language-switcher a { text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 4px; }
   .language-switcher a.active { background-color: #34d399; color: #0b2218; }
   @media (max-width: 768px) { .header-container { flex-direction: column; gap: 0.8rem; } .main-menu ul { gap: 1rem; flex-wrap: wrap; justify-content: center; } }
 </style>

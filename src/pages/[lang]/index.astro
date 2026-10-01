@@ -1,31 +1,30 @@
 ---
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getProducts, getCategories } from '../../lib/sheets';
+import { getCategories, getTextDictionary } from '../../lib/sheets';
 
 const { lang = 'tr' } = Astro.params;
 const validLangs = ['tr', 'en', 'me'];
+if (!validLangs.includes(lang)) return Astro.redirect('/tr');
 
-if (!validLangs.includes(lang)) {
-  return Astro.redirect('/tr');
-}
+const [categories, dict] = await Promise.all([ getCategories(), getTextDictionary(lang) ]);
 
-let products = [];
-let categories = [];
+// Hero ve dinamik bölümler tamamen METINLER sekmesinden çekilir
+const heroTitle = dict['home.hero.title'] || dict['home.title'] || 'TURSKA PIJACA';
+const heroDesc = dict['home.hero.subtitle'] || dict['home.hero.text'] || '';
+const heroBtn = dict['home.hero.button'] || 'Kategorileri İnceleyin';
 
-try {
-  const res = await Promise.all([getProducts(), getCategories()]);
-  products = res[0] || [];
-  categories = res[1] || [];
-} catch (e) {}
+// NEDEN TURSKA PIJACA, TEDARİK ÇÖZÜMLERİMİZ, SİPARİŞ SÜRECİ alanlarını METINLER içinden dinamik çekme
+const whyTitle = dict['home.why.title'] || 'NEDEN TURSKA PIJACA?';
+const whyText = dict['home.why.text'] || dict['home.why.description'] || '';
 
-const heroTexts = {
-  tr: { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli Ürünleri Balkanlar ile Buluşuyor", desc: "Toptan alımlarınız için doğrudan üreticiler ve B2B tedarikçileri.", btn: "Ürünleri İncele" },
-  en: { badge: "B2B WHOLESALE SOURCING PORTAL", title: "Premium Turkish Products Exported to the Balkans", desc: "Direct manufacturer connections for bulk procurement.", btn: "Explore Products" },
-  me: { badge: "B2B PORTAL ZA VELEPRODAJU", title: "Vrhunski Turski Proizvodi na Balkonskom Tržištu", desc: "Direktna povezanost sa proizvođačima za vašu veleprodaju.", btn: "Pregledaj Proizvode" }
-};
-const t = heroTexts[lang] || heroTexts.tr;
+const solutionsTitle = dict['home.solutions.title'] || 'TEDARİK ÇÖZÜMLERİMİZ';
+const solutionsText = dict['home.solutions.text'] || dict['home.solutions.description'] || '';
+
+const processTitle = dict['home.process.title'] || 'SİPARİŞ SÜRECİ';
+const processText = dict['home.process.text'] || dict['home.process.description'] || '';
 ---
+
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
@@ -35,81 +34,72 @@ const t = heroTexts[lang] || heroTexts.tr;
     <style>
       body { margin: 0; font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
       .hero { background: linear-gradient(135deg, #0b2218 0%, #143d2c 100%); color: white; padding: 4.5rem 1.5rem; text-align: center; }
-      .hero-badge { display: inline-block; background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.4rem 1rem; border-radius: 30px; font-size: 0.85rem; font-weight: 700; margin-bottom: 1.2rem; }
       .hero h1 { font-size: 2.5rem; margin: 0 0 1rem 0; font-weight: 800; }
-      .hero p { font-size: 1.15rem; color: #cbd5e1; max-width: 650px; margin: 0 auto 1.8rem auto; }
+      .hero p { font-size: 1.15rem; color: #cbd5e1; max-width: 700px; margin: 0 auto 1.8rem auto; line-height: 1.6; }
       .hero-btn { display: inline-block; background-color: #34d399; color: #0b2218; font-weight: 800; padding: 0.85rem 2rem; border-radius: 8px; text-decoration: none; }
       .section-container { max-width: 1250px; margin: 3.5rem auto; padding: 0 1.5rem; }
       .section-header h2 { font-size: 1.8rem; color: #0b2218; text-align: center; margin-bottom: 2rem; }
-      .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 4rem; }
-      .category-card { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; text-decoration: none; color: #0b2218; }
-      .cat-img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 0.8rem; background: #f1f5f9; }
-      .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.8rem; }
-      .product-card { background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
-      .product-img { width: 100%; height: 210px; object-fit: contain; background: #fff; padding: 12px; border-bottom: 1px solid #f1f5f9; }
-      .product-info { padding: 1.2rem; display: flex; flex-direction: column; flex-grow: 1; }
-      .product-title { font-size: 1.05rem; font-weight: 700; color: #0b2218; margin: 0 0 0.4rem 0; }
-      .product-code { font-size: 0.8rem; color: #64748b; margin-bottom: 0.4rem; }
-      .product-price { font-weight: 800; color: #059669; margin-bottom: 1rem; }
-      .product-link { margin-top: auto; display: block; text-align: center; background: #0b2218; color: white; padding: 0.6rem; border-radius: 6px; text-decoration: none; font-weight: 600; }
+      .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
+      .category-card { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; text-decoration: none; color: #0b2218; transition: all 0.2s; display: block; }
+      .category-card:hover { transform: translateY(-4px); border-color: #34d399; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+      .cat-img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 0.8rem; background: #f1f5f9; }
+      .info-block { background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-top: 3rem; }
+      .info-block h3 { color: #0b2218; font-size: 1.5rem; margin-top: 0; margin-bottom: 1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; }
+      .info-block p { color: #475569; line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap; }
     </style>
   </head>
   <body>
     <Header />
     <section class="hero">
-      <div class="hero-badge">{t.badge}</div>
-      <h1>{t.title}</h1>
-      <p>{t.desc}</p>
-      <a href="#products" class="hero-btn">{t.btn}</a>
+      <h1>{heroTitle}</h1>
+      {heroDesc && <p>{heroDesc}</p>}
+      <a href="#categories" class="hero-btn">{heroBtn}</a>
     </section>
 
-    <section class="section-container">
+    <main class="section-container">
+      <div id="categories" class="section-header"><h2>Ürün Kategorileri</h2></div>
       {categories && categories.length > 0 && (
-        <>
-          <div class="section-header"><h2>Kategoriler</h2></div>
-          <div class="categories-grid">
-            {categories.map(c => {
-              const nameKey = lang === 'en' ? 'aden' : lang === 'me' ? 'adme' : 'adtr';
-              const name = c[nameKey] || c.adtr || c.kod;
-              const img = c.gorselurl || '';
-              return (
-                <div class="category-card">
-                  {img && <img src={img} alt={name} class="cat-img" loading="lazy" />}
-                  <div>{name}</div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      <div id="products" class="section-header"><h2>Aktif Ürün Kataloğu</h2></div>
-      {products && products.length > 0 ? (
-        <div class="products-grid">
-          {products.map(p => {
+        <div class="categories-grid">
+          {categories.map(c => {
             const nameKey = lang === 'en' ? 'aden' : lang === 'me' ? 'adme' : 'adtr';
-            const name = p[nameKey] || p.adtr || p.icad || p.kod || 'Ürün';
-            const img = p.gorselurl || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
-            const pId = p.kayitid || p.urunno || '1';
-            const price = p.fiyateur ? `${p.fiyateur}` : '';
+            const addrKey = lang === 'en' ? 'adresen' : lang === 'me' ? 'adresme' : 'adrestr';
+            const name = c[nameKey] || c.adtr || c.kod;
+            const targetAddr = (c[addrKey] || c.adrestr || '').replace(/^\//, '');
+            const img = c.gorselurl || '';
 
             return (
-              <div class="product-card">
-                <img src={img} alt={name} class="product-img" loading="lazy" />
-                <div class="product-info">
-                  <h3 class="product-title">{name}</h3>
-                  <div class="product-code">Kod: {p.kayitid || p.urunno || '-'}</div>
-                  {price && <div class="product-price">{price}</div>}
-                  <a href={`/${lang}/products/${pId}`} class="product-link">Detayları Göster</a>
-                </div>
-              </div>
+              <a href={`/${lang}/${targetAddr}`.toLowerCase()} class="category-card">
+                {img && <img src={img} alt={name} class="cat-img" loading="lazy" />}
+                <div>{name}</div>
+              </a>
             );
           })}
         </div>
-      ) : (
-        <div style="text-align: center; padding: 3rem; background: white; border-radius: 8px;">Aktif ürün bulunamadı.</div>
       )}
-    </section>
+
+      {/* Sheet tablosundan gelen dinamik B2B tanıtım alanları */}
+      {whyText && (
+        <div class="info-block">
+          <h3>{whyTitle}</h3>
+          <p>{whyText}</p>
+        </div>
+      )}
+
+      {solutionsText && (
+        <div class="info-block">
+          <h3>{solutionsTitle}</h3>
+          <p>{solutionsText}</p>
+        </div>
+      )}
+
+      {processText && (
+        <div class="info-block">
+          <h3>{processTitle}</h3>
+          <p>{processText}</p>
+        </div>
+      )}
+    </main>
+
     <Footer lang={lang} />
   </body>
 </html>

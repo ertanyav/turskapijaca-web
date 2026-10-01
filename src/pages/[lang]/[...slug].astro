@@ -1,56 +1,48 @@
 ---
-import { getPages } from '../../lib/sheets';
 import Header from '../../components/Header.astro';
+import { getPages } from '../../lib/sheets';
 
-export async function getStaticPaths() {
-  const pages = await getPages();
-  const paths = [];
+const { lang, slug } = Astro.params;
+const validLangs = ['tr', 'en', 'me'];
 
-  pages.forEach(page => {
-    // Sütun ismi hatasına karşı korumalı link üretimi
-    ['tr', 'en', 'me'].forEach(lang => {
-      const pathStr = page[`adres${lang}`] || page['adrestr'] || page.kod;
-      
-      if (pathStr && !pathStr.includes('ana-sayfa') && !pathStr.includes('home') && !pathStr.includes('početna') && page.kod !== 'ANA_SAYFA') {
-        const slug = pathStr.replace(/^\//, ''); 
-        paths.push({
-          params: { lang, slug },
-          props: { page, lang }
-        });
-      }
-    });
-  });
-
-  return paths;
+if (!validLangs.includes(lang)) {
+  return Astro.redirect('/tr');
 }
 
-const { page, lang } = Astro.props;
-const currentLang = lang || 'tr';
-const pageTitle = page[`ad${currentLang}`] || page['adtr'] || page.kod;
+const pages = await getPages();
+
+// Gelen URL adresini, Google Sheet'teki sütunlarla eşleştirme
+const currentPage = pages.find(p => {
+  const pathStr = p[`adres${lang}`] || p['adrestr'] || p.kod;
+  if (!pathStr) return false;
+  // Tabloda başa slash (/) konmuşsa bile onu temizleyip hatasız kıyaslama yapıyoruz
+  const cleanPath = String(pathStr).replace(/^\//, '').toLowerCase();
+  return cleanPath === (slug || '').toLowerCase();
+});
+
+// Ziyaretçi tabloda OLMAYAN uydurma bir linke girerse, 404 hata sayfası yerine ana sayfaya döndür
+if (!currentPage) {
+  return Astro.redirect(`/${lang}`);
+}
+
+const pageTitle = currentPage[`ad${lang}`] || currentPage['adtr'] || currentPage.kod;
 ---
 <!DOCTYPE html>
-<html lang={currentLang}>
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{pageTitle} | TURSKA PIJACA</title>
-    <style>
-      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #1f2937; }
-      .page-container { max-width: 1200px; margin: 3rem auto; padding: 0 2rem; min-height: 60vh; }
-      .content-wrapper { background: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-      .content-wrapper h1 { color: #0b2218; margin-top: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #eaeaea; padding-bottom: 0.75rem; font-size: 2.2rem; }
-      .temp-content { color: #475569; font-size: 1.1rem; line-height: 1.6; }
-      .code-badge { display: inline-block; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.9rem; color: #0f172a; }
-    </style>
   </head>
-  <body>
+  <body style="margin: 0; font-family: system-ui, sans-serif; background: #f8fafc;">
     <Header />
-    <main class="page-container">
-      <div class="content-wrapper">
-        <h1>{pageTitle}</h1>
-        <p class="temp-content">
-          Sayfa Kodu: <span class="code-badge">{page.kod}</span>
-        </p>
+    <main style="max-width: 1200px; margin: 3rem auto; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+      <h1 style="color: #0b2218; font-size: 2.2rem; border-bottom: 2px solid #eaeaea; padding-bottom: 1rem;">
+        {pageTitle}
+      </h1>
+      <div style="margin-top: 2rem; color: #475569; line-height: 1.6;">
+        <p>Sayfa Kodu: <strong style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; color:#0b2218;">{currentPage.kod}</strong></p>
+        <p>Sihirli sayfa yönlendiricisi devrede! İçerikler, tablondaki bu satırdan ekrana basılacak.</p>
       </div>
     </main>
   </body>

@@ -1,46 +1,52 @@
 import Papa from 'papaparse';
 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT17t35fI0N3c5FwF5X-b-kL94B4_D2F5F8N-l7T4R7S-R8-0X9F4D4X4F9_T5D6S3N9D5L8D2-L8F3/pub?output=csv';
+const SHEET_ID = '12wF2Is8OiESGgZ-Xq5qJMaZqxKelOCrnRjoj0zCqKlI';
 
-// Yardımcı Fonksiyon: Google Sheets'ten CSV sekmesini JSON'a çevirir
-async function fetchSheetData(gid) {
+async function fetchSheetData(tabName) {
   try {
-    const url = `${CSV_URL}&gid=${gid}`;
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
     const response = await fetch(url);
-    const csv = await response.text();
-    const result = Papa.parse(csv, { header: true, skipEmptyLines: true });
-    return result.data;
+    if (!response.ok) throw new Error(`Veri alınamadı: ${tabName}`);
+    const csvText = await response.text();
+    return new Promise((resolve) => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => resolve(results.data || []),
+        error: () => resolve([])
+      });
+    });
   } catch (error) {
-    console.error(`Sheet fetching error (gid: ${gid}):`, error);
+    console.error(`Tablo okuma hatası (${tabName}):`, error);
     return [];
   }
 }
 
-// Sekmelerin GID numaraları (Google Sheet URL'sindeki "gid=" değerleri)
-export async function getPages() {
-  return fetchSheetData('0'); // SAYFALAR sekmesi
-}
+// Ana Fonksiyonlar
+export async function getPages() { return await fetchSheetData('SAYFALAR'); }
+export async function getTexts() { return await fetchSheetData('METINLER'); }
+export async function getDocuments() { return await fetchSheetData('DOKUMANLAR'); }
+export async function getSettings() { return await fetchSheetData('AYARLAR'); }
 
-export async function getTexts() {
-  return fetchSheetData('1994602283'); // METINLER sekmesi
-}
-
+// Filtrelenmiş Ürün, Marka ve Kategoriler
 export async function getProducts() {
-  return fetchSheetData('930815132'); // URUNLER sekmesi
+  const data = await fetchSheetData('URUNLER');
+  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()) && item.Durum && /aktif/i.test(item.Durum.toString()));
 }
 
 export async function getBrands() {
-  return fetchSheetData('556950284'); // MARKALAR sekmesi
+  const data = await fetchSheetData('MARKALAR');
+  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()));
 }
 
 export async function getCategories() {
-  return fetchSheetData('82285149'); // KATEGORILER sekmesi
+  const data = await fetchSheetData('KATEGORILER');
+  return data.filter(item => item.Yayında && /evet/i.test(item.Yayında.toString()));
 }
 
 export async function getMenu() {
   const pages = await getPages();
-  // Sadece "Yayında: Evet" ve "Menüde Göster: Evet" olanları filtrele, Sıra'ya göre diz
   return pages
-    .filter(p => p.Yayında?.toLowerCase() === 'evet' && p['Menüde Göster']?.toLowerCase() === 'evet')
-    .sort((a, b) => parseInt(a['Sıra'] || '99') - parseInt(b['Sıra'] || '99'));
+    .filter(p => p.Yayında && /evet/i.test(p.Yayında.toString()) && p.Menüde && /evet/i.test(p.Menüde.toString()))
+    .sort((a, b) => Number(a.Sıra || 0) - Number(b.Sıra || 0));
 }

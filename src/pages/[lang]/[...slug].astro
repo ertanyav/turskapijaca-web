@@ -1,154 +1,156 @@
 ---
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getPages, getTexts, getProducts, getCategories, getBrands } from '../../lib/sheets';
+import { getPages, getTexts, getProducts, getCategories, getBrands, getTextDictionary } from '../../lib/sheets';
 
 const { lang = 'tr', slug } = Astro.params;
-const validLangs = ['tr', 'en', 'me'];
-if (!validLangs.includes(lang)) return Astro.redirect('/tr');
-
-const [pages, texts, products, categories, brands] = await Promise.all([
-  getPages(), getTexts(), getProducts(), getCategories(), getBrands()
-]);
-
 const target = (slug || '').toLowerCase();
 
-// Tıklanan adresin tespiti
+const [pages, texts, products, categories, brands, dict] = await Promise.all([
+  getPages(), getTexts(), getProducts(), getCategories(), getBrands(), getTextDictionary(lang)
+]);
+
 const currentPage = pages.find(p => {
   if (!p) return false;
-  const aTR = String(p.adrestr || '').replace(/^\//, '').toLowerCase();
-  const aEN = String(p.adresen || '').replace(/^\//, '').toLowerCase();
-  const aME = String(p.adresme || '').replace(/^\//, '').toLowerCase();
-  return target === aTR || target === aEN || target === aME || target === (p.kod || '').toLowerCase();
+  return target === String(p.adrestr || '').replace(/^\//, '').toLowerCase() || 
+         target === String(p.adresen || '').replace(/^\//, '').toLowerCase() || 
+         target === (p.kod || '').toLowerCase();
 });
 
-// Eğer adres herhangi bir kategori adresiyle eşleşiyorsa
-const matchedCategory = categories.find(c => {
-  const cTR = String(c.adrestr || '').replace(/^\//, '').toLowerCase();
-  const cEN = String(c.adresen || '').replace(/^\//, '').toLowerCase();
-  const cME = String(c.adresme || '').replace(/^\//, '').toLowerCase();
-  return target === cTR || target === cEN || target === cME;
-});
+const matchedCategory = categories.find(c => target === String(c.adrestr || '').replace(/^\//, '').toLowerCase());
+const isProductPage = (currentPage && (currentPage.kod === 'products' || currentPage.kod === 'catalog' || target.includes('urunler'))) || matchedCategory;
 
-const isProductPage = (currentPage && (currentPage.kod === 'products' || currentPage.kod === 'catalog')) || matchedCategory;
+// Özel Sayfalar (Markalar, Bayiler vb. gösterimi için)
+const showBrands = currentPage && (currentPage.kod.includes('marka') || currentPage.kod.includes('brand') || currentPage.kod.includes('distributor'));
 
-// Filtrelenmiş ürün listesi
 let displayedProducts = products || [];
 if (matchedCategory) {
   displayedProducts = displayedProducts.filter(p => (p.kategori || '').toUpperCase() === (matchedCategory.kod || '').toUpperCase());
 }
 
-// METINLER sekmesindeki tüm ilgili paragrafları topla
-let pageTitle = currentPage ? currentPage.kod : (matchedCategory ? matchedCategory.adtr : 'Sayfa');
+let pageTitle = currentPage ? (currentPage[`ad${lang}`] || currentPage.adtr) : (matchedCategory ? matchedCategory[`ad${lang}`] || matchedCategory.adtr : '');
 let pageParagraphs = [];
 
-if (texts && texts.length > 0 && currentPage) {
+if (texts && currentPage) {
   const langCol = lang === 'en' ? 'english' : lang === 'me' ? 'crnogorski' : 'turkce';
   const pagePrefix = `${(currentPage.kod || '').toLowerCase()}.`;
-
   texts.forEach(t => {
     const key = (t.anahtar || '').toLowerCase();
-    if (key.startsWith(pagePrefix)) {
-      if (key.endsWith('.title')) {
-        pageTitle = t[langCol] || t.turkce || pageTitle;
-      } else if (t[langCol] || t.turkce) {
-        pageParagraphs.push(t[langCol] || t.turkce);
-      }
+    if (key.startsWith(pagePrefix) && !key.endsWith('.title') && (t[langCol] || t.turkce)) {
+      pageParagraphs.push(t[langCol] || t.turkce);
     }
   });
 }
+
+// Master Tablodan Çekilen Dinamik Arayüz Yazıları
+const txtCategories = dict['common.categories'] || dict['ortak.kategoriler'] || 'Kategoriler';
+const txtBrands = dict['common.brands'] || dict['ortak.markalar'] || 'Markalar';
+const txtAllProducts = dict['common.allproducts'] || dict['ortak.tumurunler'] || 'Tüm Ürünler';
+const txtProductDetail = dict['product.detail'] || dict['urun.detay'] || 'Ürün Detayı';
+const txtAddToCart = dict['product.addtocart'] || dict['urun.sepeteekle'] || 'Sepete Ekle';
 ---
 
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{pageTitle} | TURSKA PIJACA</title>
+    <title>{pageTitle}</title>
     <style>
-      body { margin: 0; font-family: system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; }
+      body { margin: 0; font-family: system-ui; background: #f8fafc; color: #0f172a; }
       .container { max-width: 1250px; margin: 3rem auto; padding: 0 1.5rem; min-height: 60vh; }
-      .content-card { background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
-      .content-card h1 { color: #0b2218; font-size: 2rem; margin-top: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
-      .paragraph { font-size: 1.05rem; line-height: 1.8; color: #334155; margin-bottom: 1.2rem; }
-      
-      /* Ürün Kataloğu ve Filtre Stilleri */
       .catalog-layout { display: grid; grid-template-columns: 260px 1fr; gap: 2rem; margin-top: 2rem; }
       .filter-sidebar { background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; height: fit-content; }
       .filter-group { margin-bottom: 1.5rem; }
-      .filter-group h4 { color: #0b2218; margin: 0 0 0.8rem 0; font-size: 1rem; }
+      .filter-group h4 { color: #0b2218; margin: 0 0 0.8rem 0; }
       .filter-list { list-style: none; padding: 0; margin: 0; }
       .filter-list li { margin-bottom: 0.5rem; }
       .filter-list a { color: #475569; text-decoration: none; font-size: 0.9rem; }
-      .filter-list a:hover { color: #34d399; }
       
       .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
-      .product-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; }
-      .product-img { width: 100%; height: 200px; object-fit: contain; padding: 10px; background: #fff; border-bottom: 1px solid #f1f5f9; }
+      .product-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
+      .product-img { width: 100%; height: 200px; object-fit: contain; padding: 10px; border-bottom: 1px solid #f1f5f9; }
       .product-info { padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; }
-      .product-title { font-size: 1rem; font-weight: 700; color: #0b2218; margin: 0 0 0.4rem 0; }
       .product-meta { font-size: 0.8rem; color: #64748b; margin-bottom: 0.8rem; }
-      .product-link { margin-top: auto; display: block; text-align: center; background: #0b2218; color: white; padding: 0.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.85rem; }
       
-      @media (max-width: 768px) { .catalog-layout { grid-template-columns: 1fr; } }
+      .btn-group { display: flex; gap: 0.5rem; margin-top: auto; }
+      .btn-detail { flex: 1; text-align: center; background: #f1f5f9; color: #0f172a; padding: 0.5rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+      .btn-cart { flex: 1; text-align: center; background: #34d399; color: #0b2218; padding: 0.5rem; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+      
+      .brands-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-top: 2rem;}
+      .brand-card { background: white; border: 1px solid #e2e8f0; padding: 1.5rem; text-align: center; border-radius: 12px; font-weight: bold;}
     </style>
   </head>
   <body>
     <Header />
     <main class="container">
+      <h1>{pageTitle}</h1>
+
       {isProductPage ? (
-        <div>
-          <h1>{matchedCategory ? (matchedCategory[`ad${lang}`] || matchedCategory.adtr) : 'Tüm Ürünler Kataloğu'}</h1>
-          <div class="catalog-layout">
-            <aside class="filter-sidebar">
-              <div class="filter-group">
-                <h4>Kategoriler</h4>
-                <ul class="filter-list">
-                  <li><a href={`/${lang}/ürünler/tüm-ürünler`}>Tüm Ürünler</a></li>
-                  {categories.map(c => (
-                    <li><a href={`/${lang}/${(c.adrestr || '').replace(/^\//, '')}`.toLowerCase()}>{c[`ad${lang}`] || c.adtr}</a></li>
-                  ))}
-                </ul>
-              </div>
-              <div class="filter-group">
-                <h4>Markalar</h4>
-                <ul class="filter-list">
-                  {brands.map(b => <li><a href="#">{b.marka}</a></li>)}
-                </ul>
-              </div>
-            </aside>
+        <div class="catalog-layout">
+          <aside class="filter-sidebar">
+            <div class="filter-group">
+              <h4>{txtCategories}</h4>
+              <ul class="filter-list">
+                <li><a href={`/${lang}/ürünler/tüm-ürünler`}>{txtAllProducts}</a></li>
+                {categories.map(c => <li><a href={`/${lang}/${(c.adrestr || '').replace(/^\//, '')}`.toLowerCase()}>{c[`ad${lang}`] || c.adtr}</a></li>)}
+              </ul>
+            </div>
+            <div class="filter-group">
+              <h4>{txtBrands}</h4>
+              <ul class="filter-list">
+                {brands.map(b => <li><a href="#">{b.marka}</a></li>)}
+              </ul>
+            </div>
+          </aside>
 
-            <section class="products-grid">
-              {displayedProducts.map(p => {
-                const name = p[`ad${lang}`] || p.adtr || p.icad || p.kod;
-                const img = p.gorselurl || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
-                const pId = p.kayitid || p.urunno || '1';
-
-                return (
-                  <div class="product-card">
-                    <img src={img} alt={name} class="product-img" loading="lazy" />
-                    <div class="product-info">
-                      <h3 class="product-title">{name}</h3>
-                      <div class="product-meta">Marka: {p.marka || '-'} | Kod: {p.kayitid || '-'}</div>
-                      <a href={`/${lang}/products/${pId}`} class="product-link">Ürün Detayı</a>
+          <section class="products-grid">
+            {displayedProducts.map(p => {
+              const name = p[`ad${lang}`] || p.adtr || p.icad;
+              const pId = p.urunno || p.kayitid || p.id || '1';
+              return (
+                <div class="product-card">
+                  <img src={p.gorselurl || 'https://via.placeholder.com/400?text=No+Image'} class="product-img" loading="lazy" />
+                  <div class="product-info">
+                    <h3 style="margin:0 0 0.4rem 0; font-size:1rem;">{name}</h3>
+                    <div class="product-meta">{txtBrands}: {p.marka || '-'} | No: {pId}</div>
+                    <div class="btn-group">
+                      <a href={`/${lang}/products/${pId}`} class="btn-detail">{txtProductDetail}</a>
+                      <button class="btn-cart" onclick={`addToCart('${pId}', '${name.replace(/'/g, "\\'")}')`}>{txtAddToCart}</button>
                     </div>
                   </div>
-                );
-              })}
-            </section>
-          </div>
+                </div>
+              );
+            })}
+          </section>
         </div>
       ) : (
-        <div class="content-card">
-          <h1>{pageTitle}</h1>
-          {pageParagraphs.length > 0 ? (
-            pageParagraphs.map(pText => <p class="paragraph">{pText}</p>)
-          ) : (
-            <p class="paragraph">Bu sayfa içeriği yakında güncellenecektir.</p>
+        <div style="background:white; padding:2.5rem; border-radius:16px; border:1px solid #e2e8f0;">
+          {pageParagraphs.map(txt => <p style="font-size:1.05rem; line-height:1.8; color:#334155;">{txt}</p>)}
+          
+          {/* Sayfa Markalar/Bayiler sayfası ise dinamik listeyi basar */}
+          {showBrands && brands && brands.length > 0 && (
+            <div class="brands-grid">
+              {brands.map(b => (
+                <div class="brand-card">
+                  {b.gorselurl ? <img src={b.gorselurl} style="width:100%; height:80px; object-fit:contain;" /> : b.marka}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
     </main>
+
+    <script>
+      function addToCart(id, name) {
+        const cart = JSON.parse(localStorage.getItem('tp_cart') || '[]');
+        cart.push({ id, name, qty: 1 });
+        localStorage.setItem('tp_cart', JSON.stringify(cart));
+        window.dispatchEvent(new Event('cartUpdated'));
+        alert(name + " sepete eklendi!");
+      }
+      window.addToCart = addToCart;
+    </script>
     <Footer lang={lang} />
   </body>
 </html>

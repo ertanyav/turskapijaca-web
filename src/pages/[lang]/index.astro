@@ -1,135 +1,34 @@
 ---
-import { getPages, getTexts, getProducts, getBrands, getCategories } from '../../lib/sheets';
 import Header from '../../components/Header.astro';
-
-export async function getStaticPaths() {
-  return [
-    { params: { lang: 'tr' } },
-    { params: { lang: 'en' } },
-    { params: { lang: 'me' } },
-  ];
-}
+import { getPages } from '../../lib/sheets';
 
 const { lang } = Astro.params;
-const currentLang = lang || 'tr';
+const validLangs = ['tr', 'en', 'me'];
 
-const [texts, products, brands, categories] = await Promise.all([
-  getTexts(), getProducts(), getBrands(), getCategories()
-]);
-
-function getText(key, defaultVal) {
-  const found = (texts || []).find(t => t.Anahtar === key);
-  if (!found) return defaultVal;
-  if (currentLang === 'en') return found.English || defaultVal;
-  if (currentLang === 'me') return found.Crnogorski || defaultVal;
-  return found.Türkçe || defaultVal;
+// Güvenlik: Desteklenmeyen bir dil girilirse anında Türkçe'ye at
+if (!validLangs.includes(lang)) {
+  return Astro.redirect('/tr');
 }
 
-const productCount = (products || []).length;
-const categoryCount = (categories || []).length;
-const brandCount = (brands || []).length;
+// Ana Sayfa SEO verilerini çek
+const pages = await getPages();
+const homePage = pages.find(p => p.kod === 'ANA_SAYFA') || {};
 
-const distributors = (brands || []).filter(b => b.Tür === 'DISTRIBUTOR');
-const salesBrands = (brands || []).filter(b => b.Tür === 'SALES');
+// Dil tablosundan başlıkları bul, bulamazsa yedeği kullan
+const title = homePage[`ad${lang}`] || homePage['adtr'] || 'Turska Pijaca';
 ---
-
 <!DOCTYPE html>
-<html lang={currentLang}>
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{getText('home.heading', 'Ana Sayfa')} | TURSKA PIJACA</title>
-    <style>
-      body {
-        margin: 0;
-        font-family: system-ui, -apple-system, sans-serif;
-        background-color: #0b2218; /* Kurumsal koyu yeşil */
-        color: #ffffff;
-      }
-      .main-container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
-      
-      .hero-section { margin: 3rem 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem; }
-      .hero-content { max-width: 750px; }
-      .hero-eyebrow { font-size: 0.9rem; font-weight: 600; color: #34d399; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; display: inline-block; background: rgba(52, 211, 153, 0.1); padding: 0.3rem 0.75rem; border-radius: 4px; }
-      .hero-heading { font-size: 2.75rem; font-weight: 800; line-height: 1.2; margin-bottom: 1rem; color: #ffffff; }
-      .hero-intro { font-size: 1.25rem; color: #cbd5e1; line-height: 1.6; white-space: pre-line; }
-      
-      .stats-box { display: flex; gap: 1.5rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); padding: 1.5rem 2.5rem; border-radius: 12px; text-align: center; }
-      .stat-item .number { font-size: 2.25rem; font-weight: 800; color: #ffffff; }
-      .stat-item .label { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.25rem; }
-      
-      .section-title { font-size: 1.35rem; font-weight: 700; margin: 3.5rem 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem; }
-      .brands-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.25rem; margin-bottom: 3rem; }
-      .brand-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 1rem; display: flex; align-items: center; justify-content: center; height: 75px; transition: background 0.2s; }
-      .brand-card:hover { background: rgba(255,255,255,0.08); }
-      .brand-card img { max-height: 50px; max-width: 100%; object-fit: contain; }
-      .brand-card span { font-weight: 600; font-size: 0.95rem; color: #ffffff; text-align: center; }
-      
-      .supply-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 2.5rem; border-radius: 12px; margin: 3rem 0 5rem 0; }
-      .supply-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; color: #34d399; }
-      .supply-body { font-size: 1.1rem; color: #cbd5e1; line-height: 1.6; white-space: pre-line; }
-    </style>
+    <title>{title}</title>
   </head>
-  <body>
+  <body style="margin: 0; font-family: system-ui, sans-serif; background: #f8fafc;">
     <Header />
-
-    <main class="main-container">
-      <section class="hero-section">
-        <div class="hero-content">
-          {getText('home.eyebrow') && <div class="hero-eyebrow">{getText('home.eyebrow')}</div>}
-          <h1 class="hero-heading">{getText('home.heading', 'TURSKA PIJACA — Karadağ B2B Toptan Tedarik Portalı')}</h1>
-          <p class="hero-intro">{getText('home.intro', 'Türkiye’den Karadağ’a.\nDoğrudan tedarik, güçlü dağıtım.')}</p>
-        </div>
-
-        <div class="stats-box">
-          <div class="stat-item"><div class="number">{productCount}</div><div class="label">{getText('stats.products', 'ÜRÜN')}</div></div>
-          <div class="stat-item"><div class="number">{categoryCount}</div><div class="label">{getText('stats.categories', 'KATEGORİ')}</div></div>
-          <div class="stat-item"><div class="number">{brandCount}</div><div class="label">{getText('stats.brands', 'MARKA')}</div></div>
-        </div>
-      </section>
-
-      {distributors.length > 0 && (
-        <>
-          <div class="section-title">🏆 {getText('home.brands', 'Distribütörlüklerimiz')}</div>
-          <div class="brands-grid">
-            {distributors.map(b => (
-              <div class="brand-card">
-                {b['Logo URL'] ? (
-                  <>
-                    <img src={b['Logo URL']} alt={b.Marka} onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                    <span style="display:none;">{b.Marka}</span>
-                  </>
-                ) : <span>{b.Marka}</span>}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {salesBrands.length > 0 && (
-        <>
-          <div class="section-title">📦 {getText('home.salesBrands', 'Satış Portföyümüzdeki Markalar')}</div>
-          <div class="brands-grid">
-            {salesBrands.map(b => (
-              <div class="brand-card">
-                {b['Logo URL'] ? (
-                  <>
-                    <img src={b['Logo URL']} alt={b.Marka} onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                    <span style="display:none;">{b.Marka}</span>
-                  </>
-                ) : <span>{b.Marka}</span>}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {(getText('home.supply') || getText('home.supplyBody')) && (
-        <section class="supply-section">
-          {getText('home.supply') && <div class="supply-title">{getText('home.supply')}</div>}
-          {getText('home.supplyBody') && <div class="supply-body">{getText('home.supplyBody')}</div>}
-        </section>
-      )}
+    <main style="max-width: 1200px; margin: 3rem auto; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+      <h1 style="color: #0b2218; font-size: 2.5rem;">{title}</h1>
+      <p style="color: #475569; font-size: 1.2rem;">Dinamik ana sayfamız ve dil altyapımız kusursuz çalışıyor.</p>
     </main>
   </body>
 </html>

@@ -1,34 +1,29 @@
 ---
-import { getMenu, getLogoUrl } from '../lib/sheets';
-
-let menuItems = [];
-let logoUrl = '';
-
-try {
-  menuItems = (await getMenu()) || [];
-  logoUrl = (await getLogoUrl()) || '';
-} catch (e) {}
+import { getMenu, getLogoUrl, getTextDictionary } from '../lib/sheets';
 
 const { pathname = '' } = Astro.url;
 const segments = pathname.split('/').filter(Boolean);
 const currentLang = ['tr', 'en', 'me'].includes(segments[0]) ? segments[0] : 'tr';
 
-const languages = [
-  { code: 'tr', label: 'TR' },
-  { code: 'en', label: 'EN' },
-  { code: 'me', label: 'ME' }
-];
+let menuItems = [];
+let logoUrl = '';
+let dict = {};
 
+try {
+  [menuItems, logoUrl, dict] = await Promise.all([getMenu(), getLogoUrl(), getTextDictionary(currentLang)]);
+} catch (e) {}
+
+const languages = [ { code: 'tr', label: 'TR' }, { code: 'en', label: 'EN' }, { code: 'me', label: 'ME' } ];
 function getLangPath(targetLangCode) {
   if (segments.length === 0) return `/${targetLangCode}`;
   const newSegments = [...segments];
-  if (['tr', 'en', 'me'].includes(newSegments[0])) {
-    newSegments[0] = targetLangCode;
-  } else {
-    newSegments.unshift(targetLangCode);
-  }
+  if (['tr', 'en', 'me'].includes(newSegments[0])) newSegments[0] = targetLangCode;
+  else newSegments.unshift(targetLangCode);
   return '/' + newSegments.join('/');
 }
+
+// METINLER'den Sepet yazısını çekiyoruz
+const cartText = dict['common.cart'] || dict['ortak.sepet'] || (currentLang === 'en' ? 'Cart' : currentLang === 'me' ? 'Korpa' : 'Sepet');
 ---
 
 <header class="main-header">
@@ -37,19 +32,15 @@ function getLangPath(targetLangCode) {
       {logoUrl && <img src={logoUrl} alt="TURSKA PIJACA" class="site-logo" />}
       <div class="brand-text-wrap">
         <span class="brand-title">TURSKA PIJACA</span>
-        <span class="brand-subtitle">Turski Proizvodi</span>
+        <span class="brand-subtitle">{dict['header.subtitle'] || 'Turski Proizvodi'}</span>
       </div>
     </a>
 
     <nav class="main-menu">
       <ul>
         {menuItems.map(item => {
-          const langKey = currentLang === 'en' ? 'aden' : currentLang === 'me' ? 'adme' : 'adtr';
-          const name = item[langKey] || item.adtr || item.kod;
-          
-          const addrKey = currentLang === 'en' ? 'adresen' : currentLang === 'me' ? 'adresme' : 'adrestr';
-          const rawAddress = item[addrKey] || item.adrestr || item.kod;
-          
+          const name = item[`ad${currentLang}`] || item.adtr;
+          const rawAddress = item[`adres${currentLang}`] || item.adrestr;
           if (!name || item.kod === 'home' || !rawAddress) return null;
 
           const cleanAddress = String(rawAddress).replace(/^\//, '');
@@ -62,14 +53,9 @@ function getLangPath(targetLangCode) {
               {hasChildren && (
                 <ul class="dropdown-menu">
                   {item.children.map(child => {
-                    const childName = child[langKey] || child.adtr || child.kod;
-                    const childAddr = child[addrKey] || child.adrestr || child.kod;
-                    const cleanChildAddr = String(childAddr).replace(/^\//, '');
-                    return (
-                      <li>
-                        <a href={`/${currentLang}/${cleanChildAddr}`.toLowerCase()}>{childName}</a>
-                      </li>
-                    );
+                    const childName = child[`ad${currentLang}`] || child.adtr;
+                    const childAddr = child[`adres${currentLang}`] || child.adrestr;
+                    return <li><a href={`/${currentLang}/${String(childAddr).replace(/^\//, '')}`.toLowerCase()}>{childName}</a></li>;
                   })}
                 </ul>
               )}
@@ -80,6 +66,9 @@ function getLangPath(targetLangCode) {
     </nav>
 
     <div class="header-right">
+      <button id="cart-button" class="cart-btn">
+        🛒 <span>{cartText}</span> (<span id="cart-count">0</span>)
+      </button>
       <div class="language-switcher">
         {languages.map(lang => (
           <a href={getLangPath(lang.code)} class={currentLang === lang.code ? 'active' : ''}>{lang.label}</a>
@@ -89,39 +78,39 @@ function getLangPath(targetLangCode) {
   </div>
 </header>
 
+<script>
+  function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('tp_cart') || '[]');
+    const countEl = document.getElementById('cart-count');
+    if (countEl) countEl.innerText = cart.length;
+  }
+  document.addEventListener('DOMContentLoaded', updateCartCount);
+  window.addEventListener('storage', updateCartCount);
+  window.addEventListener('cartUpdated', updateCartCount);
+
+  document.getElementById('cart-button')?.addEventListener('click', () => {
+    alert("Sepet sistemi yakında B2B sipariş modülü ile devreye alınacaktır.");
+  });
+</script>
+
 <style>
-  .main-header { background-color: #0b2218; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+  .main-header { background: #0b2218; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; }
   .header-container { max-width: 1300px; margin: 0 auto; padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
   .logo-link { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; }
-  .site-logo { height: 44px; width: auto; object-fit: contain; }
+  .site-logo { height: 44px; object-fit: contain; }
   .brand-text-wrap { display: flex; flex-direction: column; }
-  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.25rem; letter-spacing: 0.5px; line-height: 1.1; }
-  .brand-subtitle { color: #34d399; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }
-  .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.8rem; align-items: center; }
+  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.25rem; }
+  .brand-subtitle { color: #34d399; font-size: 0.75rem; font-weight: 600; }
+  .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.5rem; }
   .menu-item { position: relative; }
-  .main-menu a { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; padding: 0.5rem 0; display: flex; align-items: center; gap: 0.3rem; }
+  .main-menu a { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; padding: 0.5rem 0; display: flex; gap: 0.3rem; }
   .main-menu a:hover { color: #34d399; }
-  
-  /* Dropdown Styles */
-  .dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: #06150f;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    padding: 0.5rem 0;
-    min-width: 200px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    flex-direction: column;
-    gap: 0 !important;
-  }
-  .dropdown-menu a { padding: 0.6rem 1.2rem; color: #94a3b8; font-size: 0.88rem; white-space: nowrap; }
-  .dropdown-menu a:hover { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+  .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: #06150f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.5rem 0; min-width: 200px; flex-direction: column; }
+  .dropdown-menu a { padding: 0.6rem 1.2rem; }
   .has-dropdown:hover .dropdown-menu { display: flex; }
-
-  .language-switcher { display: flex; gap: 0.3rem; background: rgba(255, 255, 255, 0.08); padding: 0.25rem; border-radius: 6px; }
-  .language-switcher a { text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 4px; }
-  .language-switcher a.active { background-color: #34d399; color: #0b2218; }
+  .header-right { display: flex; gap: 1rem; align-items: center; }
+  .cart-btn { background: #34d399; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; cursor: pointer; color: #0b2218; display: flex; gap: 0.4rem; }
+  .language-switcher { display: flex; gap: 0.3rem; background: rgba(255,255,255,0.08); padding: 0.25rem; border-radius: 6px; }
+  .language-switcher a { color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; text-decoration: none; }
+  .language-switcher a.active { background: #34d399; color: #0b2218; border-radius: 4px; }
 </style>

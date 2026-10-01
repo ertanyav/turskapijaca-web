@@ -9,32 +9,29 @@ if (!validLangs.includes(lang)) return Astro.redirect('/tr');
 
 const [pages, texts] = await Promise.all([ getPages(), getTexts() ]);
 
-// Tıklanan URL'deki adresi adrestr, adresen, adresme sütunlarıyla tam eşleme
 const currentPage = pages.find(p => {
   const target = (slug || '').toLowerCase();
   const aTR = String(p.adrestr || '').replace(/^\//, '').toLowerCase();
   const aEN = String(p.adresen || '').replace(/^\//, '').toLowerCase();
   const aME = String(p.adresme || '').replace(/^\//, '').toLowerCase();
-  const kod = String(p.kod || '').toLowerCase();
   
-  return target === aTR || target === aEN || target === aME || target === kod;
+  return target === aTR || target === aEN || target === aME || target === (p.kod || '').toLowerCase();
 });
 
 if (!currentPage) return Astro.redirect(`/${lang}`);
 
-// Seçilen dil başlığını alır
-const pageTitle = currentPage[`ad${lang}`] || currentPage['adtr'] || currentPage.kod;
-
-// METINLER sekmesinden turkce, english, crnogorski sütunlarına bakarak içeriği çeker
+// METINLER sekmesindeki ilgili başlık ve metinleri çeker
+let pageTitle = currentPage.kod;
 let pageContent = '';
+
 if (texts && texts.length > 0) {
-  const langColMap = { tr: 'turkce', en: 'english', me: 'crnogorski' };
-  const targetCol = langColMap[lang] || 'turkce';
+  const langCol = lang === 'en' ? 'english' : lang === 'me' ? 'crnogorski' : 'turkce';
   
-  const match = texts.find(t => t.kod === currentPage.kod || t.sayfa === currentPage.kod);
-  if (match) {
-    pageContent = match[targetCol] || match['turkce'] || match[`icerik${lang}`] || '';
-  }
+  const titleRow = texts.find(t => (t.anahtar || '').toLowerCase() === `${currentPage.kod}.title`);
+  if (titleRow) pageTitle = titleRow[langCol] || titleRow.turkce || currentPage.kod;
+
+  const descRow = texts.find(t => (t.anahtar || '').toLowerCase() === `${currentPage.kod}.description` || (t.anahtar || '').toLowerCase() === `${currentPage.kod}.text`);
+  if (descRow) pageContent = descRow[langCol] || descRow.turkce || '';
 }
 ---
 

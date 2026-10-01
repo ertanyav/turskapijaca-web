@@ -4,48 +4,36 @@ import Footer from '../../components/Footer.astro';
 import { getCategories, getTextDictionary } from '../../lib/sheets';
 
 const { lang = 'tr' } = Astro.params;
-const validLangs = ['tr', 'en', 'me'];
-if (!validLangs.includes(lang)) return Astro.redirect('/tr');
-
 const [categories, dict] = await Promise.all([ getCategories(), getTextDictionary(lang) ]);
 
-// Hero ve dinamik bölümler tamamen METINLER sekmesinden çekilir
-const heroTitle = dict['home.hero.title'] || dict['home.title'] || 'TURSKA PIJACA';
-const heroDesc = dict['home.hero.subtitle'] || dict['home.hero.text'] || '';
-const heroBtn = dict['home.hero.button'] || 'Kategorileri İnceleyin';
+// Master tablodaki olası Türkçe ve İngilizce anahtarları kontrol et
+const heroTitle = dict['home.hero.title'] || dict['anasayfa.hero.title'] || dict['home.title'] || 'TURSKA PIJACA';
+const heroDesc = dict['home.hero.subtitle'] || dict['anasayfa.hero.subtitle'] || dict['home.hero.text'] || '';
+const heroBtn = dict['home.hero.button'] || dict['anasayfa.buton'] || 'Kategoriler';
 
-// NEDEN TURSKA PIJACA, TEDARİK ÇÖZÜMLERİMİZ, SİPARİŞ SÜRECİ alanlarını METINLER içinden dinamik çekme
-const whyTitle = dict['home.why.title'] || 'NEDEN TURSKA PIJACA?';
-const whyText = dict['home.why.text'] || dict['home.why.description'] || '';
-
-const solutionsTitle = dict['home.solutions.title'] || 'TEDARİK ÇÖZÜMLERİMİZ';
-const solutionsText = dict['home.solutions.text'] || dict['home.solutions.description'] || '';
-
-const processTitle = dict['home.process.title'] || 'SİPARİŞ SÜRECİ';
-const processText = dict['home.process.text'] || dict['home.process.description'] || '';
+const whyTitle = dict['home.why.title'] || dict['anasayfa.neden.baslik'] || '';
+const whyText = dict['home.why.text'] || dict['anasayfa.neden.metin'] || '';
+const solutionsTitle = dict['home.solutions.title'] || dict['anasayfa.cozumler.baslik'] || '';
+const solutionsText = dict['home.solutions.text'] || dict['anasayfa.cozumler.metin'] || '';
 ---
 
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TURSKA PIJACA | B2B Portal</title>
+    <title>{heroTitle}</title>
     <style>
-      body { margin: 0; font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
-      .hero { background: linear-gradient(135deg, #0b2218 0%, #143d2c 100%); color: white; padding: 4.5rem 1.5rem; text-align: center; }
-      .hero h1 { font-size: 2.5rem; margin: 0 0 1rem 0; font-weight: 800; }
-      .hero p { font-size: 1.15rem; color: #cbd5e1; max-width: 700px; margin: 0 auto 1.8rem auto; line-height: 1.6; }
-      .hero-btn { display: inline-block; background-color: #34d399; color: #0b2218; font-weight: 800; padding: 0.85rem 2rem; border-radius: 8px; text-decoration: none; }
-      .section-container { max-width: 1250px; margin: 3.5rem auto; padding: 0 1.5rem; }
-      .section-header h2 { font-size: 1.8rem; color: #0b2218; text-align: center; margin-bottom: 2rem; }
-      .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
-      .category-card { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; text-decoration: none; color: #0b2218; transition: all 0.2s; display: block; }
-      .category-card:hover { transform: translateY(-4px); border-color: #34d399; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-      .cat-img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 0.8rem; background: #f1f5f9; }
-      .info-block { background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-top: 3rem; }
-      .info-block h3 { color: #0b2218; font-size: 1.5rem; margin-top: 0; margin-bottom: 1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; }
-      .info-block p { color: #475569; line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap; }
+      body { margin: 0; font-family: system-ui; background: #f8fafc; color: #0f172a; }
+      .hero { background: linear-gradient(135deg, #0b2218, #143d2c); color: white; padding: 4rem 1.5rem; text-align: center; }
+      .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; }
+      .hero p { font-size: 1.15rem; color: #cbd5e1; max-width: 700px; margin: 0 auto 1.8rem; }
+      .hero-btn { background: #34d399; color: #0b2218; padding: 0.85rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 800; }
+      .container { max-width: 1250px; margin: 3rem auto; padding: 0 1.5rem; }
+      .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;}
+      .category-card { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; text-decoration: none; color: #0b2218; display: block; }
+      .cat-img { width: 100%; height: 160px; object-fit: contain; margin-bottom: 1rem; }
+      .info-block { background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 2rem; }
+      .info-block h3 { color: #0b2218; font-size: 1.5rem; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; }
     </style>
   </head>
   <body>
@@ -55,51 +43,22 @@ const processText = dict['home.process.text'] || dict['home.process.description'
       {heroDesc && <p>{heroDesc}</p>}
       <a href="#categories" class="hero-btn">{heroBtn}</a>
     </section>
-
-    <main class="section-container">
-      <div id="categories" class="section-header"><h2>Ürün Kategorileri</h2></div>
-      {categories && categories.length > 0 && (
-        <div class="categories-grid">
-          {categories.map(c => {
-            const nameKey = lang === 'en' ? 'aden' : lang === 'me' ? 'adme' : 'adtr';
-            const addrKey = lang === 'en' ? 'adresen' : lang === 'me' ? 'adresme' : 'adrestr';
-            const name = c[nameKey] || c.adtr || c.kod;
-            const targetAddr = (c[addrKey] || c.adrestr || '').replace(/^\//, '');
-            const img = c.gorselurl || '';
-
-            return (
-              <a href={`/${lang}/${targetAddr}`.toLowerCase()} class="category-card">
-                {img && <img src={img} alt={name} class="cat-img" loading="lazy" />}
-                <div>{name}</div>
-              </a>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Sheet tablosundan gelen dinamik B2B tanıtım alanları */}
-      {whyText && (
-        <div class="info-block">
-          <h3>{whyTitle}</h3>
-          <p>{whyText}</p>
-        </div>
-      )}
-
-      {solutionsText && (
-        <div class="info-block">
-          <h3>{solutionsTitle}</h3>
-          <p>{solutionsText}</p>
-        </div>
-      )}
-
-      {processText && (
-        <div class="info-block">
-          <h3>{processTitle}</h3>
-          <p>{processText}</p>
-        </div>
-      )}
+    <main class="container">
+      <div id="categories" style="text-align:center; margin-bottom: 2rem;">
+        <h2 style="color: #0b2218;">{dict['home.categories.title'] || dict['anasayfa.kategoriler'] || 'Kategoriler'}</h2>
+      </div>
+      <div class="categories-grid">
+        {categories.map(c => (
+          <a href={`/${lang}/${(c.adrestr || '').replace(/^\//, '')}`.toLowerCase()} class="category-card">
+            {c.gorselurl && <img src={c.gorselurl} alt={c[`ad${lang}`] || c.adtr} class="cat-img" loading="lazy" />}
+            <div>{c[`ad${lang}`] || c.adtr}</div>
+          </a>
+        ))}
+      </div>
+      
+      {whyTitle && <div class="info-block"><h3>{whyTitle}</h3><p>{whyText}</p></div>}
+      {solutionsTitle && <div class="info-block"><h3>{solutionsTitle}</h3><p>{solutionsText}</p></div>}
     </main>
-
     <Footer lang={lang} />
   </body>
 </html>

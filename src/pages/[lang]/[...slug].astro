@@ -17,22 +17,18 @@ const currentPage = pages.find(p => {
 
 if (!currentPage) return Astro.redirect(`/${lang}`);
 
+// Sayfa başlığı artık kesinlikle tıklanan menünün o dildeki adına eşitleniyor
 const pageTitle = currentPage[`ad${lang}`] || currentPage['adtr'] || currentPage.kod;
 
-// İçeriği METINLER sekmesinden o sayfanın koduna göre arayıp çekiyoruz
+// METINLER sekmesinden o sayfaya ait metni çekiyoruz
 let pageContent = '';
 if (texts && texts.length > 0) {
-  // METINLER'deki diller (turkce, english, crnogorski olarak normalize edilir)
-  const langCol = lang === 'en' ? 'english' : lang === 'me' ? 'crnogorski' : 'turkce';
-  const matchingText = texts.find(t => t.kod === currentPage.kod || t.sayfa === currentPage.kod || t.adtr === currentPage.adtr);
-  
+  const langKey = lang === 'en' ? 'english' : lang === 'me' ? 'crnogorski' : 'turkce';
+  const matchingText = texts.find(t => t.kod === currentPage.kod || t.sayfa === currentPage.kod);
   if (matchingText) {
-    pageContent = matchingText[langCol] || matchingText[`icerik${lang}`] || matchingText['turkce'] || '';
+    pageContent = matchingText[langKey] || matchingText[`icerik${lang}`] || matchingText['turkce'] || '';
   }
 }
-
-// Eğer METINLER boş gelirse, sayfaya ait tablodaki tüm verileri dökerek en azından boş sayfa göstermiyoruz
-const debugData = Object.entries(currentPage).filter(([k, v]) => v && k !== '_original').map(([k, v]) => `<li><strong>${k}:</strong> ${v}</li>`).join('');
 ---
 
 <!DOCTYPE html>
@@ -47,7 +43,6 @@ const debugData = Object.entries(currentPage).filter(([k, v]) => v && k !== '_or
       .content-card { background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
       .content-card h1 { color: #0b2218; font-size: 2.2rem; margin-top: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
       .body-text { font-size: 1.1rem; line-height: 1.8; color: #334155; white-space: pre-wrap; }
-      .debug-box { background: #f1f5f9; padding: 1rem; border-radius: 8px; margin-top: 2rem; font-size: 0.9rem;}
     </style>
   </head>
   <body>
@@ -60,10 +55,7 @@ const debugData = Object.entries(currentPage).filter(([k, v]) => v && k !== '_or
           <div class="body-text" set:html={pageContent} />
         ) : (
           <div class="body-text">
-            <p><strong>Bu sayfanın detayları:</strong></p>
-            <ul class="debug-box" set:html={debugData} />
-            <br>
-            <small>Not: METINLER sekmesindeki içerikler düzenlendiğinde burada paragraf olarak görünecektir.</small>
+            <p>Bu sayfa için içerik yakında güncellenecektir.</p>
           </div>
         )}
       </div>

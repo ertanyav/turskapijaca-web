@@ -4,17 +4,15 @@ import { getMenu, getSettings } from '../lib/sheets';
 const menuItems = await getMenu() || [];
 const settings = await getSettings() || [];
 
-// TP_MASTER AYARLAR sekmesinden Logo'yu bulma (Yatay veya dikey tablo yapısına uygun)
+// TP_MASTER AYARLAR sekmesinden Logoyu Akıllı Çekme
 let logoUrl = '';
-if (settings.length > 0) {
-  logoUrl = settings[0].logo || settings[0].logourl || '';
-  settings.forEach(s => {
-    const sStr = Object.values(s).join(' ').toLowerCase();
-    if (sStr.includes('logo')) {
-      logoUrl = logoUrl || s.deger || s.url || s.gorselurl || s.adres || '';
-    }
-  });
-}
+settings.forEach(s => {
+  if (s.logo) logoUrl = s.logo;
+  if (s.logourl) logoUrl = s.logourl;
+  const keyStr = (s.anahtar || s.key || s.isim || '').toLowerCase();
+  const valStr = s.deger || s.value || s.url || s.gorselurl || '';
+  if (keyStr.includes('logo') && valStr) logoUrl = valStr;
+});
 
 const { pathname } = Astro.url;
 const segments = pathname.split('/').filter(Boolean);
@@ -59,6 +57,7 @@ function getLangPath(targetLangCode) {
           </a>
         </li>
         {menuItems.map(item => {
+          // Dil koduna göre doğru sütunu çek (adtr, aden, adme)
           const name = item[`ad${currentLang}`] || item['adtr'] || item['kod'];
           const rawAddress = item[`adres${currentLang}`] || item['adrestr'] || item['kod'];
           if (!name || item.kod === 'ANA_SAYFA' || !rawAddress) return null;
@@ -89,7 +88,7 @@ function getLangPath(targetLangCode) {
   .main-header { background-color: #0b2218; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
   .header-container { max-width: 1300px; margin: 0 auto; padding: 0.9rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
   .logo-link { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
-  .site-logo { height: 50px; width: auto; object-fit: contain; }
+  .site-logo { height: 45px; width: auto; object-fit: contain; }
   .brand-badge { background: #34d399; color: #0b2218; font-size: 0.7rem; font-weight: 900; padding: 0.2rem 0.4rem; border-radius: 4px; }
   .brand-title { color: #ffffff; font-weight: 800; font-size: 1.35rem; }
   .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.8rem; align-items: center; }

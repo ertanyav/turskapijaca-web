@@ -3,11 +3,21 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { getProducts, getCategories } from '../../lib/sheets';
 
-const { lang } = Astro.params;
+const { lang = 'tr' } = Astro.params;
 const validLangs = ['tr', 'en', 'me'];
-if (!validLangs.includes(lang)) return Astro.redirect('/tr');
 
-const [products, categories] = await Promise.all([ getProducts(), getCategories() ]);
+if (!validLangs.includes(lang)) {
+  return Astro.redirect('/tr');
+}
+
+let products = [];
+let categories = [];
+
+try {
+  const res = await Promise.all([getProducts(), getCategories()]);
+  products = res[0] || [];
+  categories = res[1] || [];
+} catch (e) {}
 
 const heroTexts = {
   tr: { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli Ürünleri Balkanlar ile Buluşuyor", desc: "Toptan alımlarınız için doğrudan üreticiler ve B2B tedarikçileri.", btn: "Ürünleri İncele" },
@@ -59,7 +69,7 @@ const t = heroTexts[lang] || heroTexts.tr;
           <div class="section-header"><h2>Kategoriler</h2></div>
           <div class="categories-grid">
             {categories.map(c => {
-              const nameKey = currentLang === 'en' ? 'aden' : currentLang === 'me' ? 'adme' : 'adtr';
+              const nameKey = lang === 'en' ? 'aden' : lang === 'me' ? 'adme' : 'adtr';
               const name = c[nameKey] || c.adtr || c.kod;
               const img = c.gorselurl || '';
               return (
@@ -77,7 +87,7 @@ const t = heroTexts[lang] || heroTexts.tr;
       {products && products.length > 0 ? (
         <div class="products-grid">
           {products.map(p => {
-            const nameKey = currentLang === 'en' ? 'aden' : currentLang === 'me' ? 'adme' : 'adtr';
+            const nameKey = lang === 'en' ? 'aden' : lang === 'me' ? 'adme' : 'adtr';
             const name = p[nameKey] || p.adtr || p.icad || p.kod || 'Ürün';
             const img = p.gorselurl || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
             const pId = p.kayitid || p.urunno || '1';
@@ -97,7 +107,7 @@ const t = heroTexts[lang] || heroTexts.tr;
           })}
         </div>
       ) : (
-        <div style="text-align: center; padding: 3rem;">Aktif ürün bulunamadı.</div>
+        <div style="text-align: center; padding: 3rem; background: white; border-radius: 8px;">Aktif ürün bulunamadı.</div>
       )}
     </section>
     <Footer lang={lang} />

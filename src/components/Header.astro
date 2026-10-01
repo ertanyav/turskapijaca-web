@@ -4,15 +4,26 @@ import { getMenu, getSettings } from '../lib/sheets';
 const menuItems = await getMenu() || [];
 const settings = await getSettings() || [];
 
-// TP_MASTER AYARLAR sekmesinden Logoyu Akıllı Çekme
-let logoUrl = '';
-settings.forEach(s => {
-  if (s.logo) logoUrl = s.logo;
-  if (s.logourl) logoUrl = s.logourl;
-  const keyStr = (s.anahtar || s.key || s.isim || '').toLowerCase();
-  const valStr = s.deger || s.value || s.url || s.gorselurl || '';
-  if (keyStr.includes('logo') && valStr) logoUrl = valStr;
-});
+// AYARLAR sekmesinden Logo URL'sini alma ve Google Drive linki dönüştürme
+let rawLogo = '';
+if (settings.length > 0) {
+  rawLogo = settings[0].logo || settings[0].logourl || '';
+  if (!rawLogo) {
+    const found = settings.find(s => Object.values(s).some(v => String(v).toLowerCase().includes('logo')));
+    if (found) rawLogo = found.deger || found.url || found.gorselurl || found.logo || '';
+  }
+}
+
+function fixDriveUrl(url) {
+  if (!url) return '';
+  if (url.includes('drive.google.com/file/d/')) {
+    const id = url.split('/file/d/')[1].split('/')[0];
+    return `https://lh3.googleusercontent.com/d/${id}`;
+  }
+  return url;
+}
+
+const logoUrl = fixDriveUrl(rawLogo);
 
 const { pathname } = Astro.url;
 const segments = pathname.split('/').filter(Boolean);
@@ -40,12 +51,12 @@ function getLangPath(targetLangCode) {
   <div class="header-container">
     <a href={`/${currentLang}`} class="logo-link">
       {logoUrl ? (
-        <img src={logoUrl} alt="Turska Pijaca Logo" class="site-logo" />
+        <img src={logoUrl} alt="TURSKA PIJACA" class="site-logo" />
       ) : (
-        <>
+        <div class="brand-text-wrap">
           <span class="brand-badge">B2B</span>
           <span class="brand-title">TURSKA PIJACA</span>
-        </>
+        </div>
       )}
     </a>
 
@@ -57,7 +68,7 @@ function getLangPath(targetLangCode) {
           </a>
         </li>
         {menuItems.map(item => {
-          // Dil koduna göre doğru sütunu çek (adtr, aden, adme)
+          // adtr, aden, adme sütunlarından okur
           const name = item[`ad${currentLang}`] || item['adtr'] || item['kod'];
           const rawAddress = item[`adres${currentLang}`] || item['adrestr'] || item['kod'];
           if (!name || item.kod === 'ANA_SAYFA' || !rawAddress) return null;
@@ -67,7 +78,9 @@ function getLangPath(targetLangCode) {
 
           return (
             <li>
-              <a href={finalPath} class={pathname.toLowerCase().includes(cleanAddress.toLowerCase()) ? 'active' : ''}>{name}</a>
+              <a href={finalPath} class={pathname.toLowerCase().includes(cleanAddress.toLowerCase()) ? 'active' : ''}>
+                {name}
+              </a>
             </li>
           );
         })}
@@ -85,18 +98,17 @@ function getLangPath(targetLangCode) {
 </header>
 
 <style>
-  .main-header { background-color: #0b2218; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-  .header-container { max-width: 1300px; margin: 0 auto; padding: 0.9rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-  .logo-link { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
-  .site-logo { height: 45px; width: auto; object-fit: contain; }
+  .main-header { background-color: #0b2218; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; z-index: 1000; }
+  .header-container { max-width: 1300px; margin: 0 auto; padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .logo-link { display: flex; align-items: center; text-decoration: none; }
+  .site-logo { height: 48px; width: auto; object-fit: contain; }
+  .brand-text-wrap { display: flex; align-items: center; gap: 0.5rem; }
   .brand-badge { background: #34d399; color: #0b2218; font-size: 0.7rem; font-weight: 900; padding: 0.2rem 0.4rem; border-radius: 4px; }
-  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.35rem; }
+  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.3rem; }
   .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.8rem; align-items: center; }
   .main-menu a { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; }
   .main-menu a:hover, .main-menu a.active { color: #34d399; }
   .language-switcher { display: flex; gap: 0.3rem; background: rgba(255, 255, 255, 0.08); padding: 0.25rem; border-radius: 6px; }
-  .language-switcher a { text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 4px; transition: all 0.2s; }
-  .language-switcher a:hover { color: #ffffff; }
+  .language-switcher a { text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 4px; }
   .language-switcher a.active { background-color: #34d399; color: #0b2218; }
-  @media (max-width: 768px) { .header-container { flex-direction: column; gap: 0.8rem; } .main-menu ul { gap: 1rem; flex-wrap: wrap; justify-content: center; } }
 </style>

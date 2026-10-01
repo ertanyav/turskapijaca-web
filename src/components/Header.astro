@@ -1,11 +1,24 @@
 ---
-import { getMenu } from '../lib/sheets';
+import { getMenu, getSettings } from '../lib/sheets';
 
 const menuItems = await getMenu() || [];
+const settings = await getSettings() || [];
+
+// TP_MASTER AYARLAR sekmesinden Logo'yu bulma (Yatay veya dikey tablo yapısına uygun)
+let logoUrl = '';
+if (settings.length > 0) {
+  logoUrl = settings[0].logo || settings[0].logourl || '';
+  settings.forEach(s => {
+    const sStr = Object.values(s).join(' ').toLowerCase();
+    if (sStr.includes('logo')) {
+      logoUrl = logoUrl || s.deger || s.url || s.gorselurl || s.adres || '';
+    }
+  });
+}
+
 const { pathname } = Astro.url;
 const segments = pathname.split('/').filter(Boolean);
 const currentLang = ['tr', 'en', 'me'].includes(segments[0]) ? segments[0] : 'tr';
-const langKey = currentLang.toUpperCase();
 
 const languages = [
   { code: 'tr', label: 'TR' },
@@ -28,8 +41,14 @@ function getLangPath(targetLangCode) {
 <header class="main-header">
   <div class="header-container">
     <a href={`/${currentLang}`} class="logo-link">
-      <span class="brand-badge">B2B</span>
-      <span class="brand-title">TURSKA PIJACA</span>
+      {logoUrl ? (
+        <img src={logoUrl} alt="Turska Pijaca Logo" class="site-logo" />
+      ) : (
+        <>
+          <span class="brand-badge">B2B</span>
+          <span class="brand-title">TURSKA PIJACA</span>
+        </>
+      )}
     </a>
 
     <nav class="main-menu">
@@ -49,9 +68,7 @@ function getLangPath(targetLangCode) {
 
           return (
             <li>
-              <a href={finalPath} class={pathname.toLowerCase().includes(cleanAddress.toLowerCase()) ? 'active' : ''}>
-                {name}
-              </a>
+              <a href={finalPath} class={pathname.toLowerCase().includes(cleanAddress.toLowerCase()) ? 'active' : ''}>{name}</a>
             </li>
           );
         })}
@@ -61,12 +78,7 @@ function getLangPath(targetLangCode) {
     <div class="header-right">
       <div class="language-switcher">
         {languages.map(lang => (
-          <a 
-            href={getLangPath(lang.code)} 
-            class={currentLang === lang.code ? 'active' : ''}
-          >
-            {lang.label}
-          </a>
+          <a href={getLangPath(lang.code)} class={currentLang === lang.code ? 'active' : ''}>{lang.label}</a>
         ))}
       </div>
     </div>
@@ -74,85 +86,18 @@ function getLangPath(targetLangCode) {
 </header>
 
 <style>
-  .main-header {
-    background-color: #0b2218;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-  }
-  .header-container {
-    max-width: 1300px;
-    margin: 0 auto;
-    padding: 0.9rem 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .logo-link {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    text-decoration: none;
-  }
-  .brand-badge {
-    background: #34d399;
-    color: #0b2218;
-    font-size: 0.7rem;
-    font-weight: 900;
-    padding: 0.2rem 0.4rem;
-    border-radius: 4px;
-    letter-spacing: 0.5px;
-  }
-  .brand-title {
-    color: #ffffff;
-    font-weight: 800;
-    font-size: 1.35rem;
-    letter-spacing: 0.5px;
-  }
-  .main-menu ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    gap: 1.8rem;
-    align-items: center;
-  }
-  .main-menu a {
-    text-decoration: none;
-    color: #cbd5e1;
-    font-weight: 500;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-  }
-  .main-menu a:hover, .main-menu a.active {
-    color: #34d399;
-  }
-  .language-switcher {
-    display: flex;
-    gap: 0.3rem;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 0.25rem;
-    border-radius: 6px;
-  }
-  .language-switcher a {
-    text-decoration: none;
-    color: #94a3b8;
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 0.25rem 0.55rem;
-    border-radius: 4px;
-    transition: all 0.2s;
-  }
+  .main-header { background-color: #0b2218; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+  .header-container { max-width: 1300px; margin: 0 auto; padding: 0.9rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .logo-link { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
+  .site-logo { height: 50px; width: auto; object-fit: contain; }
+  .brand-badge { background: #34d399; color: #0b2218; font-size: 0.7rem; font-weight: 900; padding: 0.2rem 0.4rem; border-radius: 4px; }
+  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.35rem; }
+  .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.8rem; align-items: center; }
+  .main-menu a { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; }
+  .main-menu a:hover, .main-menu a.active { color: #34d399; }
+  .language-switcher { display: flex; gap: 0.3rem; background: rgba(255, 255, 255, 0.08); padding: 0.25rem; border-radius: 6px; }
+  .language-switcher a { text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 4px; transition: all 0.2s; }
   .language-switcher a:hover { color: #ffffff; }
-  .language-switcher a.active {
-    background-color: #34d399;
-    color: #0b2218;
-  }
-
-  @media (max-width: 768px) {
-    .header-container { flex-direction: column; gap: 0.8rem; }
-    .main-menu ul { gap: 1rem; flex-wrap: wrap; justify-content: center; }
-  }
+  .language-switcher a.active { background-color: #34d399; color: #0b2218; }
+  @media (max-width: 768px) { .header-container { flex-direction: column; gap: 0.8rem; } .main-menu ul { gap: 1rem; flex-wrap: wrap; justify-content: center; } }
 </style>

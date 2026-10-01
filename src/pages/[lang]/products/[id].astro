@@ -1,97 +1,87 @@
 ---
 import Header from '../../../components/Header.astro';
 import Footer from '../../../components/Footer.astro';
-import { getProducts, getTexts } from '../../../lib/sheets';
-
-export async function getStaticPaths() {
-  const products = await getProducts();
-  return ['en', 'me', 'tr'].flatMap(lang => 
-    products.map(p => ({
-      params: { lang, id: String(p['Ürün no'] || p['Kayıt ID']).trim() },
-      props: { product: p }
-    }))
-  ).filter(p => p.params.id);
-}
+import { getProducts } from '../../../lib/sheets';
 
 const { lang, id } = Astro.params;
-const { product } = Astro.props;
-const texts = await getTexts();
+const products = await getProducts();
 
-const title = product[`Ad ${lang.toUpperCase()}`] || product['Ad TR'] || product['Ad EN'] || product['İç ad'] || 'Ürün';
-const category = product['Kategori'] || 'General';
-const brand = product['Marka'] || 'TURSKA PIJACA';
-const pack = product['Ambalaj'] || 'Standard';
-const packType = product['Ambalaj tipi'] || product['Paket tipi'] || 'Koli / Paket';
-const origin = product['Menşe'] || 'Türkiye';
-const image = product['Görsel URL'] && product['Görsel URL'].startsWith('http') ? product['Görsel URL'] : 'https://via.placeholder.com/500x500/142e23/d9b871?text=TP';
+const product = products.find(p => String(p.id) === String(id) || String(p.kod) === String(id)) || products[0];
 
-let rawPrice = (product['Fiyat EUR'] ? String(product['Fiyat EUR']) : '').replace(/TRY|TL|EUR|€|\$/gi, '').trim();
-const hasPrice = (rawPrice && rawPrice !== '0' && rawPrice !== '0,00');
-const priceDisplay = hasPrice ? `€${parseFloat(rawPrice.replace(',', '.')).toFixed(2)}` : 'Fiyat Sorunuz';
+if (!product) {
+  return Astro.redirect(`/${lang}`);
+}
+
+const title = product[`ad${lang}`] || product['adtr'] || product.kod || 'Ürün Detayı';
+const desc = product[`aciklama${lang}`] || product['aciklamatr'] || 'Toptan sipariş ve tedarik şartları için iletişime geçiniz.';
+const img = product.gorsel || product.resim || product.image || 'https://via.placeholder.com/600x500?text=TURSKA+PIJACA';
+
+const whatsappMsg = encodeURIComponent(`Merhaba, ${title} (Kod: ${product.kod || ''}) ürününüz hakkında toptan fiyat ve detay almak istiyorum.`);
 ---
 
+<!DOCTYPE html>
 <html lang={lang}>
-<head>
-  <meta charset="utf-8" />
-  <title>{title} | TURSKA PIJACA</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-</head>
-<body style="margin: 0; font-family: system-ui, sans-serif; background: #0d221a; color: #f0f4ed;">
-  <Header lang={lang} texts={texts} />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | TURSKA PIJACA B2B</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+      .container { max-width: 1100px; margin: 3rem auto; padding: 0 1.5rem; }
+      .product-detail {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.5rem;
+        padding: 2.5rem;
+      }
+      .detail-img { width: 100%; height: 400px; object-fit: cover; border-radius: 12px; background: #f1f5f9; }
+      .detail-content { display: flex; flex-direction: column; }
+      .badge { align-self: flex-start; background: #e2e8f0; color: #0b2218; font-weight: 700; font-size: 0.8rem; padding: 0.3rem 0.8rem; border-radius: 20px; margin-bottom: 1rem; }
+      .product-title { font-size: 2rem; color: #0b2218; margin: 0 0 1rem 0; font-weight: 800; }
+      .product-desc { color: #475569; font-size: 1.05rem; line-height: 1.6; margin-bottom: 2rem; }
+      .b2b-actions { margin-top: auto; display: flex; gap: 1rem; flex-wrap: wrap; }
+      .btn-whatsapp {
+        flex: 1;
+        background: #25D366;
+        color: white;
+        text-decoration: none;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 700;
+        transition: background 0.2s;
+      }
+      .btn-whatsapp:hover { background: #1da851; }
+      @media (max-width: 768px) {
+        .product-detail { grid-template-columns: 1fr; gap: 1.5rem; padding: 1.5rem; }
+        .detail-img { height: 280px; }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
 
-  <main style="max-width: 1000px; margin: 3rem auto; padding: 0 1.5rem;">
-    <!-- Breadcrumb -->
-    <div style="margin-bottom: 1.5rem; font-size: 0.85rem; color: #a3c2b5;">
-      <a href={`/${lang}/`} target="_self" style="color: #d9b871; text-decoration: none; font-weight: bold;">Katalog</a> / 
-      <span>{category}</span> / <strong style="color: #f0f4ed;">{title}</strong>
-    </div>
+    <main class="container">
+      <div class="product-detail">
+        <img src={img} alt={title} class="detail-img" />
+        <div class="detail-content">
+          <span class="badge">Ürün Kodu: {product.kod || 'TP-PROD'}</span>
+          <h1 class="product-title">{title}</h1>
+          <p class="product-desc">{desc}</p>
 
-    <!-- Ürün Detay Kartı -->
-    <div style="background: #142e23; border-radius: 16px; padding: 2.5rem; border: 1px solid #234d3c; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
-      <div style="background: white; border-radius: 12px; padding: 1.5rem; display: flex; justify-content: center; align-items: center;">
-        <img src={image} alt={title} style="max-width: 100%; max-height: 400px; object-fit: contain;" />
-      </div>
-
-      <div>
-        <span style="background: #173f31; color: #d9b871; font-size: 0.8rem; padding: 0.3rem 0.8rem; border-radius: 4px; font-weight: bold; border: 1px solid #234d3c;">{brand}</span>
-        <h1 style="font-size: 2rem; margin: 1rem 0; color: #f0f4ed; font-weight: 800; line-height: 1.25;">{title}</h1>
-
-        <div style="background: #0d221a; padding: 1.2rem; border-radius: 8px; border: 1px solid #234d3c; margin-bottom: 1.5rem;">
-          <span style="font-size: 0.75rem; color: #a3c2b5; font-weight: bold; display: block; text-transform: uppercase;">B2B TOPTAN FİYAT</span>
-          <span style="font-size: 2.2rem; font-weight: 900; color: #d9b871;">{priceDisplay}</span>
+          <div class="b2b-actions">
+            <a href={`https://wa.me/905000000000?text=${whatsappMsg}`} target="_blank" class="btn-whatsapp">
+              💬 WhatsApp ile Toptan Fiyat Al
+            </a>
+          </div>
         </div>
-
-        <!-- Tüm Künye Özellikleri (Ürün no, Marka, Ambalaj, Ambalaj tipi, Menşe) -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 2rem; color: #a3c2b5;">
-          <tr style="border-bottom: 1px solid #234d3c;">
-            <td style="padding: 0.7rem 0;">Ürün no (SKU):</td>
-            <td style="padding: 0.7rem 0; font-weight: bold; text-align: right; color: #f0f4ed;">{id}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #234d3c;">
-            <td style="padding: 0.7rem 0;">Marka:</td>
-            <td style="padding: 0.7rem 0; font-weight: bold; text-align: right; color: #f0f4ed;">{brand}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #234d3c;">
-            <td style="padding: 0.7rem 0;">Ambalaj:</td>
-            <td style="padding: 0.7rem 0; font-weight: bold; text-align: right; color: #f0f4ed;">{pack}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #234d3c;">
-            <td style="padding: 0.7rem 0;">Ambalaj tipi:</td>
-            <td style="padding: 0.7rem 0; font-weight: bold; text-align: right; color: #f0f4ed;">{packType}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #234d3c;">
-            <td style="padding: 0.7rem 0;">Menşe:</td>
-            <td style="padding: 0.7rem 0; font-weight: bold; text-align: right; color: #f0f4ed;">{origin}</td>
-          </tr>
-        </table>
-
-        <a href={`https://wa.me/38263256666?text=B2B%20Siparis:%20${encodeURIComponent(title)}%20(${id})`} target="_self" style="display: block; text-align: center; background: #22c55e; color: white; padding: 1rem; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1.05rem; box-shadow: 0 4px 12px rgba(34,197,94,0.3);">
-          💬 WhatsApp B2B Doğrudan Sipariş
-        </a>
       </div>
-    </div>
-  </main>
+    </main>
 
-  <Footer lang={lang} texts={texts} />
-</body>
+    <Footer lang={lang} />
+  </body>
 </html>

@@ -11,7 +11,12 @@ const [pages, products, categories] = await Promise.all([ getPages(), getProduct
 const homePage = pages.find(p => p.kod === 'ANA_SAYFA') || {};
 const title = homePage[`ad${lang}`] || homePage['adtr'] || 'Turska Pijaca | B2B Toptan Ticaret';
 
-const t = { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli Ürünleri Balkanlar ile Buluşuyor", desc: "Toptan alımlarınız için doğrudan üreticiler ve doğrulama yapılmış B2B tedarikçileri.", btn: "Ürünleri İncele" };
+const heroTexts = {
+  tr: { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli Ürünleri Balkanlar ile Buluşuyor", desc: "Toptan alımlarınız için doğrudan üreticiler ve doğrulama yapılmış B2B tedarikçileri.", btn: "Ürünleri İncele" },
+  en: { badge: "B2B WHOLESALE SOURCING PORTAL", title: "Premium Turkish Products Exported to the Balkans", desc: "Direct manufacturer connections and verified suppliers for your bulk procurement.", btn: "Explore Products" },
+  me: { badge: "B2B PORTAL ZA VELEPRODAJU", title: "Vrhunski Turski Proizvodi na Balkonskom Tržištu", desc: "Direktna povezanost sa proizvođačima i proverenim dobavljačima za vašu veleprodaju.", btn: "Pregledaj Proizvode" }
+};
+const t = heroTexts[lang] || heroTexts.tr;
 ---
 <!DOCTYPE html>
 <html lang={lang}>
@@ -32,7 +37,7 @@ const t = { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli 
       .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
       .category-card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; transition: transform 0.2s; }
       .category-card:hover { transform: translateY(-3px); border-color: #34d399; }
-      .cat-img { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem; background: #f1f5f9; }
+      .cat-img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 0.8rem; background: #f1f5f9; }
       .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem; }
       .product-card { background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
       .product-img { width: 100%; height: 220px; object-fit: contain; background: #fff; padding: 10px; border-bottom: 1px solid #f1f5f9; }
@@ -71,22 +76,21 @@ const t = { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli 
     )}
 
     <section id="products" class="section-container">
-      <div class="section-header"><h2>Öne Çıkan Ürünler</h2></div>
+      <div class="section-header"><h2>Aktif Ürün Kataloğu</h2></div>
       {products && products.length > 0 ? (
         <div class="products-grid">
           {products.map(p => {
             const name = p[`ad${lang}`] || p['adtr'] || p.icad || p.kod || 'Ürün';
             const img = p.gorselurl || p.gorsel || 'https://via.placeholder.com/400x300?text=Gorsel+Yok';
-            // Kayıt ID veya Ürün no baz alınarak linkleme
             const pId = p.kayitid || p.urunno || p.kod || '1';
-            const price = p.fiyateur ? `${p.fiyateur}` : '';
+            const price = p.fiyateur ? `${p.fiyateur} EUR` : '';
 
             return (
               <div class="product-card">
                 <img src={img} alt={name} class="product-img" loading="lazy" />
                 <div class="product-info">
                   <h3 class="product-title">{name}</h3>
-                  <div class="product-code">Kayıt ID: {p.kayitid || p.urunno || '-'}</div>
+                  <div class="product-code">ID: {p.kayitid || p.urunno || '-'}</div>
                   {price && <div class="product-price">{price}</div>}
                   <a href={`/${lang}/products/${pId}`} class="product-link">Detayları Göster</a>
                 </div>
@@ -94,7 +98,7 @@ const t = { badge: "B2B TOPTAN TEDARİK PORTALI", title: "Türkiye'nin Kaliteli 
             );
           })}
         </div>
-      ) : ( <div style="text-align: center; padding: 3rem;">Ürünler yükleniyor...</div> )}
+      ) : ( <div style="text-align: center; padding: 3rem;">Aktif ürün bulunamadı.</div> )}
     </section>
     <Footer lang={lang} />
   </body>

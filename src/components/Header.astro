@@ -1,20 +1,12 @@
 ---
-import { getMenu, getPages } from '../lib/sheets';
+import { getMenu } from '../lib/sheets';
 
-let menuItems = [];
-try {
-  menuItems = await getMenu();
-  if (!menuItems || menuItems.length === 0) {
-    const allPages = await getPages();
-    menuItems = allPages || [];
-  }
-} catch (e) {
-  console.error("Header menu error:", e);
-}
+const menuItems = await getMenu() || [];
 
 const { pathname } = Astro.url;
 const segments = pathname.split('/').filter(Boolean);
 const currentLang = (segments[0] === 'en' || segments[0] === 'me' || segments[0] === 'tr') ? segments[0] : 'tr';
+const langKey = currentLang.toUpperCase(); // TR, EN, ME
 
 const languages = [
   { code: 'tr', label: 'TR' },
@@ -50,14 +42,15 @@ function getLangPath(targetLangCode) {
           </a>
         </li>
         {menuItems.map(item => {
-          const langKey = currentLang.toUpperCase();
-          const name = item[`Ad ${langKey}`] || item['Ad TR'] || item.Kod || '';
-          const rawAddress = item[`Adres ${langKey}`] || item['Adres TR'] || '';
-          
-          if (!name || item.Kod === 'ANA_SAYFA') return null;
+          // Sütun ismi ne olursa olsun yakalaması için genişlettik
+          const name = item[`Ad ${langKey}`] || item[`Ad_${langKey}`] || item.Ad || item.Name || item.Title || item['Ad TR'] || item.Kod;
+          const rawAddress = item[`Adres ${langKey}`] || item['Adres TR'] || item.Url || item.Slug || item.Kod;
+
+          // Eğer isim yoksa veya Ana Sayfa koduysa atla
+          if (!name || item.Kod === 'ANA_SAYFA' || !rawAddress) return null;
 
           const path = rawAddress.startsWith('/') ? rawAddress : `/${rawAddress}`;
-          const finalPath = `/${currentLang}${path}`;
+          const finalPath = `/${currentLang}${path}`.toLowerCase();
 
           return (
             <li>
@@ -70,8 +63,8 @@ function getLangPath(targetLangCode) {
 
     <div class="language-switcher">
       {languages.map(lang => (
-        <a 
-          href={getLangPath(lang.code)} 
+        <a
+          href={getLangPath(lang.code)}
           class={currentLang === lang.code ? 'active' : ''}
         >
           {lang.label}

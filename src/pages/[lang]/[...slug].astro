@@ -1,5 +1,5 @@
 ---
-import { getPages, getTexts } from '../../lib/sheets';
+import { getPages } from '../../lib/sheets';
 import Header from '../../components/Header.astro';
 
 export async function getStaticPaths() {
@@ -7,17 +7,12 @@ export async function getStaticPaths() {
   const paths = [];
 
   pages.forEach(page => {
-    // Sadece Yayında olan sayfaları oluştur
-    if (!page.Yayında || !/evet/i.test(page.Yayında.toString())) return;
-
-    // Her dil için rota oluştur
-    ['TR', 'EN', 'ME'].forEach(langCode => {
-      const lang = langCode.toLowerCase();
-      const path = page[`Adres ${langCode}`];
-
-      // Ana sayfa yönlendirmeleri hariç tüm alt sayfaları dinamik olarak üret
-      if (path && !path.includes('ana-sayfa') && !path.includes('home') && !path.includes('početna')) {
-        const slug = path.replace(/^\//, ''); // Başındaki slash işaretini temizle
+    // Sütun ismi hatasına karşı korumalı link üretimi
+    ['tr', 'en', 'me'].forEach(lang => {
+      const pathStr = page[`adres${lang}`] || page['adrestr'] || page.kod;
+      
+      if (pathStr && !pathStr.includes('ana-sayfa') && !pathStr.includes('home') && !pathStr.includes('početna') && page.kod !== 'ANA_SAYFA') {
+        const slug = pathStr.replace(/^\//, ''); 
         paths.push({
           params: { lang, slug },
           props: { page, lang }
@@ -30,15 +25,9 @@ export async function getStaticPaths() {
 }
 
 const { page, lang } = Astro.props;
-const texts = await getTexts();
 const currentLang = lang || 'tr';
-
-// Sayfa başlığını dile göre Master'dan çek
-let pageTitle = page['Ad TR'] || page.Kod;
-if (currentLang === 'en') pageTitle = page['Ad EN'] || pageTitle;
-if (currentLang === 'me') pageTitle = page['Ad ME'] || pageTitle;
+const pageTitle = page[`ad${currentLang}`] || page['adtr'] || page.kod;
 ---
-
 <!DOCTYPE html>
 <html lang={currentLang}>
   <head>
@@ -46,58 +35,21 @@ if (currentLang === 'me') pageTitle = page['Ad ME'] || pageTitle;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{pageTitle} | TURSKA PIJACA</title>
     <style>
-      body {
-        margin: 0;
-        font-family: system-ui, -apple-system, sans-serif;
-        background-color: #f8fafc;
-        color: #1f2937;
-      }
-      .page-container {
-        max-width: 1200px;
-        margin: 3rem auto;
-        padding: 0 2rem;
-        min-height: 60vh;
-      }
-      .content-wrapper {
-        background: #ffffff;
-        padding: 2.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-      }
-      .content-wrapper h1 {
-        color: #0b2218;
-        margin-top: 0;
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid #eaeaea;
-        padding-bottom: 0.75rem;
-        font-size: 2.2rem;
-      }
-      .temp-content {
-        color: #475569;
-        font-size: 1.1rem;
-        line-height: 1.6;
-      }
-      .code-badge {
-        display: inline-block;
-        background: #e2e8f0;
-        padding: 0.2rem 0.5rem;
-        border-radius: 4px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: #0f172a;
-      }
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #1f2937; }
+      .page-container { max-width: 1200px; margin: 3rem auto; padding: 0 2rem; min-height: 60vh; }
+      .content-wrapper { background: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+      .content-wrapper h1 { color: #0b2218; margin-top: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #eaeaea; padding-bottom: 0.75rem; font-size: 2.2rem; }
+      .temp-content { color: #475569; font-size: 1.1rem; line-height: 1.6; }
+      .code-badge { display: inline-block; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.9rem; color: #0f172a; }
     </style>
   </head>
   <body>
-    <!-- Üst Menü ve Logo -->
     <Header />
-
     <main class="page-container">
       <div class="content-wrapper">
         <h1>{pageTitle}</h1>
         <p class="temp-content">
-          Bu sayfa Master Tablo üzerinden dinamik olarak oluşturulmuştur. 
-          Sayfa Kodu: <span class="code-badge">{page.Kod}</span>
+          Sayfa Kodu: <span class="code-badge">{page.kod}</span>
         </p>
       </div>
     </main>

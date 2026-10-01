@@ -2,7 +2,10 @@
 import { getMenu } from '../lib/sheets';
 
 const menuItems = await getMenu() || [];
-const currentLang = Astro.params.lang || 'tr';
+const { pathname } = Astro.url;
+const segments = pathname.split('/').filter(Boolean);
+const currentLang = ['tr', 'en', 'me'].includes(segments[0]) ? segments[0] : 'tr';
+const langKey = currentLang.toUpperCase();
 
 const languages = [
   { code: 'tr', label: 'TR' },
@@ -11,60 +14,61 @@ const languages = [
 ];
 
 function getLangPath(targetLangCode) {
-  const path = Astro.url.pathname;
-  const segments = path.split('/').filter(Boolean);
   if (segments.length === 0) return `/${targetLangCode}`;
-  if (['tr', 'en', 'me'].includes(segments[0])) {
-    segments[0] = targetLangCode;
+  const newSegments = [...segments];
+  if (['tr', 'en', 'me'].includes(newSegments[0])) {
+    newSegments[0] = targetLangCode;
   } else {
-    segments.unshift(targetLangCode);
+    newSegments.unshift(targetLangCode);
   }
-  return '/' + segments.join('/');
+  return '/' + newSegments.join('/');
 }
 ---
+
 <header class="main-header">
   <div class="header-container">
-    <div class="logo">
-      <a href={`/${currentLang}`}>
-        <span class="brand-title">TURSKA PIJACA</span>
-      </a>
-    </div>
+    <a href={`/${currentLang}`} class="logo-link">
+      <span class="brand-badge">B2B</span>
+      <span class="brand-title">TURSKA PIJACA</span>
+    </a>
 
     <nav class="main-menu">
       <ul>
         <li>
-          <a href={`/${currentLang}`}>
+          <a href={`/${currentLang}`} class={pathname === `/${currentLang}` ? 'active' : ''}>
             {currentLang === 'en' ? 'Home' : currentLang === 'me' ? 'Početna' : 'Ana Sayfa'}
           </a>
         </li>
         {menuItems.map(item => {
-          // Tablodaki olası her yazım yanlışına karşı korumalı isim çekme
           const name = item[`ad${currentLang}`] || item['adtr'] || item['kod'];
           const rawAddress = item[`adres${currentLang}`] || item['adrestr'] || item['kod'];
-
           if (!name || item.kod === 'ANA_SAYFA' || !rawAddress) return null;
 
-          const path = rawAddress.startsWith('/') ? rawAddress : `/${rawAddress}`;
-          const finalPath = `/${currentLang}${path}`.toLowerCase();
+          const cleanAddress = String(rawAddress).replace(/^\//, '');
+          const finalPath = `/${currentLang}/${cleanAddress}`.toLowerCase();
 
           return (
             <li>
-              <a href={finalPath}>{name}</a>
+              <a href={finalPath} class={pathname.toLowerCase().includes(cleanAddress.toLowerCase()) ? 'active' : ''}>
+                {name}
+              </a>
             </li>
           );
         })}
       </ul>
     </nav>
 
-    <div class="language-switcher">
-      {languages.map(lang => (
-        <a
-          href={getLangPath(lang.code)}
-          class={currentLang === lang.code ? 'active' : ''}
-        >
-          {lang.label}
-        </a>
-      ))}
+    <div class="header-right">
+      <div class="language-switcher">
+        {languages.map(lang => (
+          <a 
+            href={getLangPath(lang.code)} 
+            class={currentLang === lang.code ? 'active' : ''}
+          >
+            {lang.label}
+          </a>
+        ))}
+      </div>
     </div>
   </div>
 </header>
@@ -76,15 +80,79 @@ function getLangPath(targetLangCode) {
     position: sticky;
     top: 0;
     z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   }
-  .header-container { max-width: 1400px; margin: 0 auto; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-  .logo a { text-decoration: none; }
-  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.4rem; letter-spacing: 0.5px; }
-  .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.8rem; align-items: center; }
-  .main-menu a { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; }
-  .main-menu a:hover { color: #34d399; }
-  .language-switcher { display: flex; gap: 0.4rem; background: rgba(255, 255, 255, 0.05); padding: 0.2rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); }
-  .language-switcher a { text-decoration: none; color: #94a3b8; font-size: 0.8rem; font-weight: 700; padding: 0.3rem 0.6rem; border-radius: 4px; transition: all 0.2s; }
+  .header-container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+  }
+  .brand-badge {
+    background: #34d399;
+    color: #0b2218;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .brand-title {
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 1.35rem;
+    letter-spacing: 0.5px;
+  }
+  .main-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 1.8rem;
+    align-items: center;
+  }
+  .main-menu a {
+    text-decoration: none;
+    color: #cbd5e1;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+  .main-menu a:hover, .main-menu a.active {
+    color: #34d399;
+  }
+  .language-switcher {
+    display: flex;
+    gap: 0.3rem;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.25rem;
+    border-radius: 6px;
+  }
+  .language-switcher a {
+    text-decoration: none;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.25rem 0.55rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
   .language-switcher a:hover { color: #ffffff; }
-  .language-switcher a.active { background-color: #34d399; color: #0b2218; }
+  .language-switcher a.active {
+    background-color: #34d399;
+    color: #0b2218;
+  }
+
+  @media (max-width: 768px) {
+    .header-container { flex-direction: column; gap: 0.8rem; }
+    .main-menu ul { gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  }
 </style>

@@ -6,40 +6,53 @@ import { getCategories, getTextDictionary } from '../../lib/sheets';
 const { lang = 'tr' } = Astro.params;
 const [categories, dict] = await Promise.all([ getCategories(), getTextDictionary(lang) ]);
 
-// Tüm yazılar %100 Master tablonuzdaki METİNLER sekmesinden gelir.
 const heroTitle = dict['home.hero.title'] || dict['home.title'] || 'TURSKA PIJACA';
-const heroDesc = dict['home.hero.text'] || '';
-const heroBtn = dict['home.hero.button'] || 'Tüm Ürünler';
-const catTitle = dict['home.categories.title'] || 'Kategoriler';
+const heroDesc = dict['home.hero.text'] || dict['home.hero.subtitle'] || '';
+const catTitle = dict['home.categories.title'] || (lang === 'en' ? 'Categories' : lang === 'me' ? 'Kategorije' : 'Kategoriler');
 
-const whyTitle = dict['home.why.title'] || '';
-const whyText = dict['home.why.text'] || '';
+// METINLER sekmesindeki home. ile başlayan TÜM BÖLÜMLERİ dinamik olarak toplar (Açıklamalar dahil)
+const homeBlocks = [];
+const blockNames = new Set();
+Object.keys(dict).forEach(k => {
+  if (k.startsWith('home.') || k.startsWith('anasayfa.')) {
+    const parts = k.split('.');
+    if (parts.length >= 2 && !['hero', 'title', 'categories'].includes(parts[1])) {
+      blockNames.add(parts[1]);
+    }
+  }
+});
+
+blockNames.forEach(bn => {
+  let title = dict[`home.${bn}.title`] || dict[`anasayfa.${bn}.baslik`];
+  let content = dict[`home.${bn}.text`] || dict[`home.${bn}.aciklama`] || dict[`anasayfa.${bn}.metin`];
+  if (title || content) homeBlocks.push({ title, content });
+});
 ---
 
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{heroTitle}</title>
     <style>
       body { margin: 0; font-family: 'Inter', system-ui; background: #f8fafc; color: #0f172a; }
       .hero { background: linear-gradient(135deg, #0b2218, #143d2c); color: white; padding: 5rem 1.5rem; text-align: center; }
-      .hero h1 { font-size: 3rem; font-weight: 800; margin: 0 0 1rem; }
-      .hero p { font-size: 1.2rem; color: #cbd5e1; max-width: 700px; margin: 0 auto 2rem; line-height: 1.6; }
-      .hero-btn { display: inline-block; background: #34d399; color: #0b2218; padding: 1rem 2.5rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 1.05rem; }
+      .hero h1 { font-size: 3rem; font-weight: 900; margin: 0 0 1rem; }
+      .hero p { font-size: 1.25rem; color: #e2e8f0; max-width: 800px; margin: 0 auto; line-height: 1.6; }
       
-      .container { max-width: 1250px; margin: 4rem auto; padding: 0 1.5rem; }
-      .section-title { text-align: center; font-size: 2rem; color: #0b2218; font-weight: 800; margin-bottom: 2.5rem; }
+      .container { max-width: 1300px; margin: 4rem auto; padding: 0 1.5rem; }
+      .section-title { text-align: center; font-size: 2.2rem; color: #0b2218; font-weight: 800; margin-bottom: 2.5rem; }
       
-      .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.8rem; margin-bottom: 4rem;}
+      .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem; margin-bottom: 4rem;}
       .category-card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; text-decoration: none; color: #0f172a; display: block; transition: all 0.2s; }
-      .category-card:hover { transform: translateY(-5px); border-color: #34d399; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+      .category-card:hover { transform: translateY(-5px); border-color: #059669; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
       .cat-img { width: 100%; height: 180px; object-fit: contain; margin-bottom: 1.2rem; }
-      .cat-name { font-size: 1.1rem; font-weight: 700; }
+      .cat-name { font-size: 1.15rem; font-weight: 800; }
       
-      .info-block { background: white; padding: 3rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 2rem; text-align: center; }
-      .info-block h3 { color: #0b2218; font-size: 1.8rem; margin-top: 0; margin-bottom: 1.5rem; }
-      .info-block p { font-size: 1.1rem; color: #475569; line-height: 1.8; white-space: pre-wrap; }
+      .info-block { background: white; padding: 3.5rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 2rem; text-align: center; }
+      .info-block h3 { color: #0b2218; font-size: 1.8rem; margin-top: 0; margin-bottom: 1.5rem; font-weight: 800; }
+      .info-block p { font-size: 1.15rem; color: #475569; line-height: 1.8; white-space: pre-wrap; margin: 0; }
     </style>
   </head>
   <body>
@@ -47,7 +60,6 @@ const whyText = dict['home.why.text'] || '';
     <section class="hero">
       <h1>{heroTitle}</h1>
       {heroDesc && <p>{heroDesc}</p>}
-      <a href={`/${lang}/ürünler/tüm-ürünler`} class="hero-btn">{heroBtn}</a>
     </section>
     
     <main class="container">
@@ -61,7 +73,13 @@ const whyText = dict['home.why.text'] || '';
         ))}
       </div>
 
-      {whyTitle && <div class="info-block"><h3>{whyTitle}</h3><p>{whyText}</p></div>}
+      <!-- Master dosyada home ile başlayan tüm açıklamalar otomatik buraya dizilir -->
+      {homeBlocks.map(block => (
+        <div class="info-block">
+          {block.title && <h3>{block.title}</h3>}
+          {block.content && <p>{block.content}</p>}
+        </div>
+      ))}
     </main>
     <Footer lang={lang} />
   </body>

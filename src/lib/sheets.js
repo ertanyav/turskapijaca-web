@@ -33,6 +33,7 @@ async function fetchSheetData(tabName) {
 export const getPages = () => fetchSheetData('SAYFALAR');
 export const getTexts = () => fetchSheetData('METINLER');
 export const getSettings = () => fetchSheetData('AYARLAR');
+
 export const getBrands = async () => (await fetchSheetData('MARKALAR')).filter(b => (b.yayinda || '').toUpperCase() === 'EVET').sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
 export const getDealers = async () => (await fetchSheetData('BAYILER')).filter(d => (d.yayinda || '').toUpperCase() === 'EVET').sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
 export const getDocuments = async () => (await fetchSheetData('BELGELER')).filter(d => (d.yayinda || '').toUpperCase() === 'EVET').sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
@@ -43,11 +44,10 @@ export async function getProducts() {
   return data.filter(item => {
     const yayinda = (item.yayinda || '').toUpperCase();
     const durum = (item.durum || '').toUpperCase();
-    return yayinda.includes('EVET') && (durum.includes('AKTIF') || durum.includes('AKTİF'));
+    return yayinda.includes('EVET') && (durum.includes('AKTIF') || durum.includes('AKTİF') || !durum);
   }).sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
 }
 
-// Dropdown (Açılır) Menü Hiyerarşisi
 export async function getMenu() {
   const [pages, texts] = await Promise.all([getPages(), getTexts()]);
   if (!pages) return [];

@@ -16,10 +16,13 @@ function getLangPath(targetCode) {
   return '/' + newSegs.join('/');
 }
 
-const txtCart = dict['common.cart'] || 'Sepet';
-const txtCheckout = dict['cart.checkout'] || 'Teklif İste / Siparişi Tamamla';
-const txtEmpty = dict['cart.empty'] || 'Sepetiniz boş.';
-const txtTotal = dict['cart.total'] || 'Toplam:';
+// Master dosyadan dinamik metinler
+const txtCart = dict['common.cart'] || dict['ortak.sepet'] || (currentLang === 'en' ? 'Cart' : currentLang === 'me' ? 'Korpa' : 'Sepet');
+const txtCheckout = dict['cart.checkout'] || (currentLang === 'en' ? 'Complete Order' : currentLang === 'me' ? 'Naruči' : 'Siparişi Tamamla');
+const txtEmpty = dict['cart.empty'] || (currentLang === 'en' ? 'Cart is empty' : 'Sepetiniz boş.');
+const txtTotal = dict['cart.total'] || 'Total:';
+const phone = dict['contact.phone'] || '38263256666';
+const cleanPhone = String(phone).replace(/[^0-9]/g, '');
 ---
 
 <header class="main-header">
@@ -31,6 +34,7 @@ const txtTotal = dict['cart.total'] || 'Toplam:';
     <nav class="main-menu">
       <ul>
         {menuItems.map(item => {
+          // Menü dilleri tam olarak master dosyadan geliyor
           const name = item[`ad${currentLang}`] || item.adtr;
           const rawAddress = item[`adres${currentLang}`] || item.adrestr;
           if (!name || item.kod === 'home' || !rawAddress) return null;
@@ -59,7 +63,7 @@ const txtTotal = dict['cart.total'] || 'Toplam:';
 
     <div class="header-right">
       <button id="cart-toggle" class="cart-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
         <span class="cart-count-badge" id="cart-count">0</span>
       </button>
       <div class="language-switcher">
@@ -69,7 +73,7 @@ const txtTotal = dict['cart.total'] || 'Toplam:';
   </div>
 </header>
 
-<!-- Gerçek E-Ticaret Sepeti (Sağdan Açılır) -->
+<!-- Sağdan Açılır WhatsApp Uyumlu Sepet -->
 <div id="cart-sidebar" class="cart-sidebar">
   <div class="cart-header">
     <h2>{txtCart}</h2>
@@ -77,8 +81,7 @@ const txtTotal = dict['cart.total'] || 'Toplam:';
   </div>
   <div id="cart-items" class="cart-items"></div>
   <div class="cart-footer">
-    <div class="cart-total"><span>{txtTotal}</span> <strong id="cart-total-price">0.00 €</strong></div>
-    <button id="checkout-btn" class="checkout-btn">{txtCheckout}</button>
+    <button id="checkout-btn" class="checkout-btn" data-phone={cleanPhone}>{txtCheckout}</button>
   </div>
 </div>
 <div id="cart-overlay" class="cart-overlay"></div>
@@ -92,34 +95,29 @@ const txtTotal = dict['cart.total'] || 'Toplam:';
     renderCart();
   };
 
-  document.getElementById('cart-toggle').addEventListener('click', toggleCart);
-  document.getElementById('cart-close').addEventListener('click', toggleCart);
-  document.getElementById('cart-overlay').addEventListener('click', toggleCart);
+  document.getElementById('cart-toggle')?.addEventListener('click', toggleCart);
+  document.getElementById('cart-close')?.addEventListener('click', toggleCart);
+  document.getElementById('cart-overlay')?.addEventListener('click', toggleCart);
 
   function renderCart() {
     const itemsContainer = document.getElementById('cart-items');
-    const totalEl = document.getElementById('cart-total-price');
     const countEl = document.getElementById('cart-count');
     
-    countEl.innerText = cart.reduce((sum, item) => sum + item.qty, 0);
+    if(countEl) countEl.innerText = cart.reduce((sum, item) => sum + item.qty, 0);
     
     if (cart.length === 0) {
-      itemsContainer.innerHTML = `<p style="text-align:center; color:#64748b; margin-top:2rem;">${txtEmpty}</p>`;
-      totalEl.innerText = "0.00 €";
+      if(itemsContainer) itemsContainer.innerHTML = `<p style="text-align:center; color:#64748b; margin-top:2rem;">${txtEmpty}</p>`;
       return;
     }
 
     let html = '';
-    let total = 0;
     cart.forEach((item, index) => {
-      const price = parseFloat(item.price) || 0;
-      total += price * item.qty;
       html += `
         <div class="cart-item">
           <img src="${item.img || 'https://via.placeholder.com/50'}" />
           <div class="cart-item-info">
             <div class="cart-item-name">${item.name}</div>
-            <div class="cart-item-price">${price > 0 ? price + ' €' : ''}</div>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:0.5rem;">Kod: ${item.id}</div>
             <div class="cart-item-qty">
               <button onclick="updateQty(${index}, -1)">-</button>
               <span>${item.qty}</span>
@@ -129,8 +127,7 @@ const txtTotal = dict['cart.total'] || 'Toplam:';
         </div>
       `;
     });
-    itemsContainer.innerHTML = html;
-    totalEl.innerText = total > 0 ? total.toFixed(2) + ' €' : '';
+    if(itemsContainer) itemsContainer.innerHTML = html;
   }
 
   window.updateQty = (index, change) => {
@@ -141,21 +138,27 @@ const txtTotal = dict['cart.total'] || 'Toplam:';
     }
     localStorage.setItem('tp_cart', JSON.stringify(cart));
     renderCart();
+    window.dispatchEvent(new Event('cartUpdated'));
   };
 
-  window.addToCart = (id, name, img, price) => {
+  window.addToCart = (id, name, img) => {
     const existing = cart.find(i => i.id === id);
     if (existing) existing.qty += 1;
-    else cart.push({ id, name, img, price, qty: 1 });
+    else cart.push({ id, name, img, qty: 1 });
     
     localStorage.setItem('tp_cart', JSON.stringify(cart));
     renderCart();
-    toggleCart(); // Sepete ekleyince sepeti otomatik aç
+    window.dispatchEvent(new Event('cartUpdated'));
+    toggleCart(); 
   };
 
-  document.getElementById('checkout-btn').addEventListener('click', () => {
+  // WhatsApp Sipariş Yönlendirmesi
+  document.getElementById('checkout-btn')?.addEventListener('click', function() {
     if (cart.length > 0) {
-      alert("Sipariş Sepetiniz hazırlanıyor. B2B alımları için teklif oluşturabilirsiniz.");
+      let text = "Merhaba, aşağıdaki ürünler için toptan sipariş/teklif talep ediyorum:\n\n";
+      cart.forEach(i => text += `- ${i.name} (Kod: ${i.id}) x ${i.qty} Adet\n`);
+      const phone = this.getAttribute('data-phone') || '38263256666';
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
     }
   });
 
@@ -163,44 +166,44 @@ const txtTotal = dict['cart.total'] || 'Toplam:';
 </script>
 
 <style>
-  .main-header { background: #fff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-  .header-container { max-width: 1250px; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-  .site-logo { height: 45px; object-fit: contain; }
+  .main-header { background: #fff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+  .header-container { max-width: 1300px; margin: 0 auto; padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .site-logo { height: 48px; object-fit: contain; }
   
-  .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.8rem; align-items: center;}
+  .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 2rem; align-items: center;}
   .menu-item { position: relative; }
-  .menu-link { text-decoration: none; color: #0f172a; font-weight: 600; font-size: 0.95rem; padding: 1rem 0; display: flex; gap: 0.3rem; }
-  .menu-link:hover { color: #34d399; }
+  .menu-link { text-decoration: none; color: #0f172a; font-weight: 600; font-size: 0.95rem; padding: 1.5rem 0; display: flex; gap: 0.3rem; }
+  .menu-link:hover { color: #059669; }
   
-  .dropdown-menu { visibility: hidden; opacity: 0; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0; min-width: 220px; display: flex; flex-direction: column; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.2s; transform: translateY(10px); }
+  .dropdown-menu { visibility: hidden; opacity: 0; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0; min-width: 240px; display: flex; flex-direction: column; z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.1); transition: all 0.2s; transform: translateY(10px); }
   .has-dropdown:hover .dropdown-menu { visibility: visible; opacity: 1; transform: translateY(0); }
-  .dropdown-menu a { padding: 0.7rem 1.2rem; display: block; text-decoration: none; color: #475569; font-size: 0.9rem; font-weight: 500; }
-  .dropdown-menu a:hover { background: #f8fafc; color: #34d399; }
+  .dropdown-menu a { padding: 0.8rem 1.2rem; display: block; text-decoration: none; color: #475569; font-size: 0.95rem; font-weight: 500; border-bottom:1px solid #f1f5f9; }
+  .dropdown-menu a:hover { background: #f8fafc; color: #059669; }
 
   .header-right { display: flex; gap: 1.5rem; align-items: center; }
   .cart-btn { background: none; border: none; cursor: pointer; color: #0f172a; position: relative; display: flex; align-items: center; padding: 0.5rem; }
-  .cart-count-badge { position: absolute; top: -2px; right: -5px; background: #34d399; color: #0b2218; font-size: 0.75rem; font-weight: 800; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
-  .language-switcher { display: flex; gap: 0.5rem; }
-  .language-switcher a { color: #64748b; font-size: 0.85rem; font-weight: 700; text-decoration: none; text-transform: uppercase; }
-  .language-switcher a.active { color: #0b2218; }
+  .cart-count-badge { position: absolute; top: -5px; right: -8px; background: #059669; color: #fff; font-size: 0.75rem; font-weight: 800; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+  
+  .language-switcher { display: flex; gap: 0.3rem; }
+  .language-switcher a { color: #64748b; font-size: 0.85rem; font-weight: 700; text-decoration: none; text-transform: uppercase; padding: 0.3rem 0.5rem; border-radius:4px; }
+  .language-switcher a.active { color: #059669; background: #f1f5f9; }
 
   /* CART SIDEBAR CSS */
-  .cart-sidebar { position: fixed; top: 0; right: -400px; width: 100%; max-width: 380px; height: 100vh; background: #fff; box-shadow: -5px 0 25px rgba(0,0,0,0.1); z-index: 10001; transition: right 0.3s ease; display: flex; flex-direction: column; }
+  .cart-sidebar { position: fixed; top: 0; right: -450px; width: 100%; max-width: 400px; height: 100vh; background: #fff; box-shadow: -5px 0 30px rgba(0,0,0,0.15); z-index: 10001; transition: right 0.3s ease; display: flex; flex-direction: column; }
   .cart-sidebar.open { right: 0; }
   .cart-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: none; }
   .cart-overlay.open { display: block; }
   .cart-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-  .cart-header h2 { margin: 0; font-size: 1.25rem; color: #0f172a; }
+  .cart-header h2 { margin: 0; font-size: 1.3rem; color: #0f172a; }
   .cart-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
   .cart-items { flex-grow: 1; overflow-y: auto; padding: 1.5rem; }
   .cart-item { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1.5rem; }
   .cart-item img { width: 70px; height: 70px; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; }
   .cart-item-info { flex-grow: 1; }
-  .cart-item-name { font-weight: 700; color: #0f172a; font-size: 0.95rem; margin-bottom: 0.3rem; }
-  .cart-item-price { color: #059669; font-weight: 800; font-size: 0.9rem; margin-bottom: 0.5rem; }
+  .cart-item-name { font-weight: 700; color: #0f172a; font-size: 0.95rem; margin-bottom: 0.2rem; line-height: 1.4; }
   .cart-item-qty { display: flex; align-items: center; gap: 0.8rem; }
-  .cart-item-qty button { background: #f1f5f9; border: 1px solid #e2e8f0; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  .cart-item-qty button { background: #f8fafc; border: 1px solid #e2e8f0; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; font-weight: bold; }
   .cart-footer { padding: 1.5rem; border-top: 1px solid #e2e8f0; background: #f8fafc; }
-  .cart-total { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; }
-  .checkout-btn { width: 100%; background: #34d399; color: #0b2218; border: none; padding: 1rem; font-size: 1rem; font-weight: 800; border-radius: 8px; cursor: pointer; }
+  .checkout-btn { width: 100%; background: #25D366; color: #fff; border: none; padding: 1.2rem; font-size: 1.05rem; font-weight: 800; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+  .checkout-btn:hover { background: #1ebd5a; }
 </style>

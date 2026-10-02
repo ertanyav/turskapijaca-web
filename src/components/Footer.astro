@@ -4,39 +4,192 @@ import { getTextDictionary } from '../lib/sheets';
 const { lang = 'tr' } = Astro.props;
 const dict = await getTextDictionary(lang);
 
-const tagline = dict['footer.tagline'] || 'From Türkiye to Montenegro. Direct supply, strong distribution.';
+const isEnglish = lang === 'en';
+const isMontenegrin = lang === 'me';
+
+const homeLabel =
+  dict['nav.home'] ||
+  (isEnglish ? 'Home' : isMontenegrin ? 'Početna' : 'Ana Sayfa');
+
+const productsLabel =
+  dict['nav.products'] ||
+  dict['menu.products'] ||
+  (isEnglish ? 'Products' : isMontenegrin ? 'Proizvodi' : 'Ürünler');
+
+const aboutLabel =
+  dict['nav.about'] ||
+  dict['menu.about'] ||
+  (isEnglish ? 'About Us' : isMontenegrin ? 'O nama' : 'Hakkımızda');
+
+const contactLabel =
+  dict['footer.contact'] ||
+  dict['nav.contact'] ||
+  (isEnglish ? 'Contact' : isMontenegrin ? 'Kontakt' : 'İletişim');
+
+const tagline =
+  dict['footer.tagline'] ||
+  (isEnglish
+    ? 'From Türkiye to Montenegro. Direct supply, strong distribution.'
+    : isMontenegrin
+      ? 'Od Turske do Crne Gore. Direktno snabdijevanje i pouzdana distribucija.'
+      : 'Türkiye’den Karadağ’a. Doğrudan tedarik, güçlü dağıtım.');
+
 const phone = dict['contact.phone'] || '+382 63 256 666';
 const email = dict['contact.email'] || 'info@turskapijaca.com';
 const company = dict['company.full_name'] || 'UNIVERCERT-MNE D.O.O.';
+const address = dict['contact.address'] || 'Montenegro';
+
+const copyrightText =
+  isEnglish
+    ? 'All rights reserved.'
+    : isMontenegrin
+      ? 'Sva prava zadržana.'
+      : 'Tüm Hakları Saklıdır.';
+
+const currentYear = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-brand">
-      <h3>TURSKA PIJACA</h3>
+      <a class="footer-logo" href={`/${lang}/`} aria-label="Turska Pijaca">
+        TURSKA PIJACA
+      </a>
+
       <p class="company-name">{company}</p>
       <p class="tagline">{tagline}</p>
     </div>
 
+    <nav class="footer-navigation" aria-label="Footer navigation">
+      <h2>{isEnglish ? 'Navigation' : isMontenegrin ? 'Navigacija' : 'Navigasyon'}</h2>
+
+      <a href={`/${lang}/`}>{homeLabel}</a>
+      <a href={`/${lang}/products`}>{productsLabel}</a>
+      <a href={`/${lang}/about`}>{aboutLabel}</a>
+      <a href={`/${lang}/contact`}>{contactLabel}</a>
+    </nav>
+
     <div class="footer-contact">
-      <h4>{dict['footer.contact'] || 'İletişim'}</h4>
-      <p>📞 {phone}</p>
-      <p>✉️ {email}</p>
-      <p>📍 Montenegro</p>
+      <h2>{contactLabel}</h2>
+
+      <a href={`tel:${phone.replace(/[^\d+]/g, '')}`}>
+        <span aria-hidden="true">☎</span>
+        <span>{phone}</span>
+      </a>
+
+      <a href={`mailto:${email}`}>
+        <span aria-hidden="true">✉</span>
+        <span>{email}</span>
+      </a>
+
+      <p>
+        <span aria-hidden="true">⌖</span>
+        <span>{address}</span>
+      </p>
     </div>
   </div>
+
   <div class="footer-bottom">
-    <p>© {new Date().getFullYear()} TURSKA PIJACA — UNIVERCERT-MNE D.O.O. Tüm Hakları Saklıdır.</p>
+    <p>
+      © {currentYear} TURSKA PIJACA — {company}. {copyrightText}
+    </p>
   </div>
 </footer>
 
 <style>
-  .site-footer { background: #071710; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.1); padding: 3rem 1.5rem 1.5rem; margin-top: 4rem; }
-  .footer-container { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
-  .footer-brand h3 { color: #ffffff; margin: 0 0 0.4rem; font-size: 1.4rem; font-weight: 800; }
-  .company-name { color: #34d399; font-weight: 700; font-size: 0.88rem; margin: 0 0 0.8rem; }
-  .tagline { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; }
-  .footer-contact h4 { color: #ffffff; margin: 0 0 1rem; font-size: 1.05rem; }
-  .footer-contact p { margin: 0.4rem 0; font-size: 0.9rem; }
-  .footer-bottom { max-width: 1280px; margin: 2rem auto 0; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 0.8rem; }
+  .site-footer {
+    margin-top: 4rem;
+    padding: 3.5rem 1.5rem 1.5rem;
+    color: #cbd5e1;
+    background: #071710;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .footer-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(180px, 1fr));
+    gap: 3rem;
+    width: min(100%, 1280px);
+    margin: 0 auto;
+  }
+
+  .footer-logo {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    color: #ffffff;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+  }
+
+  .company-name {
+    margin: 0 0 0.75rem;
+    color: #34d399;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .tagline {
+    max-width: 380px;
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .footer-navigation,
+  .footer-contact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footer-navigation h2,
+  .footer-contact h2 {
+    margin: 0 0 1rem;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .footer-navigation a,
+  .footer-contact a,
+  .footer-contact p {
+    display: flex;
+    gap: 0.55rem;
+    align-items: center;
+    margin: 0.35rem 0;
+    color: #cbd5e1;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    text-decoration: none;
+  }
+
+  .footer-navigation a:hover,
+  .footer-contact a:hover {
+    color: #34d399;
+  }
+
+  .footer-bottom {
+    width: min(100%, 1280px);
+    margin: 2.5rem auto 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+  }
+
+  .footer-bottom p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 760px) {
+    .footer-container {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+  }
 </style>

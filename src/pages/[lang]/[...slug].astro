@@ -1,243 +1,929 @@
 ---
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getPages, getTexts, getProducts, getCategories, getBrands, getDealers, getDocuments, getTextDictionary } from '../../lib/sheets';
+import SEO from '../../components/SEO.astro';
+import {
+  getPages,
+  getTexts,
+  getProducts,
+  getCategories,
+  getBrands,
+  getDealers,
+  getDocuments,
+  getTextDictionary
+} from '../../lib/sheets';
 
 const { lang = 'tr', slug } = Astro.params;
-const target = (slug || '').toLowerCase();
+const target = String(slug || '').toLowerCase();
 
-const [pages, texts, products, categories, brands, dealers, documents, dict] = await Promise.all([
-  getPages(), getTexts(), getProducts(), getCategories(), getBrands(), getDealers(), getDocuments(), getTextDictionary(lang)
+const [
+  pages,
+  texts,
+  products,
+  categories,
+  brands,
+  dealers,
+  documents,
+  dict
+] = await Promise.all([
+  getPages(),
+  getTexts(),
+  getProducts(),
+  getCategories(),
+  getBrands(),
+  getDealers(),
+  getDocuments(),
+  getTextDictionary(lang)
 ]);
 
-const currentPage = pages.find(p => {
-  if (!p) return false;
-  return target === String(p.adrestr || '').replace(/^\//, '').toLowerCase() || 
-         target === String(p.adresen || '').replace(/^\//, '').toLowerCase() || 
-         target === (p.kod || '').toLowerCase();
+const currentPage = pages.find((page) => {
+  if (!page) return false;
+
+  const pagePaths = [
+    page.adrestr,
+    page.adresen,
+    page.adresme,
+    page.kod
+  ]
+    .filter(Boolean)
+    .map((value) =>
+      String(value).replace(/^\/+/, '').toLowerCase()
+    );
+
+  return pagePaths.includes(target);
 });
 
-const matchedCategory = categories.find(c => target === String(c.adrestr || '').replace(/^\//, '').toLowerCase());
-const isProductPage = (currentPage && (currentPage.kod === 'products' || currentPage.kod === 'catalog' || target.includes('urunler'))) || matchedCategory;
+const matchedCategory = categories.find((category) => {
+  const categoryPath = String(category.adrestr || '')
+    .replace(/^\/+/, '')
+    .toLowerCase();
 
-const isBrandsPage = currentPage && currentPage.kod === 'brands';
-const isDealersPage = currentPage && currentPage.kod === 'network';
-const isDocsPage = currentPage && currentPage.kod === 'documents';
+  return target === categoryPath;
+});
+
+const currentPageCode = String(currentPage?.kod || '').toLowerCase();
+
+const isProductPage =
+  Boolean(matchedCategory) ||
+  currentPageCode === 'products' ||
+  currentPageCode === 'catalog' ||
+  target.includes('urunler') ||
+  target.includes('products') ||
+  target.includes('proizvodi');
+
+const isBrandsPage = currentPageCode === 'brands';
+const isDealersPage = currentPageCode === 'network';
+const isDocsPage = currentPageCode === 'documents';
 
 let displayedProducts = products || [];
+
 if (matchedCategory) {
-  displayedProducts = displayedProducts.filter(p => (p.kategori || '').toUpperCase() === (matchedCategory.kod || '').toUpperCase());
+  displayedProducts = displayedProducts.filter(
+    (product) =>
+      String(product.kategori || '').toUpperCase() ===
+      String(matchedCategory.kod || '').toUpperCase()
+  );
 }
 
-// BÜYÜK DÜZELTME: Başlıklar Artık %100 Master Dosyaya Göre Dil Değiştirecek!
+const localizedValue = (item, key) =>
+  item?.[`${key}${lang}`] ||
+  item?.[`${key}tr`] ||
+  item?.[key] ||
+  '';
+
 let pageTitle = '';
+
 if (matchedCategory) {
-  pageTitle = matchedCategory[`ad${lang}`] || matchedCategory.adtr || matchedCategory.kod;
+  pageTitle =
+    localizedValue(matchedCategory, 'ad') ||
+    matchedCategory.kod ||
+    'Products';
 } else if (currentPage) {
-  pageTitle = dict[`${(currentPage.kod || '').toLowerCase()}.title`] || currentPage[`ad${lang}`] || currentPage.adtr || currentPage.kod;
+  pageTitle =
+    dict[`${currentPageCode}.title`] ||
+    localizedValue(currentPage, 'ad') ||
+    currentPage.kod ||
+    'Turska Pijaca';
 }
 
-// KATEGORİ AÇIKLAMALARI (Master Dosyadaki Açıklama TR/EN/ME sütunları)
-const categoryDesc = matchedCategory ? (matchedCategory[`aciklama${lang}`] || matchedCategory.aciklamatr || '') : '';
+if (!pageTitle) {
+  pageTitle = isProductPage
+    ? lang === 'en'
+      ? 'Products'
+      : lang === 'me'
+        ? 'Proizvodi'
+        : 'Ürünler'
+    : 'Turska Pijaca';
+}
 
-// SAYFA İÇERİKLERİ (Hakkımızda vb. içerikleri)
-let pageParagraphs = [];
+const categoryDescription = matchedCategory
+  ? localizedValue(matchedCategory, 'aciklama')
+  : '';
+
+const pageParagraphs = [];
+
 if (currentPage) {
-  const pagePrefix = `${(currentPage.kod || '').toLowerCase()}.`;
-  Object.keys(dict).forEach(k => {
-    if (k.startsWith(pagePrefix) && !k.endsWith('.title') && dict[k]) {
-      pageParagraphs.push(dict[k]);
+  const pagePrefix = `${currentPageCode}.`;
+
+  Object.keys(dict).forEach((key) => {
+    if (
+      key.startsWith(pagePrefix) &&
+      !key.endsWith('.title') &&
+      dict[key]
+    ) {
+      pageParagraphs.push(dict[key]);
     }
   });
 }
 
-const txtAddToCart = dict['product.addtocart'] || (lang === 'en' ? 'Add to Cart' : lang === 'me' ? 'Dodaj u Korpu' : 'Sepete Ekle');
+const txtAddToCart =
+  dict['product.addtocart'] ||
+  (lang === 'en'
+    ? 'Add to Cart'
+    : lang === 'me'
+      ? 'Dodaj u korpu'
+      : 'Sepete Ekle');
+
+const txtSearch =
+  lang === 'en'
+    ? 'Search products or code...'
+    : lang === 'me'
+      ? 'Pretražite proizvode ili šifru...'
+      : 'Ürün veya kod ara...';
+
+const txtAllCategories =
+  lang === 'en'
+    ? 'All Categories'
+    : lang === 'me'
+      ? 'Sve kategorije'
+      : 'Tüm Kategoriler';
+
+const txtAllBrands =
+  lang === 'en'
+    ? 'All Brands'
+    : lang === 'me'
+      ? 'Svi brendovi'
+      : 'Tüm Markalar';
+
+const txtCode =
+  lang === 'en'
+    ? 'Code'
+    : lang === 'me'
+      ? 'Šifra'
+      : 'Kod';
+
+const pageDescription =
+  categoryDescription ||
+  pageParagraphs[0] ||
+  (lang === 'en'
+    ? 'Wholesale products and distribution from Türkiye to Montenegro.'
+    : lang === 'me'
+      ? 'Veleprodajni proizvodi i distribucija iz Turske u Crnoj Gori.'
+      : 'Türkiye’den Karadağ’a toptan ürün ve dağıtım hizmetleri.');
+
+const jsonLd = isProductPage
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: pageTitle,
+      description: pageDescription,
+      url: Astro.url.href,
+      inLanguage: lang === 'me' ? 'sr-Latn-ME' : lang
+    }
+  : {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: pageTitle,
+      description: pageDescription,
+      url: Astro.url.href,
+      inLanguage: lang === 'me' ? 'sr-Latn-ME' : lang
+    };
 ---
 
-<!DOCTYPE html>
-<html lang={lang}>
+<!doctype html>
+<html lang={lang === 'me' ? 'sr-Latn-ME' : lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{pageTitle}</title>
-    <style>
-      body { margin: 0; font-family: 'Inter', system-ui; background: #f8fafc; color: #0f172a; }
-      .container { max-width: 1300px; margin: 3rem auto; padding: 0 1.5rem; min-height: 60vh; }
-      .page-header { margin-bottom: 2.5rem; text-align: center; }
-      .page-header h1 { font-size: 2.5rem; color: #0b2218; font-weight: 900; margin: 0 0 1rem; }
-      .page-header p { font-size: 1.15rem; color: #475569; max-width: 800px; margin: 0 auto; line-height: 1.6; }
-      
-      .filter-bar { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
-      .filter-input { flex: 1; min-width: 220px; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f8fafc; color: #0f172a; }
-      
-      .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
-      .product-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; transition: border-color 0.2s; }
-      .product-card:hover { border-color: #059669; }
-      .product-img { width: 100%; height: 220px; object-fit: contain; padding: 1rem; border-bottom: 1px solid #f1f5f9; }
-      .product-info { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
-      .product-name { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem; line-height: 1.4; }
-      .product-meta { font-size: 0.9rem; color: #64748b; margin-bottom: 1rem; }
-      .btn-add { background: #059669; color: white; border: none; padding: 0.9rem; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; text-align: center; margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 0.5rem;}
-      .btn-add:hover { background: #047857; }
 
-      .entities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; margin-bottom: 4rem; }
-      .entity-card { background: white; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 12px; text-decoration: none; color: inherit; display: flex; flex-direction: column; }
-      .entity-card:hover { border-color: #059669; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-      .entity-img { width: 100%; height: 90px; object-fit: contain; margin-bottom: 1.5rem;}
-      .entity-desc { font-size: 0.95rem; color: #475569; line-height: 1.6; }
-      
-      @media (max-width: 768px) { .filter-bar { flex-direction: column; } }
+    <SEO
+      title={pageTitle}
+      description={pageDescription}
+      lang={lang}
+      canonicalUrl={Astro.url.href}
+      jsonLd={jsonLd}
+    />
+
+    <style>
+      :global(body) {
+        margin: 0;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #0f172a;
+        background: #f8fafc;
+      }
+
+      .container {
+        width: min(100% - 3rem, 1300px);
+        min-height: 60vh;
+        margin: 3rem auto;
+      }
+
+      .page-header {
+        margin-bottom: 2.5rem;
+        text-align: center;
+      }
+
+      .page-header h1 {
+        margin: 0 0 1rem;
+        color: #0b2218;
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        font-weight: 900;
+      }
+
+      .page-header p {
+        max-width: 800px;
+        margin: 0 auto;
+        color: #475569;
+        font-size: 1.1rem;
+        line-height: 1.7;
+      }
+
+      .filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1.2rem;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+      }
+
+      .filter-input {
+        flex: 1 1 220px;
+        min-width: 0;
+        padding: 0.8rem 1rem;
+        color: #0f172a;
+        font: inherit;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+      }
+
+      .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .product-card {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        transition:
+          transform 0.2s ease,
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .product-card:hover {
+        border-color: #059669;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+        transform: translateY(-3px);
+      }
+
+      .product-image-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 220px;
+        padding: 1rem;
+        background: #f8fafc;
+        text-decoration: none;
+      }
+
+      .product-img,
+      .product-img-placeholder {
+        width: 100%;
+        height: 220px;
+        object-fit: contain;
+      }
+
+      .product-img-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        color: #64748b;
+        text-align: center;
+        box-sizing: border-box;
+      }
+
+      .product-info {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        padding: 1.25rem;
+      }
+
+      .product-name {
+        margin-bottom: 0.5rem;
+        color: #0f172a;
+        font-size: 1.05rem;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .product-meta {
+        margin-bottom: 1rem;
+        color: #64748b;
+        font-size: 0.9rem;
+      }
+
+      .product-description {
+        margin-bottom: 1rem;
+        color: #475569;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+
+      .btn-add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: auto;
+        padding: 0.85rem;
+        color: #ffffff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        background: #059669;
+        border: 0;
+        border-radius: 8px;
+      }
+
+      .btn-add:hover {
+        background: #047857;
+      }
+
+      .empty-state,
+      .content-panel {
+        padding: 2rem;
+        text-align: center;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+      }
+
+      .content-panel {
+        text-align: left;
+      }
+
+      .content-panel p {
+        color: #334155;
+        font-size: 1.05rem;
+        line-height: 1.8;
+      }
+
+      .entities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin: 1.5rem 0 3rem;
+      }
+
+      .entity-card {
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        color: inherit;
+        text-decoration: none;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+      }
+
+      .entity-card:hover {
+        border-color: #059669;
+        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.06);
+      }
+
+      .entity-img {
+        width: 100%;
+        height: 90px;
+        margin-bottom: 1.5rem;
+        object-fit: contain;
+      }
+
+      .entity-desc {
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+
+      .section-heading {
+        margin: 2rem 0 1rem;
+        color: #0b2218;
+        font-size: 1.7rem;
+      }
+
+      .dealer-title {
+        margin: 0;
+        color: #0b2218;
+        font-size: 1.2rem;
+      }
+
+      .dealer-city {
+        margin: 0.75rem 0;
+        color: #059669;
+        font-weight: 800;
+      }
+
+      .dealer-detail {
+        margin: 0.45rem 0;
+        color: #475569;
+      }
+
+      .document-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 1.25rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+      }
+
+      .document-row h3 {
+        margin: 0 0 0.5rem;
+        color: #0b2218;
+      }
+
+      .document-description {
+        color: #64748b;
+      }
+
+      .document-link {
+        flex: 0 0 auto;
+        padding: 0.75rem 1.25rem;
+        color: #ffffff;
+        font-weight: 700;
+        text-decoration: none;
+        background: #0b2218;
+        border-radius: 8px;
+      }
+
+      @media (max-width: 700px) {
+        .container {
+          width: min(100% - 2rem, 1300px);
+          margin: 2rem auto;
+        }
+
+        .filter-bar {
+          flex-direction: column;
+        }
+
+        .document-row {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .document-link {
+          text-align: center;
+        }
+      }
     </style>
   </head>
+
   <body>
-    <Header />
+    <Header lang={lang} />
+
     <main class="container">
-      <div class="page-header">
+      <header class="page-header">
         <h1>{pageTitle}</h1>
-        <!-- Kategori veya Sayfa Açıklaması Varsa Yazdır -->
-        {categoryDesc && <p>{categoryDesc}</p>}
-      </div>
+        {categoryDescription && <p>{categoryDescription}</p>}
+      </header>
 
       {isProductPage ? (
-        <div>
+        <section>
           <div class="filter-bar">
-            <input type="text" id="searchInput" class="filter-input" placeholder={lang === 'en' ? 'Search products...' : 'Ürün veya Kod Ara...'} />
-            <select id="catSelect" class="filter-input">
-              <option value="">{lang === 'en' ? 'All Categories' : 'Tüm Kategoriler'}</option>
-              {categories.map(c => <option value={(c.kod || '').toLowerCase()}>{c[`ad${lang}`] || c.adtr}</option>)}
+            <input
+              type="search"
+              id="searchInput"
+              class="filter-input"
+              placeholder={txtSearch}
+              aria-label={txtSearch}
+            />
+
+            <select
+              id="catSelect"
+              class="filter-input"
+              aria-label={txtAllCategories}
+            >
+              <option value="">{txtAllCategories}</option>
+
+              {categories.map((category) => (
+                <option value={String(category.kod || '').toLowerCase()}>
+                  {localizedValue(category, 'ad') || category.kod}
+                </option>
+              ))}
             </select>
-            <select id="brandSelect" class="filter-input">
-              <option value="">{lang === 'en' ? 'All Brands' : 'Tüm Markalar'}</option>
-              {brands.map(b => <option value={(b.marka || '').toLowerCase()}>{b.marka}</option>)}
+
+            <select
+              id="brandSelect"
+              class="filter-input"
+              aria-label={txtAllBrands}
+            >
+              <option value="">{txtAllBrands}</option>
+
+              {brands.map((brand) => (
+                <option value={String(brand.marka || '').toLowerCase()}>
+                  {brand.marka}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div class="products-grid" id="productsGrid">
-            {displayedProducts.map(p => {
-              // Ürün Adları ve Açıklamaları Dil Korumalı
-              const name = p[`ad${lang}`] || p.adtr || p.icad;
-              const code = p.urunno || p.kayitid || '';
-              return (
-                <div class="product-card" data-name={name.toLowerCase()} data-code={code.toLowerCase()} data-cat={(p.kategori||'').toLowerCase()} data-brand={(p.marka||'').toLowerCase()}>
-                  <img src={p.gorselurl || 'https://via.placeholder.com/400'} class="product-img" loading="lazy" />
-                  <div class="product-info">
-                    <div class="product-name">{name}</div>
-                    <div class="product-meta">{p.marka || '-'} | Kod: {code}</div>
-                    {/* Ürün açıklaması (aciklamatr) varsa göster */}
-                    {p[`aciklama${lang}`] && <div style="font-size:0.85rem; color:#475569; margin-bottom:1rem;">{p[`aciklama${lang}`]}</div>}
-                    <button class="btn-add" onclick={`addToCart('${code}', '${name.replace(/'/g, "\\'")}', '${p.gorselurl || ''}')`}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                      {txtAddToCart}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+          {displayedProducts.length > 0 ? (
+            <div class="products-grid" id="productsGrid">
+              {displayedProducts.map((product) => {
+                const name =
+                  localizedValue(product, 'ad') ||
+                  product.icad ||
+                  product.urunno ||
+                  'Ürün';
+
+                const code = String(
+                  product.urunno || product.kayitid || ''
+                );
+
+                const image =
+                  typeof product.gorselurl === 'string' &&
+                  /^https?:\/\//i.test(product.gorselurl)
+                    ? product.gorselurl
+                    : '';
+
+                const description = localizedValue(product, 'aciklama');
+
+                return (
+                  <article
+                    class="product-card"
+                    data-name={String(name).toLowerCase()}
+                    data-code={code.toLowerCase()}
+                    data-cat={String(product.kategori || '').toLowerCase()}
+                    data-brand={String(product.marka || '').toLowerCase()}
+                  >
+                    <a
+                      class="product-image-link"
+                      href={`/${lang}/products/${encodeURIComponent(code)}`}
+                    >
+                      {image ? (
+                        <img
+                          src={image}
+                          alt={name}
+                          class="product-img"
+                          width="400"
+                          height="300"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div class="product-img-placeholder">
+                          {name}
+                        </div>
+                      )}
+                    </a>
+
+                    <div class="product-info">
+                      <div class="product-name">{name}</div>
+
+                      <div class="product-meta">
+                        {product.marka ? `${product.marka} | ` : ''}
+                        {txtCode}: {code}
+                      </div>
+
+                      {description && (
+                        <div class="product-description">
+                          {description}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        class="btn-add"
+                        data-add-to-cart
+                        data-product-id={code}
+                        data-product-name={name}
+                        data-product-image={image}
+                      >
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          aria-hidden="true"
+                        >
+                          <circle cx="9" cy="21" r="1" />
+                          <circle cx="20" cy="21" r="1" />
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+
+                        {txtAddToCart}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div class="empty-state">
+              {lang === 'en'
+                ? 'No products found.'
+                : lang === 'me'
+                  ? 'Proizvodi nijesu pronađeni.'
+                  : 'Ürün bulunamadı.'}
+            </div>
+          )}
+        </section>
       ) : (
-        <div style="background: white; padding: 3.5rem; border-radius: 16px; border: 1px solid #e2e8f0;">
-          {pageParagraphs.map(txt => <p style="font-size: 1.15rem; line-height: 1.8; color: #334155;">{txt}</p>)}
-          
-          {isBrandsPage && brands && (
+        <section class="content-panel">
+          {pageParagraphs.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+
+          {isBrandsPage && brands.length > 0 && (
             <>
-              <h2 style="color:#0b2218; font-size:1.8rem; margin-top:2rem;">Distribütörlüğünü Yaptığımız Markalar</h2>
+              <h2 class="section-heading">
+                {lang === 'en'
+                  ? 'Distributor Brands'
+                  : lang === 'me'
+                    ? 'Distributerski brendovi'
+                    : 'Distribütör Markalar'}
+              </h2>
+
               <div class="entities-grid">
-                {brands.filter(b => b.tur.includes('DISTRIBUTOR')).map(b => (
-                  <a href={`/${lang}/ürünler/tüm-ürünler?marka=${b.marka}`} class="entity-card">
-                    {b.gorselurl ? <img src={b.gorselurl} class="entity-img" /> : <h3 style="margin:0 0 1rem;">{b.marka}</h3>}
-                    {/* Marka Açıklamaları eklendi! */}
-                    <div class="entity-desc">{b[`aciklama${lang}`] || b.aciklamatr || ''}</div>
-                  </a>
-                ))}
+                {brands
+                  .filter((brand) =>
+                    String(brand.tur || '').includes('DISTRIBUTOR')
+                  )
+                  .map((brand) => (
+                    <a
+                      href={`/${lang}/products?marka=${encodeURIComponent(brand.marka || '')}`}
+                      class="entity-card"
+                    >
+                      {brand.gorselurl ? (
+                        <img
+                          src={brand.gorselurl}
+                          alt={brand.marka}
+                          class="entity-img"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <h3 class="dealer-title">{brand.marka}</h3>
+                      )}
+
+                      <div class="entity-desc">
+                        {localizedValue(brand, 'aciklama')}
+                      </div>
+                    </a>
+                  ))}
               </div>
-              <h2 style="color:#0b2218; font-size:1.8rem;">Satış Portföyümüzdeki Markalar</h2>
+
+              <h2 class="section-heading">
+                {lang === 'en'
+                  ? 'Portfolio Brands'
+                  : lang === 'me'
+                    ? 'Brendovi u portfoliju'
+                    : 'Portföy Markaları'}
+              </h2>
+
               <div class="entities-grid">
-                {brands.filter(b => b.tur.includes('PORTFOLIO') || !b.tur.includes('DISTRIBUTOR')).map(b => (
-                  <a href={`/${lang}/ürünler/tüm-ürünler?marka=${b.marka}`} class="entity-card">
-                    {b.gorselurl ? <img src={b.gorselurl} class="entity-img" /> : <h3 style="margin:0 0 1rem;">{b.marka}</h3>}
-                    <div class="entity-desc">{b[`aciklama${lang}`] || b.aciklamatr || ''}</div>
-                  </a>
-                ))}
+                {brands
+                  .filter(
+                    (brand) =>
+                      String(brand.tur || '').includes('PORTFOLIO') ||
+                      !String(brand.tur || '').includes('DISTRIBUTOR')
+                  )
+                  .map((brand) => (
+                    <a
+                      href={`/${lang}/products?marka=${encodeURIComponent(brand.marka || '')}`}
+                      class="entity-card"
+                    >
+                      {brand.gorselurl ? (
+                        <img
+                          src={brand.gorselurl}
+                          alt={brand.marka}
+                          class="entity-img"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <h3 class="dealer-title">{brand.marka}</h3>
+                      )}
+
+                      <div class="entity-desc">
+                        {localizedValue(brand, 'aciklama')}
+                      </div>
+                    </a>
+                  ))}
               </div>
             </>
           )}
 
-          {isDealersPage && dealers && (
+          {isDealersPage && dealers.length > 0 && (
             <>
-              <h2 style="color:#0b2218; font-size:1.8rem; margin-top:2rem;">Yetkili Satış Noktaları</h2>
+              <h2 class="section-heading">
+                {lang === 'en'
+                  ? 'Authorized Dealers'
+                  : lang === 'me'
+                    ? 'Ovlašćeni distributeri'
+                    : 'Yetkili Satış Noktaları'}
+              </h2>
+
               <div class="entities-grid">
-                {dealers.filter(d => d.tur.includes('DEALER')).map(d => (
-                  <div class="entity-card">
-                    <h3 style="margin: 0; color:#0b2218; font-size:1.3rem;">{d.ad}</h3>
-                    <div style="font-weight:800; color:#059669; margin:1rem 0; font-size:1.1rem;">{d.sehir}</div>
-                    {d.adres && <div style="color:#475569; margin-bottom:0.5rem;">📍 {d.adres}</div>}
-                    {d.telefon && <div style="color:#475569; margin-bottom:0.5rem;">📞 {d.telefon}</div>}
-                    {d[`aciklama${lang}`] && <div style="color:#64748b; font-size:0.9rem; margin-top:0.5rem;">{d[`aciklama${lang}`]}</div>}
-                  </div>
-                ))}
+                {dealers
+                  .filter((dealer) =>
+                    String(dealer.tur || '').includes('DEALER')
+                  )
+                  .map((dealer) => (
+                    <div class="entity-card">
+                      <h3 class="dealer-title">{dealer.ad}</h3>
+
+                      <div class="dealer-city">{dealer.sehir}</div>
+
+                      {dealer.adres && (
+                        <div class="dealer-detail">
+                          📍 {dealer.adres}
+                        </div>
+                      )}
+
+                      {dealer.telefon && (
+                        <div class="dealer-detail">
+                          ☎ {dealer.telefon}
+                        </div>
+                      )}
+
+                      {localizedValue(dealer, 'aciklama') && (
+                        <div class="entity-desc">
+                          {localizedValue(dealer, 'aciklama')}
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
-              <h2 style="color:#0b2218; font-size:1.8rem;">Depolarımız</h2>
+
+              <h2 class="section-heading">
+                {lang === 'en'
+                  ? 'Our Warehouses'
+                  : lang === 'me'
+                    ? 'Naša skladišta'
+                    : 'Depolarımız'}
+              </h2>
+
               <div class="entities-grid">
-                {dealers.filter(d => d.tur.includes('WAREHOUSE')).map(d => (
-                  <div class="entity-card" style="background:#f8fafc;">
-                    <h3 style="margin: 0; color:#0b2218; font-size:1.3rem;">{d.ad}</h3>
-                    <div style="font-weight:800; margin:1rem 0; font-size:1.1rem;">{d.sehir}</div>
-                    {d.adres && <div style="color:#475569;">📍 {d.adres}</div>}
-                  </div>
-                ))}
+                {dealers
+                  .filter((dealer) =>
+                    String(dealer.tur || '').includes('WAREHOUSE')
+                  )
+                  .map((dealer) => (
+                    <div class="entity-card">
+                      <h3 class="dealer-title">{dealer.ad}</h3>
+
+                      <div class="dealer-city">{dealer.sehir}</div>
+
+                      {dealer.adres && (
+                        <div class="dealer-detail">
+                          📍 {dealer.adres}
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
             </>
           )}
 
-          {isDocsPage && documents && (
-            <div style="margin-top:2rem;">
-              {documents.map(doc => (
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:1.5rem; border-radius:8px; margin-bottom:1rem; border: 1px solid #e2e8f0;">
+          {isDocsPage && documents.length > 0 && (
+            <div>
+              {documents.map((document) => (
+                <div class="document-row">
                   <div>
-                    <h3 style="margin:0 0 0.5rem; color:#0b2218;">{doc[`ad${lang}`] || doc.adtr}</h3>
-                    <div style="color:#64748b;">{doc[`aciklama${lang}`] || doc.aciklamatr}</div>
+                    <h3>
+                      {localizedValue(document, 'ad') || document.adtr}
+                    </h3>
+
+                    <div class="document-description">
+                      {localizedValue(document, 'aciklama')}
+                    </div>
                   </div>
-                  <a href={`https://drive.google.com/file/d/${doc.driveid}/view`} target="_blank" style="background:#0b2218; color:white; padding:0.8rem 1.5rem; border-radius:8px; text-decoration:none; font-weight:700;">Dokümanı Aç</a>
+
+                  {document.driveid && (
+                    <a
+                      href={`https://drive.google.com/file/d/${document.driveid}/view`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="document-link"
+                    >
+                      {lang === 'en'
+                        ? 'Open Document'
+                        : lang === 'me'
+                          ? 'Otvori dokument'
+                          : 'Dokümanı Aç'}
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       )}
     </main>
+
     <script>
       const searchInput = document.getElementById('searchInput');
       const catSelect = document.getElementById('catSelect');
       const brandSelect = document.getElementById('brandSelect');
       const grid = document.getElementById('productsGrid');
 
-      if (grid) {
+      const filterCards = () => {
+        if (!grid) return;
+
+        const query = (searchInput?.value || '').toLowerCase();
+        const category = (catSelect?.value || '').toLowerCase();
+        const brand = (brandSelect?.value || '').toLowerCase();
+
         const cards = Array.from(grid.children);
-        const filterCards = () => {
-          const q = (searchInput?.value || '').toLowerCase();
-          const cat = (catSelect?.value || '').toLowerCase();
-          const brand = (brandSelect?.value || '').toLowerCase();
 
-          cards.forEach(card => {
-            const matchQ = card.getAttribute('data-name').includes(q) || card.getAttribute('data-code').includes(q);
-            const matchCat = !cat || card.getAttribute('data-cat') === cat;
-            const matchBrand = !brand || card.getAttribute('data-brand') === brand;
-            card.style.display = (matchQ && matchCat && matchBrand) ? 'flex' : 'none';
-          });
-        };
-        searchInput?.addEventListener('input', filterCards);
-        catSelect?.addEventListener('change', filterCards);
-        brandSelect?.addEventListener('change', filterCards);
+        cards.forEach((card) => {
+          if (!(card instanceof HTMLElement)) return;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlBrand = urlParams.get('marka');
-        if (urlBrand && brandSelect) {
-          brandSelect.value = urlBrand.toLowerCase();
-          filterCards();
-        }
+          const name = card.dataset.name || '';
+          const code = card.dataset.code || '';
+          const cardCategory = card.dataset.cat || '';
+          const cardBrand = card.dataset.brand || '';
+
+          const matchesQuery =
+            !query || name.includes(query) || code.includes(query);
+
+          const matchesCategory =
+            !category || cardCategory === category;
+
+          const matchesBrand =
+            !brand || cardBrand === brand;
+
+          card.style.display =
+            matchesQuery && matchesCategory && matchesBrand
+              ? 'flex'
+              : 'none';
+        });
+      };
+
+      searchInput?.addEventListener('input', filterCards);
+      catSelect?.addEventListener('change', filterCards);
+      brandSelect?.addEventListener('change', filterCards);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlBrand = urlParams.get('marka');
+
+      if (urlBrand && brandSelect) {
+        brandSelect.value = urlBrand.toLowerCase();
+        filterCards();
       }
+
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+
+        if (!(target instanceof Element)) return;
+
+        const button = target.closest('[data-add-to-cart]');
+
+        if (!(button instanceof HTMLElement)) return;
+
+        const productId = button.dataset.productId || '';
+        const productName = button.dataset.productName || '';
+        const productImage = button.dataset.productImage || '';
+
+        if (
+          productId &&
+          typeof window.addToCart === 'function'
+        ) {
+          window.addToCart(
+            productId,
+            productName,
+            productImage
+          );
+        }
+      });
     </script>
+
     <Footer lang={lang} />
   </body>
 </html>

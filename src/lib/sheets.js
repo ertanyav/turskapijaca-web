@@ -32,15 +32,11 @@ async function fetchSheetData(tabName) {
 
 export const getPages = () => fetchSheetData('SAYFALAR');
 export const getTexts = () => fetchSheetData('METINLER');
-export const getBrands = () => fetchSheetData('MARKALAR');
-export const getDealers = () => fetchSheetData('BAYILER'); // BAYİLER EKLENDİ
 export const getSettings = () => fetchSheetData('AYARLAR');
-export const getDocuments = () => fetchSheetData('BELGELER');
-
-export async function getCategories() {
-  const data = await fetchSheetData('KATEGORILER');
-  return data.filter(c => (c.yayinda || '').toUpperCase().includes('EVET')).sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
-}
+export const getBrands = async () => (await fetchSheetData('MARKALAR')).filter(b => (b.yayinda || '').toUpperCase() === 'EVET').sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
+export const getDealers = async () => (await fetchSheetData('BAYILER')).filter(d => (d.yayinda || '').toUpperCase() === 'EVET').sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
+export const getDocuments = async () => (await fetchSheetData('BELGELER')).filter(d => (d.yayinda || '').toUpperCase() === 'EVET').sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
+export const getCategories = async () => (await fetchSheetData('KATEGORILER')).filter(c => (c.yayinda || '').toUpperCase().includes('EVET')).sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
 
 export async function getProducts() {
   const data = await fetchSheetData('URUNLER');
@@ -51,6 +47,7 @@ export async function getProducts() {
   }).sort((a, b) => Number(a.sira || 99) - Number(b.sira || 99));
 }
 
+// Dropdown (Açılır) Menü Hiyerarşisi
 export async function getMenu() {
   const [pages, texts] = await Promise.all([getPages(), getTexts()]);
   if (!pages) return [];

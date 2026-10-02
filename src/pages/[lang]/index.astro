@@ -6,78 +6,59 @@ import { getCategories, getTextDictionary } from '../../lib/sheets';
 const { lang = 'tr' } = Astro.params;
 const [categories, dict] = await Promise.all([ getCategories(), getTextDictionary(lang) ]);
 
-const heroTitle = dict['home.hero.title'] || dict['home.title'] || 'TURSKA PIJACA';
-const heroDesc = dict['home.hero.text'] || '';
-const whyTitle = dict['home.why.title'] || '';
-const whyText = dict['home.why.text'] || '';
-const statsTitle = dict['home.stats.title'] || 'Rakamlarla Biz';
+const heroTitle = dict['home.hero.title'] || 'TURSKA PIJACA';
+const heroSubtitle = dict['home.hero.subtitle'] || 'Production in Türkiye. Strong supply in Montenegro.';
+const heroDesc = dict['home.hero.text'] || 'Direct supply and wholesale distribution for markets, hotels, restaurants and cafes.';
+const heroBtn = dict['home.hero.button'] || 'Tüm Ürünler / All Products';
 ---
 
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
-    <title>{heroTitle}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{heroTitle} | B2B Supply Montenegro</title>
     <style>
-      body { margin: 0; font-family: system-ui; background: #f8fafc; color: #0f172a; }
-      .hero { background: linear-gradient(135deg, #0b2218, #143d2c); color: white; padding: 4rem 1.5rem; text-align: center; }
-      .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; }
-      .hero p { font-size: 1.15rem; color: #cbd5e1; max-width: 700px; margin: 0 auto 1.8rem; }
-      .container { max-width: 1250px; margin: 3rem auto; padding: 0 1.5rem; }
+      body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+      .hero { background: linear-gradient(135deg, #071710 0%, #0b2218 100%); color: white; padding: 4.5rem 1.5rem; text-align: center; border-bottom: 3px solid #34d399; }
+      .hero-sub { color: #34d399; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; margin-bottom: 0.8rem; }
+      .hero h1 { font-size: 2.6rem; font-weight: 800; margin: 0 0 1rem; }
+      .hero p { font-size: 1.15rem; color: #cbd5e1; max-width: 720px; margin: 0 auto 2rem; line-height: 1.6; }
+      .hero-btn { display: inline-block; background: #34d399; color: #0b2218; padding: 0.85rem 2.2rem; border-radius: 6px; text-decoration: none; font-weight: 800; font-size: 0.95rem; }
       
-      .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;}
-      .category-card { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; text-decoration: none; color: #0b2218; display: block; }
-      .cat-img { width: 100%; height: 160px; object-fit: contain; margin-bottom: 1rem; }
-      
-      /* Sayaç Tasarımı */
-      .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 2rem; text-align: center; }
-      .stat-num { font-size: 2.5rem; font-weight: 900; color: #34d399; margin-bottom: 0.5rem; }
-      .stat-label { font-size: 1rem; font-weight: 600; color: #475569; }
-      
-      .info-block { background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 2rem; }
-      .info-block h3 { color: #0b2218; font-size: 1.5rem; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; }
+      .container { max-width: 1280px; margin: 3.5rem auto; padding: 0 1.5rem; }
+      .section-title { text-align: center; font-size: 1.8rem; color: #0b2218; font-weight: 800; margin-bottom: 2rem; }
+      .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
+      .category-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.2rem; text-align: center; text-decoration: none; color: #0b2218; font-weight: 700; transition: transform 0.2s, border-color 0.2s; }
+      .category-card:hover { transform: translateY(-3px); border-color: #34d399; }
+      .cat-img { width: 100%; height: 150px; object-fit: contain; margin-bottom: 0.8rem; background: #f8fafc; border-radius: 6px; padding: 8px; }
     </style>
   </head>
   <body>
     <Header />
     <section class="hero">
+      <div class="hero-sub">{heroSubtitle}</div>
       <h1>{heroTitle}</h1>
-      {heroDesc && <p>{heroDesc}</p>}
+      <p>{heroDesc}</p>
+      <a href={`/${lang}/ürünler/tüm-ürünler`} class="hero-btn">{heroBtn}</a>
     </section>
-    <main class="container">
-      
-      <div class="categories-grid">
-        {categories.map(c => (
-          <a href={`/${lang}/${(c.adrestr || '').replace(/^\//, '')}`.toLowerCase()} class="category-card">
-            {c.gorselurl && <img src={c.gorselurl} alt={c[`ad${lang}`] || c.adtr} class="cat-img" loading="lazy" />}
-            <div>{c[`ad${lang}`] || c.adtr}</div>
-          </a>
-        ))}
-      </div>
-      
-      <!-- Dinamik Sayaçlar -->
-      <div class="stats-grid">
-        <div><div class="stat-num" data-target="250">0</div><div class="stat-label">{dict['stat.brands'] || 'Marka'}</div></div>
-        <div><div class="stat-num" data-target="1500">0</div><div class="stat-label">{dict['stat.products'] || 'Ürün Çeşidi'}</div></div>
-        <div><div class="stat-num" data-target="45">0</div><div class="stat-label">{dict['stat.dealers'] || 'Bayi & Satış Noktası'}</div></div>
-      </div>
 
-      {whyTitle && <div class="info-block"><h3>{whyTitle}</h3><p>{whyText}</p></div>}
+    <main class="container">
+      <h2 class="section-title">Kategoriler / Categories</h2>
+      <div class="categories-grid">
+        {categories.map(c => {
+          const name = c[`ad${lang}`] || c.adtr;
+          const targetAddr = (c[`adres${lang}`] || c.adrestr || '').replace(/^\//, '');
+          return (
+            <a href={`/${lang}/${targetAddr}`.toLowerCase()} class="category-card">
+              <img src={c.gorselurl || 'https://via.placeholder.com/300x200'} alt={name} class="cat-img" loading="lazy" />
+              <div>{name}</div>
+            </a>
+          );
+        })}
+      </div>
     </main>
 
-    <script>
-      const counters = document.querySelectorAll('.stat-num');
-      counters.forEach(counter => {
-        const updateCount = () => {
-          const target = +counter.getAttribute('data-target');
-          const count = +counter.innerText;
-          const inc = target / 200;
-          if (count < target) { counter.innerText = Math.ceil(count + inc); setTimeout(updateCount, 15); } 
-          else { counter.innerText = target + "+"; }
-        };
-        updateCount();
-      });
-    </script>
     <Footer lang={lang} />
   </body>
 </html>

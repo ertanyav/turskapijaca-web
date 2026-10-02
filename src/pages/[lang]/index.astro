@@ -4,261 +4,80 @@ import Footer from '../../components/Footer.astro';
 import { getCategories, getTextDictionary } from '../../lib/sheets';
 
 const { lang = 'tr' } = Astro.params;
-const validLangs = ['tr', 'en', 'me'];
-if (!validLangs.includes(lang)) return Astro.redirect('/tr');
-
-const [categories, dict] = await Promise.all([
-  getCategories(),
-  getTextDictionary(lang)
-]);
+const [categories, dict] = await Promise.all([ getCategories(), getTextDictionary(lang) ]);
 
 const heroTitle = dict['home.hero.title'] || dict['home.title'] || 'TURSKA PIJACA';
-const heroSubtitle = dict['home.hero.subtitle'] || 'B2B Toptan İhracat & Tedarik Portalı';
-const heroDesc = dict['home.hero.text'] || 'Türkiye’nin seçkin üreticilerinden doğrudan taze ve kaliteli gıda ürünlerini Balkan pazarına ulaştırıyoruz.';
-const heroBtn = dict['home.hero.button'] || 'Katalog ve Kategoriler';
-
-const whyTitle = dict['home.why.title'] || 'NEDEN TURSKA PIJACA?';
+const heroDesc = dict['home.hero.text'] || '';
+const whyTitle = dict['home.why.title'] || '';
 const whyText = dict['home.why.text'] || '';
-const solutionsTitle = dict['home.solutions.title'] || 'TEDARİK ÇÖZÜMLERİMİZ';
-const solutionsText = dict['home.solutions.text'] || '';
-const processTitle = dict['home.process.title'] || 'SİPARİŞ VE SEVKİYAT SÜRECİ';
-const processText = dict['home.process.text'] || '';
+const statsTitle = dict['home.stats.title'] || 'Rakamlarla Biz';
 ---
 
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{heroTitle} | Global B2B Sourcing Portal</title>
+    <title>{heroTitle}</title>
     <style>
-      body {
-        margin: 0;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: #fcfcfc;
-        color: #0f172a;
-      }
-      .hero {
-        background: linear-gradient(135deg, #071710 0%, #0b2218 50%, #143d2c 100%);
-        color: #ffffff;
-        padding: 5.5rem 1.5rem 4.5rem;
-        text-align: center;
-        border-bottom: 3px solid #c5a059;
-      }
-      .hero-badge {
-        display: inline-block;
-        background: rgba(197, 160, 89, 0.15);
-        color: #c5a059;
-        border: 1px solid rgba(197, 160, 89, 0.4);
-        padding: 0.4rem 1.2rem;
-        border-radius: 30px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        margin-bottom: 1.5rem;
-      }
-      .hero h1 {
-        font-size: 2.8rem;
-        font-weight: 800;
-        margin: 0 0 0.8rem 0;
-        letter-spacing: -0.5px;
-      }
-      .hero p {
-        font-size: 1.15rem;
-        color: #cbd5e1;
-        max-width: 720px;
-        margin: 0 auto 2.2rem;
-        line-height: 1.7;
-      }
-      .hero-btn {
-        display: inline-block;
-        background: linear-gradient(135deg, #c5a059, #a37f3e);
-        color: #0b2218;
-        font-weight: 800;
-        padding: 0.95rem 2.4rem;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 0.95rem;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
-      }
+      body { margin: 0; font-family: system-ui; background: #f8fafc; color: #0f172a; }
+      .hero { background: linear-gradient(135deg, #0b2218, #143d2c); color: white; padding: 4rem 1.5rem; text-align: center; }
+      .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; }
+      .hero p { font-size: 1.15rem; color: #cbd5e1; max-width: 700px; margin: 0 auto 1.8rem; }
+      .container { max-width: 1250px; margin: 3rem auto; padding: 0 1.5rem; }
       
-      .trust-bar {
-        background: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
-        padding: 1.5rem;
-        display: flex;
-        justify-content: center;
-        gap: 3rem;
-        flex-wrap: wrap;
-      }
-      .trust-item {
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-        font-weight: 700;
-        font-size: 0.9rem;
-        color: #0b2218;
-      }
-      .trust-icon {
-        color: #c5a059;
-        font-size: 1.2rem;
-      }
-
-      .container {
-        max-width: 1280px;
-        margin: 4rem auto;
-        padding: 0 1.5rem;
-      }
-      .section-header {
-        text-align: center;
-        margin-bottom: 2.8rem;
-      }
-      .section-header h2 {
-        font-size: 2rem;
-        color: #0b2218;
-        margin: 0 0 0.5rem;
-        font-weight: 800;
-      }
-      .section-header p {
-        color: #64748b;
-        font-size: 0.95rem;
-        margin: 0;
-      }
-
-      .categories-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1.8rem;
-        margin-bottom: 5rem;
-      }
-      .category-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1.5rem;
-        text-decoration: none;
-        color: #0b2218;
-        transition: all 0.25s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-      }
-      .category-card:hover {
-        border-color: #c5a059;
-        transform: translateY(-4px);
-        box-shadow: 0 12px 25px rgba(11, 34, 24, 0.08);
-      }
-      .cat-img {
-        width: 100%;
-        height: 160px;
-        object-fit: contain;
-        margin-bottom: 1.2rem;
-        background: #f8fafc;
-        border-radius: 6px;
-        padding: 10px;
-      }
-      .cat-name {
-        font-weight: 800;
-        font-size: 1.05rem;
-        color: #0b2218;
-      }
-
-      .b2b-info-section {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 2rem;
-      }
-      .info-card {
-        background: #ffffff;
-        border-top: 4px solid #c5a059;
-        border-left: 1px solid #e2e8f0;
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 2.2rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-      }
-      .info-card h3 {
-        color: #0b2218;
-        font-size: 1.35rem;
-        margin: 0 0 1rem;
-        font-weight: 800;
-      }
-      .info-card p {
-        color: #475569;
-        line-height: 1.8;
-        font-size: 0.98rem;
-        white-space: pre-wrap;
-        margin: 0;
-      }
+      .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;}
+      .category-card { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; text-decoration: none; color: #0b2218; display: block; }
+      .cat-img { width: 100%; height: 160px; object-fit: contain; margin-bottom: 1rem; }
+      
+      /* Sayaç Tasarımı */
+      .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 2rem; text-align: center; }
+      .stat-num { font-size: 2.5rem; font-weight: 900; color: #34d399; margin-bottom: 0.5rem; }
+      .stat-label { font-size: 1rem; font-weight: 600; color: #475569; }
+      
+      .info-block { background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 2rem; }
+      .info-block h3 { color: #0b2218; font-size: 1.5rem; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; }
     </style>
   </head>
   <body>
     <Header />
-
     <section class="hero">
-      <div class="hero-badge">{heroSubtitle}</div>
       <h1>{heroTitle}</h1>
-      <p>{heroDesc}</p>
-      <a href="#categories" class="hero-btn">{heroBtn}</a>
+      {heroDesc && <p>{heroDesc}</p>}
     </section>
-
-    <div class="trust-bar">
-      <div class="trust-item"><span class="trust-icon">✔</span> Doğrudan Üretici Erişimi</div>
-      <div class="trust-item"><span class="trust-icon">✔</span> Doğrulanmış B2B Kalitesi</div>
-      <div class="trust-item"><span class="trust-icon">✔</span> Esnek Lojistik & Gümrük Desteği</div>
-    </div>
-
     <main class="container">
-      <div id="categories" class="section-header">
-        <h2>Ürün Kategorileri</h2>
-        <p>Balkan pazarı için taze ve tescilli gıda grupları</p>
+      
+      <div class="categories-grid">
+        {categories.map(c => (
+          <a href={`/${lang}/${(c.adrestr || '').replace(/^\//, '')}`.toLowerCase()} class="category-card">
+            {c.gorselurl && <img src={c.gorselurl} alt={c[`ad${lang}`] || c.adtr} class="cat-img" loading="lazy" />}
+            <div>{c[`ad${lang}`] || c.adtr}</div>
+          </a>
+        ))}
+      </div>
+      
+      <!-- Dinamik Sayaçlar -->
+      <div class="stats-grid">
+        <div><div class="stat-num" data-target="250">0</div><div class="stat-label">{dict['stat.brands'] || 'Marka'}</div></div>
+        <div><div class="stat-num" data-target="1500">0</div><div class="stat-label">{dict['stat.products'] || 'Ürün Çeşidi'}</div></div>
+        <div><div class="stat-num" data-target="45">0</div><div class="stat-label">{dict['stat.dealers'] || 'Bayi & Satış Noktası'}</div></div>
       </div>
 
-      {categories && categories.length > 0 && (
-        <div class="categories-grid">
-          {categories.map(c => {
-            const nameKey = lang === 'en' ? 'aden' : lang === 'me' ? 'adme' : 'adtr';
-            const name = c[nameKey] || c.adtr || c.kod;
-            const addrKey = lang === 'en' ? 'adresen' : lang === 'me' ? 'adresme' : 'adrestr';
-            const targetAddr = (c[addrKey] || c.adrestr || '').replace(/^\//, '');
-
-            return (
-              <a href={`/${lang}/${targetAddr}`.toLowerCase()} class="category-card">
-                <img src={c.gorselurl || 'https://via.placeholder.com/300x200'} alt={name} class="cat-img" loading="lazy" />
-                <div class="cat-name">{name}</div>
-              </a>
-            );
-          })}
-        </div>
-      )}
-
-      <div class="b2b-info-section">
-        {whyText && (
-          <div class="info-card">
-            <h3>{whyTitle}</h3>
-            <p>{whyText}</p>
-          </div>
-        )}
-        {solutionsText && (
-          <div class="info-card">
-            <h3>{solutionsTitle}</h3>
-            <p>{solutionsText}</p>
-          </div>
-        )}
-        {processText && (
-          <div class="info-card">
-            <h3>{processTitle}</h3>
-            <p>{processText}</p>
-          </div>
-        )}
-      </div>
+      {whyTitle && <div class="info-block"><h3>{whyTitle}</h3><p>{whyText}</p></div>}
     </main>
 
+    <script>
+      const counters = document.querySelectorAll('.stat-num');
+      counters.forEach(counter => {
+        const updateCount = () => {
+          const target = +counter.getAttribute('data-target');
+          const count = +counter.innerText;
+          const inc = target / 200;
+          if (count < target) { counter.innerText = Math.ceil(count + inc); setTimeout(updateCount, 15); } 
+          else { counter.innerText = target + "+"; }
+        };
+        updateCount();
+      });
+    </script>
     <Footer lang={lang} />
   </body>
 </html>

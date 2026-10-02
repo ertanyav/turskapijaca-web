@@ -6,39 +6,43 @@ import { getProducts, getTextDictionary } from '../../../lib/sheets';
 const { lang = 'tr', id } = Astro.params;
 const [products, dict] = await Promise.all([ getProducts(), getTextDictionary(lang) ]);
 
-// urunno baz alınarak eşleşme yapılıyor
 const product = products.find(p => String(p.urunno) === id || String(p.kayitid) === id);
-
 if (!product) return Astro.redirect(`/${lang}`);
 
 const name = product[`ad${lang}`] || product.adtr || product.icad;
 const desc = product[`aciklama${lang}`] || product.aciklamatr || product.aciklama || '';
-const img = product.gorselurl || 'https://via.placeholder.com/600?text=No+Image';
+const img = product.gorselurl || 'https://via.placeholder.com/600';
 
-// Otomatik Çoklu Dil Koruması (Tabloda Yoksa Bile Çevirir)
 const txtBrand = dict['product.brand'] || (lang === 'en' ? 'Brand' : lang === 'me' ? 'Brend' : 'Marka');
-const txtCode = dict['product.code'] || (lang === 'en' ? 'Product Code' : lang === 'me' ? 'Šifra Proizvoda' : 'Ürün Kodu');
+const txtCode = dict['product.code'] || (lang === 'en' ? 'Product Code' : lang === 'me' ? 'Šifra' : 'Ürün Kodu');
 const txtCategory = dict['product.category'] || (lang === 'en' ? 'Category' : lang === 'me' ? 'Kategorija' : 'Kategori');
-const txtAddToCart = dict['product.addtocart'] || (lang === 'en' ? 'Add to Cart' : lang === 'me' ? 'Dodaj u Korpu' : 'Sepete Ekle');
+const txtPackaging = dict['product.packaging'] || (lang === 'en' ? 'Packaging' : lang === 'me' ? 'Pakovanje' : 'Ambalaj');
+const txtOrigin = dict['product.origin'] || (lang === 'en' ? 'Origin' : lang === 'me' ? 'Porijeklo' : 'Menşe');
+const txtAddToCart = dict['product.addtocart'] || (lang === 'en' ? 'Add to Sourcing Order' : lang === 'me' ? 'Dodaj u Korpu' : 'Tedarik Sepetine Ekle');
 ---
 
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
-    <title>{name}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{name} | B2B Product Details</title>
     <style>
-      body { margin: 0; font-family: system-ui; background: #f8fafc; color: #0f172a; }
-      .container { max-width: 1200px; margin: 4rem auto; padding: 0 1.5rem; }
-      .product-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; background: white; padding: 2.5rem; border-radius: 16px; border: 1px solid #e2e8f0; }
-      .product-img { width: 100%; max-height: 500px; object-fit: contain; padding: 1rem; }
-      .product-info h1 { font-size: 2.2rem; color: #0b2218; margin-top: 0; }
-      .meta-box { background: #f1f5f9; padding: 1rem; border-radius: 8px; margin: 1.5rem 0; }
-      .meta-box div { margin-bottom: 0.5rem; font-size: 0.95rem; }
-      .meta-box strong { color: #0b2218; width: 110px; display: inline-block; }
-      .desc { font-size: 1.1rem; line-height: 1.8; color: #475569; }
-      .btn-add { background: #34d399; color: #0b2218; border: none; padding: 1rem 2rem; font-size: 1.1rem; font-weight: 800; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 2rem; }
-      @media (max-width: 768px) { .product-wrap { grid-template-columns: 1fr; } }
+      body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #fcfcfc; color: #0f172a; }
+      .container { max-width: 1200px; margin: 3.5rem auto; padding: 0 1.5rem; }
+      .product-wrap { display: grid; grid-template-columns: 1fr 1.1fr; gap: 3.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+      .product-img { width: 100%; max-height: 480px; object-fit: contain; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 6px; padding: 1.5rem; }
+      .product-info h1 { font-size: 2.2rem; font-weight: 800; color: #0b2218; margin: 0 0 1.2rem; }
+      
+      .spec-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: #f8fafc; border-radius: 6px; overflow: hidden; }
+      .spec-table td { padding: 0.85rem 1.2rem; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; }
+      .spec-table td:first-child { font-weight: 700; color: #0b2218; width: 130px; }
+      .spec-table td:last-child { color: #475569; }
+
+      .desc { font-size: 1.05rem; line-height: 1.8; color: #475569; margin: 1.5rem 0; }
+      .btn-add { background: linear-gradient(135deg, #0b2218, #143d2c); color: #c5a059; border: 1px solid #c5a059; padding: 1.1rem 2rem; font-size: 1.05rem; font-weight: 800; border-radius: 6px; cursor: pointer; width: 100%; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(11, 34, 24, 0.2); }
+      .btn-add:hover { background: #0b2218; }
+      @media (max-width: 800px) { .product-wrap { grid-template-columns: 1fr; padding: 1.8rem; } }
     </style>
   </head>
   <body>
@@ -48,23 +52,31 @@ const txtAddToCart = dict['product.addtocart'] || (lang === 'en' ? 'Add to Cart'
         <img src={img} alt={name} class="product-img" />
         <div class="product-info">
           <h1>{name}</h1>
-          <div class="meta-box">
-            <div><strong>{txtCode}:</strong> {product.urunno || product.kayitid || id}</div>
-            <div><strong>{txtBrand}:</strong> {product.marka || '-'}</div>
-            <div><strong>{txtCategory}:</strong> {product.kategori || '-'}</div>
-          </div>
-          <p class="desc">{desc}</p>
-          <button class="btn-add" onclick={`addToCart('${product.urunno || id}', '${name.replace(/'/g, "\\'")}')`}>🛒 {txtAddToCart}</button>
+          
+          <table class="spec-table">
+            <tr><td>{txtCode}</td><td>{product.urunno || product.kayitid || id}</td></tr>
+            <tr><td>{txtBrand}</td><td>{product.marka || '-'}</td></tr>
+            <tr><td>{txtCategory}</td><td>{product.kategori || '-'}</td></tr>
+            <tr><td>{txtPackaging}</td><td>{product.ambalaj || product.ambalajtipi || '-'}</td></tr>
+            <tr><td>{txtOrigin}</td><td>{product.mense || 'TR'}</td></tr>
+          </table>
+
+          {desc && <p class="desc">{desc}</p>}
+          
+          <button class="btn-add" onclick={`addToCart('${product.urunno || id}', '${name.replace(/'/g, "\\'")}')`}>
+            🛒 {txtAddToCart}
+          </button>
         </div>
       </div>
     </main>
+
     <script>
       function addToCart(id, name) {
         const cart = JSON.parse(localStorage.getItem('tp_cart') || '[]');
         cart.push({ id, name, qty: 1 });
         localStorage.setItem('tp_cart', JSON.stringify(cart));
         window.dispatchEvent(new Event('cartUpdated'));
-        alert(name + " sepete eklendi!");
+        alert(name + " tedarik sepetinize eklendi!");
       }
       window.addToCart = addToCart;
     </script>

@@ -16,16 +16,16 @@ function getLangPath(targetCode) {
   return '/' + newSegs.join('/');
 }
 
-const cartText = dict['common.cart'] || (currentLang === 'en' ? 'Cart' : currentLang === 'me' ? 'Korpa' : 'Sepet');
+const companyName = dict['company.name'] || 'UNIVERCERT-MNE D.O.O.';
 ---
 
 <header class="main-header">
   <div class="header-container">
     <a href={`/${currentLang}`} class="logo-link">
-      {logoUrl && <img src={logoUrl} alt="TURSKA PIJACA" class="site-logo" />}
+      {logoUrl ? <img src={logoUrl} alt="TURSKA PIJACA" class="site-logo" /> : null}
       <div class="brand-text-wrap">
         <span class="brand-title">TURSKA PIJACA</span>
-        <span class="brand-subtitle">{dict['header.subtitle'] || 'Turski Proizvodi'}</span>
+        <span class="brand-subtitle">{companyName}</span>
       </div>
     </a>
 
@@ -59,50 +59,38 @@ const cartText = dict['common.cart'] || (currentLang === 'en' ? 'Cart' : current
     </nav>
 
     <div class="header-right">
-      <button id="cart-button" class="cart-btn">
-        🛒 <span>{cartText}</span>
-      </button>
       <div class="language-switcher">
-        {languages.map(lang => <a href={getLangPath(lang.code)} class={currentLang === lang.code ? 'active' : ''}>{lang.label}</a>)}
+        {languages.map(lang => <a href={getLangPath(lang.code)} class={currentLang === lang.code ? 'active' : ''}>[{lang.label.toUpperCase()}]</a>)}
       </div>
     </div>
   </div>
 </header>
 
-<script>
-  document.getElementById('cart-button')?.addEventListener('click', () => {
-    alert("Sipariş Sepetiniz hazırlanıyor. B2B alımları için teklif oluşturabilirsiniz.");
-  });
-</script>
-
 <style>
-  .main-header { background: #0b2218; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; }
-  .header-container { max-width: 1300px; margin: 0 auto; padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .main-header { background: #0b2218; border-bottom: 1px solid rgba(255,255,255,0.12); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+  .header-container { max-width: 1280px; margin: 0 auto; padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
   .logo-link { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; }
-  .site-logo { height: 44px; object-fit: contain; }
+  .site-logo { height: 42px; width: auto; object-fit: contain; }
   .brand-text-wrap { display: flex; flex-direction: column; }
-  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.25rem; line-height:1.2; }
-  .brand-subtitle { color: #34d399; font-size: 0.75rem; font-weight: 600; }
-  
-  .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.5rem; align-items: center;}
+  .brand-title { color: #ffffff; font-weight: 800; font-size: 1.25rem; letter-spacing: 0.5px; line-height: 1.1; }
+  .brand-subtitle { color: #34d399; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.5px; margin-top: 2px; }
+  .main-menu ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.6rem; align-items: center; }
   .menu-item { position: relative; }
-  .menu-link { text-decoration: none; color: #cbd5e1; font-weight: 500; font-size: 0.95rem; padding: 1.5rem 0; display: flex; gap: 0.3rem; }
+  .menu-link { text-decoration: none; color: #e2e8f0; font-weight: 600; font-size: 0.92rem; padding: 1rem 0; display: flex; gap: 0.3rem; align-items: center; }
   .menu-link:hover { color: #34d399; }
   
-  /* Dropdown Fix - Bozuk açılmayı ve titremeyi önler */
   .dropdown-menu { 
     visibility: hidden; opacity: 0; position: absolute; top: 100%; left: 0; 
-    background: #06150f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; 
-    padding: 0.5rem 0; min-width: 220px; display: flex; flex-direction: column; z-index: 10; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s ease; transform: translateY(10px);
+    background: #071710; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; 
+    padding: 0.4rem 0; min-width: 220px; display: flex; flex-direction: column; z-index: 100; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: all 0.2s ease; transform: translateY(8px);
   }
   .has-dropdown:hover .dropdown-menu { visibility: visible; opacity: 1; transform: translateY(0); }
-  .dropdown-menu a { padding: 0.6rem 1.2rem; display: block; text-decoration: none; color: #94a3b8; }
-  .dropdown-menu a:hover { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+  .dropdown-menu a { padding: 0.65rem 1.2rem; display: block; text-decoration: none; color: #cbd5e1; font-size: 0.88rem; font-weight: 500; }
+  .dropdown-menu a:hover { background: rgba(52, 211, 153, 0.12); color: #34d399; }
 
   .header-right { display: flex; gap: 1rem; align-items: center; }
-  .cart-btn { background: #34d399; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; cursor: pointer; color: #0b2218; display: flex; gap: 0.4rem; }
-  .language-switcher { display: flex; gap: 0.3rem; background: rgba(255,255,255,0.08); padding: 0.25rem; border-radius: 6px; }
-  .language-switcher a { color: #94a3b8; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem; text-decoration: none; }
-  .language-switcher a.active { background: #34d399; color: #0b2218; border-radius: 4px; }
+  .language-switcher { display: flex; gap: 0.2rem; }
+  .language-switcher a { color: #94a3b8; font-size: 0.8rem; font-weight: 700; padding: 0.2rem 0.4rem; text-decoration: none; }
+  .language-switcher a.active { color: #34d399; }
 </style>

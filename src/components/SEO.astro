@@ -1,0 +1,60 @@
+---
+const {
+  title = 'Turska Pijaca',
+  description = 'Turska Pijaca B2B ürün ve tedarik kataloğu.',
+  lang = 'tr',
+  canonicalUrl = Astro.url.href,
+  image = '',
+  type = 'website',
+  jsonLd = null
+} = Astro.props;
+
+const htmlLang = lang === 'me' ? 'sr-Latn-ME' : lang;
+
+const alternateUrls = {
+  tr: `${Astro.url.origin}/tr`,
+  en: `${Astro.url.origin}/en`,
+  me: `${Astro.url.origin}/me`
+};
+
+const safeDescription = String(description).slice(0, 160);
+---
+
+<html lang={htmlLang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{title}</title>
+    <meta name="description" content={safeDescription} />
+
+    <link rel="canonical" href={canonicalUrl} />
+
+    <link rel="alternate" hreflang="tr" href={alternateUrls.tr} />
+    <link rel="alternate" hreflang="en" href={alternateUrls.en} />
+    <link rel="alternate" hreflang="sr-Latn-ME" href={alternateUrls.me} />
+    <link rel="alternate" hreflang="x-default" href={alternateUrls.tr} />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content="Turska Pijaca" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={safeDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+
+    {image && <meta property="og:image" content={image} />}
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={safeDescription} />
+
+    {image && <meta name="twitter:image" content={image} />}
+
+    {jsonLd && (
+      <script
+        type="application/ld+json"
+        is:inline
+        set:html={JSON.stringify(jsonLd)}
+      />
+    )}
+  </head>
+</html>

@@ -1,21 +1,48 @@
 const SHEET_ID = '12wF2Is8OiESGgZ-Xq5qJMaZqxKelOCrnRjoj0zCqKlI';
 
+// Sunucu içi önbellek: Aynı sekme kısa süre içinde tekrar tekrar okunmasın
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 dakika
+const sheetCache = new Map();
+
+function getCached(tabName) {
+  const entry = sheetCache.get(tabName);
+  if (!entry) return null;
+  if (Date.now() - entry.time > CACHE_TTL_MS) {
+    sheetCache.delete(tabName);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCached(tabName, data) {
+  sheetCache.set(tabName, { data, time: Date.now() });
+}
+
 async function fetchSheetData(tabName) {
+  const cached = getCached(tabName);
+  if (cached) return cached;
+
   try {
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(tabName)}`;
     const response = await fetch(url);
-    if (!response.ok) return [];
-    
+    if (!response.ok) {
+      console.error(`Sheets API hatası (${tabName}): HTTP ${response.status}`);
+      return [];
+    }
+
     const text = await response.text();
     const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]+)\);/);
-    if (!match) return [];
-    
+    if (!match) {
+      console.error(`Sheets yanıtı ayrıştırılamadı (${tabName})`);
+      return [];
+    }
+
     const json = JSON.parse(match[1]);
     if (!json.table || !json.table.cols || !json.table.rows) return [];
-    
+
     const headers = json.table.cols.map(c => c && c.label ? c.label.toLowerCase().replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ç/g, 'c').replace(/ü/g, 'u').replace(/[^a-z0-9]/g, '') : '');
-    
-    return json.table.rows.map(r => {
+
+    const rows = json.table.rows.map(r => {
       const rowData = {};
       if (r && r.c) {
         r.c.forEach((cell, i) => {
@@ -27,7 +54,13 @@ async function fetchSheetData(tabName) {
       }
       return rowData;
     });
-  } catch (error) { return []; }
+
+    setCached(tabName, rows);
+    return rows;
+  } catch (error) {
+    console.error(`Sheets okuma hatası (${tabName}):`, error);
+    return [];
+  }
 }
 
 export const getPages = () => fetchSheetData('SAYFALAR');
@@ -62,7 +95,7 @@ export async function getMenu() {
     const addr = p.adrestr || p.kod || '';
     const parts = addr.split('/').filter(Boolean);
     const titleKey = `${(p.kod || '').toLowerCase()}.title`;
-    
+
     p.adtr = (textMap[titleKey]?.turkce) || p.adtr || p.kod;
     p.aden = (textMap[titleKey]?.english) || p.aden || p.kod;
     p.adme = (textMap[titleKey]?.crnogorski) || p.adme || p.kod;

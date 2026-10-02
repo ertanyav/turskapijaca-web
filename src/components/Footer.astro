@@ -1,88 +1,42 @@
 ---
+import { getTextDictionary } from '../lib/sheets';
+
 const { lang = 'tr' } = Astro.props;
+const dict = await getTextDictionary(lang);
 
-const labels = {
-  tr: {
-    about: "Türkiye ve Balkanlar arasındaki B2B toptan ticaret ve tedarik köprünüz.",
-    quickLinks: "Hızlı Bağlantılar",
-    contact: "İletişim & Destek",
-    rights: "Tüm hakları saklıdır. TP Master CMS altyapısı ile desteklenmektedir."
-  },
-  en: {
-    about: "Your B2B wholesale trade & sourcing bridge between Türkiye and the Balkans.",
-    quickLinks: "Quick Links",
-    contact: "Contact & Support",
-    rights: "All rights reserved. Powered by TP Master CMS."
-  },
-  me: {
-    about: "Vaš B2B most za veleprodaju i nabavku između Turske i Balkana.",
-    quickLinks: "Brzi Linkovi",
-    contact: "Kontakt i Podrška",
-    rights: "Sva prava zadržana. Pokreće TP Master CMS."
-  }
-};
-
-const currentText = labels[lang] || labels.tr;
+const tagline = dict['footer.tagline'] || 'From Türkiye to Montenegro. Direct supply, strong distribution.';
+const phone = dict['contact.phone'] || '+382 63 256 666';
+const email = dict['contact.email'] || 'info@turskapijaca.com';
+const company = dict['company.full_name'] || 'UNIVERCERT-MNE D.O.O.';
 ---
 
-<footer class="main-footer">
+<footer class="site-footer">
   <div class="footer-container">
-    <div class="footer-col">
-      <h3 class="footer-brand">TURSKA PIJACA</h3>
-      <p>{currentText.about}</p>
+    <div class="footer-brand">
+      <h3>TURSKA PIJACA</h3>
+      <p class="company-name">{company}</p>
+      <p class="tagline">{tagline}</p>
     </div>
 
-    <div class="footer-col">
-      <h4>{currentText.quickLinks}</h4>
-      <ul>
-        <li><a href={`/${lang}`}>Ana Sayfa</a></li>
-        <li><a href={`/${lang}/urunler`}>Ürün Kataloğu</a></li>
-        <li><a href={`/${lang}/hakkimizda`}>Hakkımızda</a></li>
-      </ul>
-    </div>
-
-    <div class="footer-col">
-      <h4>{currentText.contact}</h4>
-      <p>📍 Podgorica / Montenegro & İstanbul / Türkiye</p>
-      <p>✉️ info@turskapijaca.com</p>
+    <div class="footer-contact">
+      <h4>{dict['footer.contact'] || 'İletişim'}</h4>
+      <p>📞 {phone}</p>
+      <p>✉️ {email}</p>
+      <p>📍 Montenegro</p>
     </div>
   </div>
-
   <div class="footer-bottom">
-    <p>&copy; {new Date().getFullYear()} Turska Pijaca. {currentText.rights}</p>
+    <p>© {new Date().getFullYear()} TURSKA PIJACA — UNIVERCERT-MNE D.O.O. Tüm Hakları Saklıdır.</p>
   </div>
 </footer>
 
 <style>
-  .main-footer {
-    background-color: #06150f;
-    color: #94a3b8;
-    padding: 3rem 1.5rem 1.5rem 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    margin-top: 4rem;
-  }
-  .footer-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 3rem;
-  }
-  .footer-brand { color: #ffffff; font-size: 1.3rem; margin-bottom: 0.8rem; }
-  .footer-col h4 { color: #ffffff; font-size: 1.05rem; margin-bottom: 1rem; }
-  .footer-col ul { list-style: none; padding: 0; margin: 0; }
-  .footer-col li { margin-bottom: 0.5rem; }
-  .footer-col a { color: #94a3b8; text-decoration: none; transition: color 0.2s; }
-  .footer-col a:hover { color: #34d399; }
-  .footer-bottom {
-    max-width: 1200px;
-    margin: 2.5rem auto 0 auto;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    text-align: center;
-    font-size: 0.85rem;
-  }
-  @media (max-width: 768px) {
-    .footer-container { grid-template-columns: 1fr; gap: 2rem; }
-  }
+  .site-footer { background: #071710; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.1); padding: 3rem 1.5rem 1.5rem; margin-top: 4rem; }
+  .footer-container { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
+  .footer-brand h3 { color: #ffffff; margin: 0 0 0.4rem; font-size: 1.4rem; font-weight: 800; }
+  .company-name { color: #34d399; font-weight: 700; font-size: 0.88rem; margin: 0 0 0.8rem; }
+  .tagline { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; }
+  .footer-contact h4 { color: #ffffff; margin: 0 0 1rem; font-size: 1.05rem; }
+  .footer-contact p { margin: 0.4rem 0; font-size: 0.9rem; }
+  .footer-bottom { max-width: 1280px; margin: 2rem auto 0; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 0.8rem; }
 </style>

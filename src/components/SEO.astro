@@ -1,4 +1,15 @@
 ---
+interface Props {
+  title?: string;
+  description?: string;
+  lang?: string;
+  canonicalUrl?: string;
+  image?: string;
+  type?: string;
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
 const {
   title = 'Turska Pijaca',
   description = 'Turska Pijaca B2B ürün ve tedarik kataloğu.',
@@ -6,55 +17,60 @@ const {
   canonicalUrl = Astro.url.href,
   image = '',
   type = 'website',
+  noindex = false,
   jsonLd = null
 } = Astro.props;
 
 const htmlLang = lang === 'me' ? 'sr-Latn-ME' : lang;
 
+const safeTitle = String(title).trim();
+const safeDescription = String(description).trim().slice(0, 160);
+const safeCanonicalUrl = String(canonicalUrl).trim();
+
+const pathWithoutQuery = Astro.url.pathname
+  .replace(/^\/(tr|en|me)(?=\/|$)/, '');
+
 const alternateUrls = {
-  tr: `${Astro.url.origin}/tr`,
-  en: `${Astro.url.origin}/en`,
-  me: `${Astro.url.origin}/me`
+  tr: new URL(`/tr${pathWithoutQuery}`, Astro.url.origin).href,
+  en: new URL(`/en${pathWithoutQuery}`, Astro.url.origin).href,
+  me: new URL(`/me${pathWithoutQuery}`, Astro.url.origin).href
 };
 
-const safeDescription = String(description).slice(0, 160);
+const serializedJsonLd = jsonLd ? JSON.stringify(jsonLd) : '';
 ---
 
-<html lang={htmlLang}>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{safeTitle}</title>
+<meta name="description" content={safeDescription} />
+<meta name="language" content={htmlLang} />
 
-    <title>{title}</title>
-    <meta name="description" content={safeDescription} />
+{noindex && <meta name="robots" content="noindex, nofollow" />}
 
-    <link rel="canonical" href={canonicalUrl} />
+<link rel="canonical" href={safeCanonicalUrl} />
 
-    <link rel="alternate" hreflang="tr" href={alternateUrls.tr} />
-    <link rel="alternate" hreflang="en" href={alternateUrls.en} />
-    <link rel="alternate" hreflang="sr-Latn-ME" href={alternateUrls.me} />
-    <link rel="alternate" hreflang="x-default" href={alternateUrls.tr} />
+<link rel="alternate" hreflang="tr" href={alternateUrls.tr} />
+<link rel="alternate" hreflang="en" href={alternateUrls.en} />
+<link rel="alternate" hreflang="sr-Latn-ME" href={alternateUrls.me} />
+<link rel="alternate" hreflang="x-default" href={alternateUrls.tr} />
 
-    <meta property="og:type" content={type} />
-    <meta property="og:site_name" content="Turska Pijaca" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={safeDescription} />
-    <meta property="og:url" content={canonicalUrl} />
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content="Turska Pijaca" />
+<meta property="og:locale" content={htmlLang} />
+<meta property="og:title" content={safeTitle} />
+<meta property="og:description" content={safeDescription} />
+<meta property="og:url" content={safeCanonicalUrl} />
 
-    {image && <meta property="og:image" content={image} />}
+{image && <meta property="og:image" content={image} />}
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={safeDescription} />
+<meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+<meta name="twitter:title" content={safeTitle} />
+<meta name="twitter:description" content={safeDescription} />
 
-    {image && <meta name="twitter:image" content={image} />}
+{image && <meta name="twitter:image" content={image} />}
 
-    {jsonLd && (
-      <script
-        type="application/ld+json"
-        is:inline
-        set:html={JSON.stringify(jsonLd)}
-      />
-    )}
-  </head>
-</html>
+{jsonLd && (
+  <script
+    type="application/ld+json"
+    is:inline
+    set:html={serializedJsonLd}
+  />
+)}

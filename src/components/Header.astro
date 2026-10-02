@@ -1,13 +1,9 @@
 ---
 import { getMenu, getLogoUrl, getTextDictionary } from '../lib/sheets';
 
-const pathname = Astro.url.pathname;
+const { pathname = '' } = Astro.url;
 const segments = pathname.split('/').filter(Boolean);
-
-const supportedLanguages = ['tr', 'en', 'me'];
-const currentLang = supportedLanguages.includes(segments[0])
-  ? segments[0]
-  : 'tr';
+const currentLang = ['tr', 'en', 'me'].includes(segments[0]) ? segments[0] : 'tr';
 
 let menuItems = [];
 let logoUrl = '';
@@ -21,9 +17,6 @@ try {
   ]);
 } catch (error) {
   console.error('Header verileri yüklenemedi:', error);
-  menuItems = [];
-  logoUrl = '';
-  dict = {};
 }
 
 const languages = [
@@ -32,123 +25,84 @@ const languages = [
   { code: 'me', label: 'ME' }
 ];
 
-function getText(key, fallback) {
-  return dict?.[key] || fallback;
-}
+function getLangPath(targetCode) {
+  if (segments.length === 0) return `/${targetCode}`;
 
-function getLanguagePath(targetLanguage) {
   const newSegments = [...segments];
 
-  if (supportedLanguages.includes(newSegments[0])) {
-    newSegments[0] = targetLanguage;
+  if (['tr', 'en', 'me'].includes(newSegments[0])) {
+    newSegments[0] = targetCode;
   } else {
-    newSegments.unshift(targetLanguage);
+    newSegments.unshift(targetCode);
   }
 
-  return `/${newSegments.join('/')}`;
+  return '/' + newSegments.join('/');
 }
 
-function getItemName(item) {
-  return item?.[`ad${currentLang}`] || item?.adtr || '';
-}
-
-function getItemAddress(item) {
-  return item?.[`adres${currentLang}`] || item?.adrestr || '';
-}
-
-function getItemPath(item) {
-  const address = String(getItemAddress(item))
-    .replace(/^\/+/, '')
-    .replace(/\/+$/, '');
-
-  return address ? `/${currentLang}/${address}` : `/${currentLang}`;
-}
-
-const cartText = getText(
-  'common.cart',
-  currentLang === 'en'
+// Master dosyadan dinamik metinler
+const txtCart =
+  dict['common.cart'] ||
+  dict['ortak.sepet'] ||
+  (currentLang === 'en'
     ? 'Cart'
     : currentLang === 'me'
       ? 'Korpa'
-      : 'Sepet'
-);
+      : 'Sepet');
 
-const checkoutText = getText(
-  'cart.checkout',
-  currentLang === 'en'
-    ? 'Complete order'
+const txtCheckout =
+  dict['cart.checkout'] ||
+  (currentLang === 'en'
+    ? 'Complete Order'
     : currentLang === 'me'
       ? 'Naruči'
-      : 'Siparişi tamamla'
-);
+      : 'Siparişi Tamamla');
 
-const emptyCartText = getText(
-  'cart.empty',
-  currentLang === 'en'
+const txtEmpty =
+  dict['cart.empty'] ||
+  (currentLang === 'en'
     ? 'Cart is empty'
     : currentLang === 'me'
       ? 'Korpa je prazna'
-      : 'Sepetiniz boş'
-);
+      : 'Sepetiniz boş.');
 
-const productCodeText = getText(
-  'product.code',
-  currentLang === 'en'
+const txtCode =
+  dict['product.code'] ||
+  (currentLang === 'en'
     ? 'Code'
     : currentLang === 'me'
       ? 'Šifra'
-      : 'Kod'
-);
+      : 'Kod');
 
-const menuText =
+const txtMenu =
   currentLang === 'en'
     ? 'Menu'
     : currentLang === 'me'
       ? 'Meni'
       : 'Menü';
 
-const phone = String(dict?.['contact.phone'] || '38263256666')
-  .replace(/[^0-9]/g, '');
-
-const visibleMenuItems = Array.isArray(menuItems)
-  ? menuItems.filter((item) => {
-      const name = getItemName(item);
-      const address = getItemAddress(item);
-
-      return (
-        name &&
-        address &&
-        String(item?.kod || '').toLowerCase() !== 'home'
-      );
-    })
-  : [];
+const phone = dict['contact.phone'] || '38263256666';
+const cleanPhone = String(phone).replace(/[^0-9]/g, '');
 ---
 
-<header class="site-header">
-  <div class="header-inner">
-    <a
-      class="logo-link"
-      href={`/${currentLang}`}
-      aria-label="TURSKA PIJACA"
-    >
-      {logoUrl ? (
+<header class="main-header">
+  <div class="header-container">
+    <a href={`/${currentLang}`} class="logo-link" aria-label="TURSKA PIJACA">
+      {logoUrl && (
         <img
-          class="site-logo"
           src={logoUrl}
           alt="TURSKA PIJACA"
+          class="site-logo"
           width="180"
-          height="52"
+          height="48"
         />
-      ) : (
-        <span class="logo-text">TURSKA PIJACA</span>
       )}
     </a>
 
     <button
-      id="mobile-menu-button"
-      class="mobile-menu-button"
+      id="mobile-menu-toggle"
+      class="mobile-menu-toggle"
       type="button"
-      aria-label={menuText}
+      aria-label={txtMenu}
       aria-expanded="false"
       aria-controls="main-navigation"
     >
@@ -157,39 +111,46 @@ const visibleMenuItems = Array.isArray(menuItems)
       <span></span>
     </button>
 
-    <nav
-      id="main-navigation"
-      class="main-navigation"
-      aria-label={menuText}
-    >
-      <ul class="main-menu">
-        {visibleMenuItems.map((item) => {
-          const name = getItemName(item);
-          const address = getItemAddress(item);
-          const children = Array.isArray(item?.children)
-            ? item.children.filter((child) => {
-                return getItemName(child) && getItemAddress(child);
-              })
-            : [];
+    <nav id="main-navigation" class="main-menu" aria-label={txtMenu}>
+      <ul>
+        {menuItems.map(item => {
+          const name = item[`ad${currentLang}`] || item.adtr;
+          const rawAddress = item[`adres${currentLang}`] || item.adrestr;
+
+          if (!name || item.kod === 'home' || !rawAddress) return null;
+
+          const cleanAddress = String(rawAddress)
+            .replace(/^\/+/, '')
+            .replace(/\/+$/, '');
+
+          const finalPath = `/${currentLang}/${cleanAddress}`.toLowerCase();
+          const hasChildren = item.children && item.children.length > 0;
 
           return (
-            <li class:list-item={true} class:list-has-children={children.length > 0}>
-              <a class="menu-link" href={getItemPath(item)}>
-                <span>{name}</span>
-                {children.length > 0 && (
-                  <span class="menu-arrow" aria-hidden="true">▾</span>
-                )}
+            <li class={`menu-item ${hasChildren ? 'has-dropdown' : ''}`}>
+              <a href={finalPath} class="menu-link">
+                {name}
+                {hasChildren && <span class="arrow" aria-hidden="true">▾</span>}
               </a>
 
-              {children.length > 0 && (
-                <ul class="submenu">
-                  {children.map((child) => (
-                    <li>
-                      <a class="submenu-link" href={getItemPath(child)}>
-                        {getItemName(child)}
-                      </a>
-                    </li>
-                  ))}
+              {hasChildren && (
+                <ul class="dropdown-menu">
+                  {item.children.map(child => {
+                    const childName = child[`ad${currentLang}`] || child.adtr;
+                    const childAddr = child[`adres${currentLang}`] || child.adrestr;
+
+                    if (!childName || !childAddr) return null;
+
+                    const childPath = `/${currentLang}/${String(childAddr)
+                      .replace(/^\/+/, '')
+                      .replace(/\/+$/, '')}`.toLowerCase();
+
+                    return (
+                      <li>
+                        <a href={childPath}>{childName}</a>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </li>
@@ -198,18 +159,18 @@ const visibleMenuItems = Array.isArray(menuItems)
       </ul>
     </nav>
 
-    <div class="header-actions">
+    <div class="header-right">
       <button
-        id="cart-button"
-        class="cart-button"
+        id="cart-toggle"
+        class="cart-btn"
         type="button"
-        aria-label={cartText}
+        aria-label={txtCart}
         aria-expanded="false"
-        aria-controls="cart-panel"
+        aria-controls="cart-sidebar"
       >
         <svg
-          width="21"
-          height="21"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -218,17 +179,17 @@ const visibleMenuItems = Array.isArray(menuItems)
         >
           <circle cx="9" cy="21" r="1"></circle>
           <circle cx="20" cy="21" r="1"></circle>
-          <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"></path>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
         </svg>
 
-        <span id="cart-count" class="cart-count" hidden>0</span>
+        <span class="cart-count-badge" id="cart-count" aria-live="polite">0</span>
       </button>
 
       <div class="language-switcher" aria-label="Language selection">
-        {languages.map((language) => (
+        {languages.map(language => (
           <a
-            href={getLanguagePath(language.code)}
-            class:active-language={currentLang === language.code}
+            href={getLangPath(language.code)}
+            class={currentLang === language.code ? 'active' : ''}
             aria-current={currentLang === language.code ? 'page' : undefined}
           >
             {language.label}
@@ -242,19 +203,19 @@ const visibleMenuItems = Array.isArray(menuItems)
 <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
 
 <aside
-  id="cart-panel"
-  class="cart-panel"
+  id="cart-sidebar"
+  class="cart-sidebar"
   aria-hidden="true"
-  aria-label={cartText}
+  aria-label={txtCart}
 >
-  <div class="cart-panel-header">
-    <h2>{cartText}</h2>
+  <div class="cart-header">
+    <h2>{txtCart}</h2>
 
     <button
-      id="close-cart-button"
-      class="close-cart-button"
+      id="cart-close"
+      class="cart-close"
       type="button"
-      aria-label={currentLang === 'en' ? 'Close cart' : 'Sepeti kapat'}
+      aria-label={currentLang === 'en' ? 'Close cart' : currentLang === 'me' ? 'Zatvori korpu' : 'Sepeti kapat'}
     >
       ×
     </button>
@@ -262,52 +223,53 @@ const visibleMenuItems = Array.isArray(menuItems)
 
   <div id="cart-items" class="cart-items"></div>
 
-  <div class="cart-panel-footer">
+  <div class="cart-footer">
     <button
-      id="checkout-button"
-      class="checkout-button"
+      id="checkout-btn"
+      class="checkout-btn"
       type="button"
-      data-phone={phone}
+      data-phone={cleanPhone}
     >
-      {checkoutText}
+      {txtCheckout}
     </button>
   </div>
 </aside>
 
 <div id="cart-overlay" class="cart-overlay"></div>
 
-<script define:vars={{ emptyCartText, productCodeText }}>
-  const STORAGE_KEY = 'tp_cart';
+<script define:vars={{ txtEmpty, txtCode }}>
+  const CART_STORAGE_KEY = 'tp_cart';
   const FALLBACK_IMAGE = 'https://via.placeholder.com/70';
 
   let cart = [];
 
   function readCart() {
     try {
-      const saved = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || '[]'
+      const storedCart = JSON.parse(
+        localStorage.getItem(CART_STORAGE_KEY) || '[]'
       );
 
-      if (!Array.isArray(saved)) return [];
+      if (!Array.isArray(storedCart)) return [];
 
-      return saved
-        .filter((item) => item && item.id)
-        .map((item) => ({
+      return storedCart
+        .filter(item => item && item.id)
+        .map(item => ({
           id: String(item.id),
           name: String(item.name || ''),
           img: String(item.img || ''),
           qty: Math.max(1, Number(item.qty) || 1)
         }));
-    } catch {
+    } catch (error) {
+      console.error('Sepet okunamadı:', error);
       return [];
     }
   }
 
   function saveCart() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
   }
 
-  function totalQuantity() {
+  function getCartQuantity() {
     return cart.reduce((total, item) => total + item.qty, 0);
   }
 
@@ -316,14 +278,14 @@ const visibleMenuItems = Array.isArray(menuItems)
 
     if (!countElement) return;
 
-    const count = totalQuantity();
+    const quantity = getCartQuantity();
 
-    countElement.textContent = String(count);
-    countElement.hidden = count === 0;
+    countElement.textContent = String(quantity);
+    countElement.hidden = quantity === 0;
   }
 
-  function createElement(tag, className, text = '') {
-    const element = document.createElement(tag);
+  function createElement(tagName, className, text = '') {
+    const element = document.createElement(tagName);
 
     if (className) {
       element.className = className;
@@ -337,23 +299,22 @@ const visibleMenuItems = Array.isArray(menuItems)
   }
 
   function renderCart() {
-    const container = document.getElementById('cart-items');
+    const itemsContainer = document.getElementById('cart-items');
 
     updateCartCount();
 
-    if (!container) return;
+    if (!itemsContainer) return;
 
-    container.replaceChildren();
+    itemsContainer.replaceChildren();
 
     if (cart.length === 0) {
-      container.appendChild(
-        createElement('p', 'empty-cart-message', emptyCartText)
-      );
+      const emptyMessage = createElement('p', 'cart-empty', txtEmpty);
+      itemsContainer.appendChild(emptyMessage);
       return;
     }
 
     cart.forEach((item, index) => {
-      const row = createElement('div', 'cart-item');
+      const cartItem = createElement('div', 'cart-item');
 
       const image = document.createElement('img');
       image.src = item.img || FALLBACK_IMAGE;
@@ -361,123 +322,165 @@ const visibleMenuItems = Array.isArray(menuItems)
       image.width = 70;
       image.height = 70;
       image.loading = 'lazy';
+      image.referrerPolicy = 'no-referrer';
 
-      image.addEventListener(
-        'error',
-        () => {
-          image.src = FALLBACK_IMAGE;
-        },
-        { once: true }
-      );
+      image.addEventListener('error', () => {
+        image.src = FALLBACK_IMAGE;
+      }, { once: true });
 
-      const details = createElement('div', 'cart-item-details');
-      const name = createElement('strong', 'cart-item-name', item.name);
-      const code = createElement(
-        'small',
+      const itemInfo = createElement('div', 'cart-item-info');
+      const itemName = createElement('div', 'cart-item-name', item.name);
+      const itemCode = createElement(
+        'div',
         'cart-item-code',
-        `${productCodeText}: ${item.id}`
+        `${txtCode}: ${item.id}`
       );
 
-      const controls = createElement('div', 'quantity-controls');
+      const quantityControls = createElement('div', 'cart-item-qty');
 
-      const decrease = createElement('button', 'quantity-button', '−');
-      decrease.type = 'button';
-      decrease.dataset.index = String(index);
-      decrease.dataset.change = '-1';
-      decrease.setAttribute('aria-label', 'Decrease quantity');
+      const decreaseButton = createElement('button', 'qty-button', '−');
+      decreaseButton.type = 'button';
+      decreaseButton.dataset.index = String(index);
+      decreaseButton.dataset.change = '-1';
+      decreaseButton.setAttribute('aria-label', 'Decrease quantity');
 
       const quantity = createElement(
         'span',
-        'quantity-value',
+        'cart-item-quantity',
         String(item.qty)
       );
 
-      const increase = createElement('button', 'quantity-button', '+');
-      increase.type = 'button';
-      increase.dataset.index = String(index);
-      increase.dataset.change = '1';
-      increase.setAttribute('aria-label', 'Increase quantity');
+      const increaseButton = createElement('button', 'qty-button', '+');
+      increaseButton.type = 'button';
+      increaseButton.dataset.index = String(index);
+      increaseButton.dataset.change = '1';
+      increaseButton.setAttribute('aria-label', 'Increase quantity');
 
-      controls.append(decrease, quantity, increase);
-      details.append(name, code, controls);
-      row.append(image, details);
-      container.appendChild(row);
+      quantityControls.append(
+        decreaseButton,
+        quantity,
+        increaseButton
+      );
+
+      itemInfo.append(itemName, itemCode, quantityControls);
+      cartItem.append(image, itemInfo);
+      itemsContainer.appendChild(cartItem);
     });
   }
 
-  function openCart() {
-    document.getElementById('cart-panel')?.classList.add('open');
-    document.getElementById('cart-overlay')?.classList.add('open');
-    document.getElementById('cart-button')?.setAttribute(
-      'aria-expanded',
-      'true'
-    );
-    document.getElementById('cart-panel')?.setAttribute(
-      'aria-hidden',
-      'false'
-    );
-
-    renderCart();
-  }
-
-  function closeCart() {
-    document.getElementById('cart-panel')?.classList.remove('open');
-    document.getElementById('cart-overlay')?.classList.remove('open');
-    document.getElementById('cart-button')?.setAttribute(
-      'aria-expanded',
-      'false'
-    );
-    document.getElementById('cart-panel')?.setAttribute(
-      'aria-hidden',
-      'true'
-    );
-  }
-
   function updateQuantity(index, change) {
-    if (!cart[index]) return;
+    const item = cart[index];
 
-    cart[index].qty += change;
+    if (!item) return;
 
-    if (cart[index].qty <= 0) {
+    item.qty += change;
+
+    if (item.qty <= 0) {
       cart.splice(index, 1);
     }
 
     saveCart();
     renderCart();
+    window.dispatchEvent(new Event('cartUpdated'));
+  }
+
+  function openCart() {
+    const sidebar = document.getElementById('cart-sidebar');
+    const overlay = document.getElementById('cart-overlay');
+    const toggleButton = document.getElementById('cart-toggle');
+
+    sidebar?.classList.add('open');
+    sidebar?.setAttribute('aria-hidden', 'false');
+    overlay?.classList.add('open');
+    toggleButton?.setAttribute('aria-expanded', 'true');
+
+    renderCart();
+  }
+
+  function closeCart() {
+    const sidebar = document.getElementById('cart-sidebar');
+    const overlay = document.getElementById('cart-overlay');
+    const toggleButton = document.getElementById('cart-toggle');
+
+    sidebar?.classList.remove('open');
+    sidebar?.setAttribute('aria-hidden', 'true');
+    overlay?.classList.remove('open');
+    toggleButton?.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleCart() {
+    const sidebar = document.getElementById('cart-sidebar');
+
+    if (sidebar?.classList.contains('open')) {
+      closeCart();
+    } else {
+      openCart();
+    }
+  }
+
+  function addToCart(id, name, img = '') {
+    if (!id || !name) return;
+
+    const productId = String(id);
+    const productName = String(name);
+    const productImage = String(img || '');
+
+    const existingItem = cart.find(item => item.id === productId);
+
+    if (existingItem) {
+      existingItem.qty += 1;
+
+      if (!existingItem.img && productImage) {
+        existingItem.img = productImage;
+      }
+    } else {
+      cart.push({
+        id: productId,
+        name: productName,
+        img: productImage,
+        qty: 1
+      });
+    }
+
+    saveCart();
+    renderCart();
+    window.dispatchEvent(new Event('cartUpdated'));
+    openCart();
   }
 
   function toggleMobileMenu() {
     const navigation = document.getElementById('main-navigation');
-    const button = document.getElementById('mobile-menu-button');
+    const toggleButton = document.getElementById('mobile-menu-toggle');
     const overlay = document.getElementById('mobile-menu-overlay');
 
     const isOpen = navigation?.classList.toggle('mobile-open');
 
-    button?.setAttribute('aria-expanded', String(Boolean(isOpen)));
+    toggleButton?.classList.toggle('is-open', Boolean(isOpen));
+    toggleButton?.setAttribute('aria-expanded', String(Boolean(isOpen)));
     overlay?.classList.toggle('open', Boolean(isOpen));
     document.body.classList.toggle('menu-open', Boolean(isOpen));
   }
 
   function closeMobileMenu() {
-    document.getElementById('main-navigation')?.classList.remove(
-      'mobile-open'
-    );
-    document.getElementById('mobile-menu-overlay')?.classList.remove('open');
-    document.getElementById('mobile-menu-button')?.setAttribute(
-      'aria-expanded',
-      'false'
-    );
+    const navigation = document.getElementById('main-navigation');
+    const toggleButton = document.getElementById('mobile-menu-toggle');
+    const overlay = document.getElementById('mobile-menu-overlay');
+
+    navigation?.classList.remove('mobile-open');
+    toggleButton?.classList.remove('is-open');
+    toggleButton?.setAttribute('aria-expanded', 'false');
+    overlay?.classList.remove('open');
     document.body.classList.remove('menu-open');
   }
 
   cart = readCart();
 
   document
-    .getElementById('cart-button')
-    ?.addEventListener('click', openCart);
+    .getElementById('cart-toggle')
+    ?.addEventListener('click', toggleCart);
 
   document
-    .getElementById('close-cart-button')
+    .getElementById('cart-close')
     ?.addEventListener('click', closeCart);
 
   document
@@ -485,7 +488,7 @@ const visibleMenuItems = Array.isArray(menuItems)
     ?.addEventListener('click', closeCart);
 
   document
-    .getElementById('mobile-menu-button')
+    .getElementById('mobile-menu-toggle')
     ?.addEventListener('click', toggleMobileMenu);
 
   document
@@ -494,8 +497,8 @@ const visibleMenuItems = Array.isArray(menuItems)
 
   document
     .getElementById('cart-items')
-    ?.addEventListener('click', (event) => {
-      const button = event.target.closest('.quantity-button');
+    ?.addEventListener('click', event => {
+      const button = event.target.closest('.qty-button');
 
       if (!button) return;
 
@@ -508,20 +511,21 @@ const visibleMenuItems = Array.isArray(menuItems)
     });
 
   document
-    .getElementById('checkout-button')
-    ?.addEventListener('click', (event) => {
+    .getElementById('checkout-btn')
+    ?.addEventListener('click', event => {
       if (cart.length === 0) return;
 
-      const phone = event.currentTarget.dataset.phone || '';
+      const button = event.currentTarget;
+      const phone = button?.getAttribute('data-phone') || '';
 
-      const products = cart.map((item) => {
-        return `- ${item.name} (${productCodeText}: ${item.id}) x ${item.qty}`;
-      });
+      const lines = cart.map(
+        item => `- ${item.name} (${txtCode}: ${item.id}) x ${item.qty}`
+      );
 
       const message = [
         'Merhaba, aşağıdaki ürünler için toptan sipariş/teklif talep ediyorum:',
         '',
-        ...products
+        ...lines
       ].join('\n');
 
       window.open(
@@ -533,453 +537,4 @@ const visibleMenuItems = Array.isArray(menuItems)
 
   document
     .getElementById('main-navigation')
-    ?.addEventListener('click', (event) => {
-      if (event.target.closest('a')) {
-        closeMobileMenu();
-      }
-    });
-
-  renderCart();
-</script>
-
-<style>
-  :global(*) {
-    box-sizing: border-box;
-  }
-
-  :global(body) {
-    margin: 0;
-  }
-
-  .site-header {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    width: 100%;
-    background: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
-    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
-  }
-
-  .header-inner {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    width: min(100% - 2rem, 1280px);
-    min-height: 76px;
-    margin: 0 auto;
-  }
-
-  .logo-link {
-    display: inline-flex;
-    align-items: center;
-    flex-shrink: 0;
-    color: #0b2218;
-    text-decoration: none;
-  }
-
-  .site-logo {
-    display: block;
-    width: 180px;
-    height: 52px;
-    object-fit: contain;
-  }
-
-  .logo-text {
-    font-size: 1.15rem;
-    font-weight: 900;
-    white-space: nowrap;
-  }
-
-  .main-navigation {
-    margin-left: auto;
-  }
-
-  .main-menu {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .list-item {
-    position: relative;
-  }
-
-  .menu-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.75rem 0.65rem;
-    color: #0f172a;
-    font-size: 0.92rem;
-    font-weight: 600;
-    line-height: 1.2;
-    text-decoration: none;
-    white-space: nowrap;
-    border-radius: 7px;
-  }
-
-  .menu-link:hover,
-  .menu-link:focus-visible {
-    color: #047857;
-    background: #ecfdf5;
-  }
-
-  .menu-arrow {
-    font-size: 0.7rem;
-  }
-
-  .submenu {
-    position: absolute;
-    top: calc(100% + 0.25rem);
-    left: 0;
-    display: none;
-    min-width: 220px;
-    margin: 0;
-    padding: 0.45rem;
-    list-style: none;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
-  }
-
-  .list-has-children:hover > .submenu,
-  .list-has-children:focus-within > .submenu {
-    display: block;
-  }
-
-  .submenu-link {
-    display: block;
-    padding: 0.65rem 0.7rem;
-    color: #334155;
-    font-size: 0.88rem;
-    line-height: 1.35;
-    text-decoration: none;
-    border-radius: 6px;
-  }
-
-  .submenu-link:hover,
-  .submenu-link:focus-visible {
-    color: #047857;
-    background: #ecfdf5;
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    flex-shrink: 0;
-  }
-
-  .cart-button {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    color: #0f172a;
-    cursor: pointer;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 50%;
-  }
-
-  .cart-button:hover {
-    color: #047857;
-    border-color: #10b981;
-    background: #ecfdf5;
-  }
-
-  .cart-count {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 19px;
-    height: 19px;
-    padding: 0 4px;
-    color: #ffffff;
-    font-size: 0.7rem;
-    font-weight: 700;
-    background: #dc2626;
-    border: 2px solid #ffffff;
-    border-radius: 999px;
-  }
-
-  .cart-count[hidden] {
-    display: none;
-  }
-
-  .language-switcher {
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-  }
-
-  .language-switcher a {
-    padding: 0.35rem 0.4rem;
-    color: #64748b;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-decoration: none;
-    border-radius: 5px;
-  }
-
-  .language-switcher a:hover,
-  .language-switcher a.active-language {
-    color: #047857;
-    background: #ecfdf5;
-  }
-
-  .mobile-menu-button {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    cursor: pointer;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
-  }
-
-  .mobile-menu-button span {
-    display: block;
-    width: 21px;
-    height: 2px;
-    background: #0f172a;
-    border-radius: 2px;
-  }
-
-  .cart-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    z-index: 1200;
-    display: flex;
-    flex-direction: column;
-    width: min(390px, 100%);
-    height: 100vh;
-    padding: 1.25rem;
-    background: #ffffff;
-    transform: translateX(100%);
-    transition: transform 0.25s ease;
-  }
-
-  .cart-panel.open {
-    transform: translateX(0);
-  }
-
-  .cart-overlay,
-  .mobile-menu-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1100;
-    display: none;
-    background: rgba(15, 23, 42, 0.48);
-  }
-
-  .cart-overlay.open,
-  .mobile-menu-overlay.open {
-    display: block;
-  }
-
-  .cart-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-  }
-
-  .cart-panel-header h2 {
-    margin: 0;
-    color: #0f172a;
-    font-size: 1.25rem;
-  }
-
-  .close-cart-button {
-    padding: 0.2rem 0.55rem;
-    color: #475569;
-    font-size: 1.8rem;
-    line-height: 1;
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-  }
-
-  .cart-items {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem 0;
-  }
-
-  .empty-cart-message {
-    color: #64748b;
-    text-align: center;
-  }
-
-  .cart-item {
-    display: flex;
-    gap: 0.75rem;
-    padding: 0.8rem 0;
-    border-bottom: 1px solid #e2e8f0;
-  }
-
-  .cart-item img {
-    width: 70px;
-    height: 70px;
-    flex-shrink: 0;
-    object-fit: contain;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-  }
-
-  .cart-item-details {
-    min-width: 0;
-  }
-
-  .cart-item-name {
-    display: block;
-    color: #0f172a;
-    line-height: 1.35;
-  }
-
-  .cart-item-code {
-    display: block;
-    margin-top: 0.2rem;
-    color: #64748b;
-  }
-
-  .quantity-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    margin-top: 0.55rem;
-  }
-
-  .quantity-button {
-    width: 28px;
-    height: 28px;
-    cursor: pointer;
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    border-radius: 5px;
-  }
-
-  .cart-panel-footer {
-    padding-top: 1rem;
-    border-top: 1px solid #e2e8f0;
-  }
-
-  .checkout-button {
-    width: 100%;
-    padding: 0.85rem 1rem;
-    color: #ffffff;
-    font-weight: 700;
-    cursor: pointer;
-    background: #047857;
-    border: 0;
-    border-radius: 8px;
-  }
-
-  .checkout-button:hover {
-    background: #065f46;
-  }
-
-  @media (max-width: 950px) {
-    .header-inner {
-      min-height: 68px;
-    }
-
-    .mobile-menu-button {
-      display: inline-flex;
-      order: 2;
-    }
-
-    .logo-link {
-      order: 1;
-      margin-right: auto;
-    }
-
-    .header-actions {
-      order: 3;
-    }
-
-    .main-navigation {
-      position: fixed;
-      top: 68px;
-      left: 0;
-      z-index: 1150;
-      width: min(320px, 86vw);
-      height: calc(100vh - 68px);
-      margin: 0;
-      padding: 1rem;
-      overflow-y: auto;
-      background: #ffffff;
-      box-shadow: 8px 0 24px rgba(15, 23, 42, 0.12);
-      transform: translateX(-105%);
-      transition: transform 0.25s ease;
-    }
-
-    .main-navigation.mobile-open {
-      transform: translateX(0);
-    }
-
-    .main-menu {
-      display: block;
-    }
-
-    .list-item {
-      display: block;
-    }
-
-    .menu-link {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-    }
-
-    .submenu {
-      position: static;
-      display: block;
-      min-width: 0;
-      margin: 0.2rem 0 0.5rem 0.75rem;
-      padding: 0 0 0 0.5rem;
-      border: 0;
-      border-left: 2px solid #d1fae5;
-      box-shadow: none;
-    }
-
-    .site-logo {
-      width: 145px;
-      height: 44px;
-    }
-  }
-
-  @media (max-width: 520px) {
-    .header-inner {
-      width: calc(100% - 1rem);
-      gap: 0.45rem;
-    }
-
-    .language-switcher {
-      display: none;
-    }
-
-    .site-logo {
-      width: 130px;
-    }
-  }
-</style>
+    ?.addEventL
